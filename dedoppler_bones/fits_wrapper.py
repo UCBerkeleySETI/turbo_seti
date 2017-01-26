@@ -207,10 +207,7 @@ class FITSHandle:
         try:
             first_row = fil_file.read_row(0)
 #            first_row = np.array(first_row,dtype=np.float64)
-            print '>>>> yes header here', fil_file.headerinfo
-
             header = self.make_fits_header(fil_file.headerinfo)
-            print header
 
         except:
             logger.error('The fil_file.headerinfo is '%fil_file.headerinfo)
@@ -343,9 +340,9 @@ class  nonFITS:
                 self.header = barycenter.correct(header, self.obs_length)
                 logger.info('barycenter done for fits file %s! baryv: %f'%(filename, self.header['baryv']))
             else:
-		self.header = header
-		self.header['baryv'] = 0.0
-		self.header['barya'] = 0.0
+                self.header = header
+                self.header['baryv'] = 0.0
+                self.header['barya'] = 0.0
 
             # some default values
             self.original_vals= {'tsteps_valid': self.tsteps_valid, 'tsteps': self.tsteps,

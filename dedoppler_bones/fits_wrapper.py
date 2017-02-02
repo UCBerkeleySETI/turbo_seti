@@ -207,7 +207,7 @@ class FITSHandle:
         try:
 #EE_fil            first_row = fil_file.read_row(0)
 #            first_row = np.array(first_row,dtype=np.float64)
-            first_row = fil_file..data[0]
+            first_row = fil_file.data[0]
             header = self.make_fits_header(fil_file2.headerinfo)
 #EE_fil2            header = self.make_fits_header(fil_file.header)
         except:
@@ -263,7 +263,7 @@ class FITSHandle:
                 new_header = self.make_fits_header(fil_file2.headerinfo,first=False)
 #EE_fil2                new_header = self.make_fits_header(fil_file.header,first=False)
 #EE_fil                next_rows = fil_file.read_rows(i*nrows+1,nrows)
-                next_rows = fil_file..data[i+1]
+                next_rows = fil_file.data[i+1]
 
                 for j, new_filename in enumerate(new_filenames):
                     if not to_create[j]:
@@ -357,10 +357,10 @@ class  nonFITS:
         base_header['PCOUNT'] = 1
         base_header['GCOUNT'] = 1
 
-		if  '32' in header['Number of bits per sample']:
-			base_header['BITPIX'] = -32
-		else:
-			raise ValueError('Check nbits per sample. Not equeal 32')
+        if '32' in header['Number of bits per sample']:
+            base_header['BITPIX'] = -32
+        else:
+            raise ValueError('Check nbits per sample. Not equeal 32')
 
         base_header['NAXIS1'] = int(header['Number of channels'])  #nchans
 #EE_fil2        base_header['NAXIS1'] = int(header['nchans'])  #nchans
@@ -372,16 +372,16 @@ class  nonFITS:
 #EE_fil2        base_header['DELTAT'] = float(header['tsamp'])
 #EE_fil2        base_header['MJD'] = float(header['tstart'])
 #EE_fil2        base_header['TOFFSET'] = float(header['tsamp)'])
-		base_header['DELTAF'] =  np.abs(float(header['Channel bandwidth      (MHz)']))
-#EE_fil2		base_header['DELTAF'] =  np.abs(float(header['foff']))
-		base_header['SOURCE'] = header['Source Name'].replace('\xc2\xa0','_').replace(' ','')  #Removing white spaces and bad formats
-#EE_fil2		base_header['SOURCE'] = header['source_name'].replace('\xc2\xa0','_').replace(' ','')   #Removing white spaces and bad formats
+        base_header['DELTAF'] =  np.abs(float(header['Channel bandwidth      (MHz)']))
+#EE_fil2        base_header['DELTAF'] =  np.abs(float(header['foff']))
+        base_header['SOURCE'] = header['Source Name'].replace('\xc2\xa0','_').replace(' ','')  #Removing white spaces and bad formats
+#EE_fil2        base_header['SOURCE'] = header['source_name'].replace('\xc2\xa0','_').replace(' ','')   #Removing white spaces and bad formats
         base_header['FCNTR'] = float(header['Frequency of channel 1 (MHz)']) - base_header['DELTAF']*base_header['NAXIS1']/2
 #EE_fil2        base_header['FCNTR'] = float(header['fch1']) - base_header['DELTAF']*base_header['NAXIS1']/2
-		base_header['DEC'] = float(header['Source DEC (J2000)'])
-		base_header['RA'] = float(header['Source RA (J2000)'])
-#EE_fil2		base_header['DEC'] = float(header['Source DEC (J2000)'])
-#EE_fil2		base_header['RA'] = float(header['Source RA (J2000)'])
+        base_header['DEC'] = float(header['Source DEC (J2000)'])
+        base_header['RA'] = float(header['Source RA (J2000)'])
+#EE_fil2        base_header['DEC'] = float(header['Source DEC (J2000)'])
+#EE_fil2        base_header['RA'] = float(header['Source RA (J2000)'])
 
         return base_header
 

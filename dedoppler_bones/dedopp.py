@@ -33,7 +33,7 @@ class hist_vals:
 
 class DedopplerTask:
     """ """
-    def __init__(self, fitsfile, max_drift, min_drift=0, snr = 25.0, bw=0, rfithresh=1000.0, rfiwindow = 2, split_dir='/tmp', obs_info=None, LOFAR=False):
+    def __init__(self, fitsfile, max_drift, min_drift=0, snr = 25.0, bw=0, rfiwindow = 2, split_dir='/tmp', obs_info=None, LOFAR=False):
         self.min_drift = min_drift
         self.max_drift = max_drift
         self.snr = snr
@@ -41,7 +41,6 @@ class DedopplerTask:
             self.bw = bw
         else:
             self.bw = 0
-        self.rfithresh = rfithresh
         self.rfiwindow = rfiwindow
         self.split_dir = split_dir
         self.LOFAR = LOFAR
@@ -262,7 +261,7 @@ class DedopplerTask:
 
         #----------------------------------------
         # Writing to file the top hits.
-        self.filewriter = tophitsearch(tree_dedoppler_original, max_val, tsteps, nframes, fits_obj.header, tdwidth, fftlen, split_dir = self.split_dir, rfithresh=self.rfithresh, logwriter=self.logwriter, filewriter=self.filewriter, obs_info = self.obs_info)
+        self.filewriter = tophitsearch(tree_dedoppler_original, max_val, tsteps, nframes, fits_obj.header, tdwidth, fftlen, split_dir = self.split_dir, logwriter=self.logwriter, filewriter=self.filewriter, obs_info = self.obs_info)
 
         logger.info("Total number of candidates for "+ fits_obj.filename +" is: %i"%max_val.total_n_candi)
 
@@ -414,7 +413,7 @@ def candsearch(spectrum, specstart, specend, candthresh, drift_rate, header, fft
 
     return j, max_val
 
-def tophitsearch(tree_dedoppler_original, max_val, tsteps, nframes, header, tdwidth, fftlen, split_dir='', rfithresh = 1000, logwriter=None, filewriter=None,obs_info=None):
+def tophitsearch(tree_dedoppler_original, max_val, tsteps, nframes, header, tdwidth, fftlen, split_dir='', logwriter=None, filewriter=None,obs_info=None):
     '''This finds the candidate with largest SNR within 2*tsteps frequency channels.
     '''
 
@@ -423,7 +422,7 @@ def tophitsearch(tree_dedoppler_original, max_val, tsteps, nframes, header, tdwi
     tree_orig = tree_dedoppler_original.reshape((tsteps, tdwidth))
     logger.debug("tree_orig shape: %s"%str(tree_orig.shape))
 
-    for i in ((maxsnr > 0) & (maxsnr < rfithresh)).nonzero()[0]:
+    for i in (maxsnr > 0).nonzero()[0]:
         lbound = max(0, i - tsteps/2)
         ubound = min(tdwidth, i + tsteps/2)
         skip = 0

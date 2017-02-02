@@ -16,7 +16,6 @@ def main():
     p.add_option('-M', '--max_drift', dest='max_drift', type='float', default=10.0, help='Set the drift rate to search. Unit: Hz/sec. Default: 10.0')
     p.add_option('-s', '--snr', dest='snr', type='float', default=25.0, help='SNR threshold. Default: 25.0')
 #    p.add_option('-b', '--bw', dest='bw', type='float', default=1, help='Specify the amount of \'compression\' to be done in frequency domain to search for more \'spread out\' signals. Unit:?. Default: ?')
-    p.add_option('-r', '--rfithresh', dest='rfithresh', type='float', default=1000.0, help='Specify the RFI threshold. Default: 1000.0')
     p.add_option('-p', '--path', dest='out_dir', type='str', default='/tmp', help='In the case that the input file size is too big to handle at once, we\'ll need to split it into smaller FITS files. This option specify where to put those FITS files. Default: /tmp ')
 #    p.add_option('-w', '--width', dest='slice_width', type='int', default=512, help='')
     p.add_option('-l', '--loglevel', dest='loglevel', type='str', default='info', help='Specify log level (info, debug)')
@@ -63,7 +62,7 @@ def main():
     try:
         logging.basicConfig(format=format,stream=stream,level = level_log)
 
-        mydedopp = dedoppler_bones.dedopp.DedopplerTask(filename, max_drift = opts.max_drift, snr = opts.snr, rfithresh = opts.rfithresh, split_dir = opts.out_dir, obs_info=obs_info, LOFAR=False)
+        mydedopp = dedoppler_bones.dedopp.DedopplerTask(filename, max_drift = opts.max_drift, snr = opts.snr, split_dir = opts.out_dir, obs_info=obs_info, LOFAR=False)
         mydedopp.search()
 
 

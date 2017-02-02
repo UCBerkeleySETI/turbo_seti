@@ -8,8 +8,8 @@ import math
 import copy
 from pkg_resources import resource_filename
 #import barycenter
-import onlyreadfilterbank as fr
-import filterbank as fr2   #Danny's repo
+import onlyreadfilterbank as fr2
+import filterbank as fr
 
 import logging
 logger = logging.getLogger(__name__)
@@ -199,18 +199,19 @@ class FITSHandle:
             return []
 
         try:
-            fil_file=fr.DataReader(filename)
-#            fil_file=fr.read_header(filename)
+#EE_fil            fil_file=fr2.DataReader(filename)
+            fil_file=fr.Filterbank(filename)
         except:
             raise IOError("Error encountered when trying to open FIL file %s"%filename)
 
         try:
-            first_row = fil_file.read_row(0)
+#EE_fil            first_row = fil_file.read_row(0)
 #            first_row = np.array(first_row,dtype=np.float64)
-            header = self.make_fits_header(fil_file.headerinfo)
-
+            first_row = fil_file..data[0]
+            header = self.make_fits_header(fil_file2.headerinfo)
+#EE_fil2            header = self.make_fits_header(fil_file.header)
         except:
-            logger.error('The fil_file.headerinfo is '%fil_file.headerinfo)
+            logger.error('The fil_file.headerinfo is '%fil_file.header)
 #EE            logger.error('The header is '%header)
             raise IOError("Error accessing data FIL file %s."%filename)
 
@@ -259,21 +260,10 @@ class FITSHandle:
 
             #Looping over blocks of row, filenames and rows per block(nrows).
             for i in range(int(header['NAXIS2']/nrows)):
-                new_header = self.make_fits_header(fil_file.headerinfo,first=False)
-                next_rows = fil_file.read_rows(i*nrows+1,nrows)
-
-#EE This old code appended data to fits file but it was too slow...
-#                next_rows = np.array(next_rows,dtype=np.float64)
-#                 for rr in range(nrows):
-#                     logger.debug("Dealing with row %d"%(i*nrows+1+rr))
-#                     for j, new_filename in enumerate(new_filenames):
-#                         if not to_create[j]:
-#                             continue
-#                         new_header['TOFFSET'] = (i*nrows+1+rr)*new_header['DELTAT']
-#                         new_header['FCNTR'] = new_fcntrs[j]
-#                         ind = indices[j]
-#                         data = next_rows[rr][ind[0]:ind[1]]
-#                         pyfits.append(new_filename, data, new_header,verify=False)
+                new_header = self.make_fits_header(fil_file2.headerinfo,first=False)
+#EE_fil2                new_header = self.make_fits_header(fil_file.header,first=False)
+#EE_fil                next_rows = fil_file.read_rows(i*nrows+1,nrows)
+                next_rows = fil_file..data[i+1]
 
                 for j, new_filename in enumerate(new_filenames):
                     if not to_create[j]:
@@ -318,9 +308,10 @@ class  nonFITS:
                 logger.error("The file is of size %f MB, exceeding our size limit %f MB. Aborting..."%(filesize, size_limit))
                 return None
             try:
-                fil_file=fr.DataReader(filename)  # Will replace by danny's filterbank...
-                header = self.make_fits_header(fil_file.headerinfo)
-#                header = fr2.read_header(filename)
+                fil_file2=fr2.DataReader(filename)  # Will be replaced by danny's filterbank...
+                fil_file=fr.Filterbank(filename)
+                header = self.make_fits_header(fil_file2.headerinfo)
+#EE_fil2                header = self.make_fits_header(fil_file.header)
             except:
                 logger.error("Error encountered when trying to open FITS file %s"%filename)
                 self.status = False
@@ -358,35 +349,39 @@ class  nonFITS:
         base_header = {}
         base_header['SIMPLE'] = True
         base_header['NAXIS'] = 2
-        base_header['NAXIS1'] = int(header['Number of channels'])  #nchans
-        base_header['NAXIS2'] = int(header['Number of samples'])
+
         base_header['DOPPLER'] = 0.0
         base_header['SNR'] = 0.0
         base_header['EXTEND'] = True
-        base_header['DELTAT'] = float(header['Sample time (us)'])/1e6
-        base_header['MJD'] = float(header['Time stamp of first sample (MJD)'])
         base_header['XTENSION'] = 'IMAGE   '
         base_header['PCOUNT'] = 1
         base_header['GCOUNT'] = 1
+
+		if  '32' in header['Number of bits per sample']:
+			base_header['BITPIX'] = -32
+		else:
+			raise ValueError('Check nbits per sample. Not equeal 32')
+
+        base_header['NAXIS1'] = int(header['Number of channels'])  #nchans
+#EE_fil2        base_header['NAXIS1'] = int(header['nchans'])  #nchans
+        base_header['NAXIS2'] = int(header['Number of samples'])
+#EE_fil2        base_header['NAXIS2'] = int(header[''])
+        base_header['DELTAT'] = float(header['Sample time (us)'])/1e6
+        base_header['MJD'] = float(header['Time stamp of first sample (MJD)'])
         base_header['TOFFSET'] = float(header['Sample time (us)'])/1e6
-
-        if LOFAR:
-            base_header['BITPIX'] = -32
-            base_header['DELTAF'] =  0.000001497456 # LOFAR specific (project LC2_040).
-            base_header['DEC'] = float(header['Source DEC (J2000)'])
-            base_header['RA'] = float(header['Source RA (J2000)'])
-            base_header['SOURCE'] = header['Source Name'].replace('\xc2\xa0','_').replace(' ','_')
-        else:
-            if  '32' in header['Number of bits per sample']:
-                base_header['BITPIX'] = -32
-            else:
-                raise ValueError('Check nbits per sample. Not equeal 32')
-            base_header['DELTAF'] =  np.abs(float(header['Channel bandwidth      (MHz)']))
-            base_header['DEC'] = float(header['Source DEC (J2000)'])
-            base_header['RA'] = float(header['Source RA (J2000)'])
-            base_header['SOURCE'] = header['Source Name'].replace('\xc2\xa0','_').replace(' ','')
-
+#EE_fil2        base_header['DELTAT'] = float(header['tsamp'])
+#EE_fil2        base_header['MJD'] = float(header['tstart'])
+#EE_fil2        base_header['TOFFSET'] = float(header['tsamp)'])
+		base_header['DELTAF'] =  np.abs(float(header['Channel bandwidth      (MHz)']))
+#EE_fil2		base_header['DELTAF'] =  np.abs(float(header['foff']))
+		base_header['SOURCE'] = header['Source Name'].replace('\xc2\xa0','_').replace(' ','')  #Removing white spaces and bad formats
+#EE_fil2		base_header['SOURCE'] = header['source_name'].replace('\xc2\xa0','_').replace(' ','')   #Removing white spaces and bad formats
         base_header['FCNTR'] = float(header['Frequency of channel 1 (MHz)']) - base_header['DELTAF']*base_header['NAXIS1']/2
+#EE_fil2        base_header['FCNTR'] = float(header['fch1']) - base_header['DELTAF']*base_header['NAXIS1']/2
+		base_header['DEC'] = float(header['Source DEC (J2000)'])
+		base_header['RA'] = float(header['Source RA (J2000)'])
+#EE_fil2		base_header['DEC'] = float(header['Source DEC (J2000)'])
+#EE_fil2		base_header['RA'] = float(header['Source RA (J2000)'])
 
         return base_header
 
@@ -394,8 +389,10 @@ class  nonFITS:
         ''' Read all the data from file.
         '''
 
-        fil_file = fr.DataReader(self.filename)
-        spec = fil_file.read_all()
+#EE_fil        fil_file = fr2.DataReader(self.filename)
+        fil_file = fr.Filterbank(filename)
+#EE_fil        spec = fil_file.read_all()
+        spec = np.squeeze(fil_file.data)
         spectra = np.array(spec, dtype=np.float64)
 
         if spectra.shape != (self.tsteps_valid, self.fftlen):

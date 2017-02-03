@@ -199,7 +199,7 @@ class FITSHandle:
             return []
 
         try:
-#EE_fil            fil_file=fr2.DataReader(filename)
+            fil_file2=fr2.DataReader(filename)   #tmp, will remove when fully move to filterbank.py
             fil_file=fr.Filterbank(filename)
         except:
             raise IOError("Error encountered when trying to open FIL file %s"%filename)
@@ -211,7 +211,7 @@ class FITSHandle:
             header = self.make_fits_header(fil_file2.headerinfo)
 #EE_fil2            header = self.make_fits_header(fil_file.header)
         except:
-            logger.error('The fil_file.headerinfo is '%fil_file.header)
+            logger.error('The fil_file.headerinfo is '%fil_file2.headerinfo)
 #EE            logger.error('The header is '%header)
             raise IOError("Error accessing data FIL file %s."%filename)
 
@@ -259,7 +259,7 @@ class FITSHandle:
         if np.array(to_create,dtype=bool).any():
 
             #Looping over blocks of row, filenames and rows per block(nrows).
-            for i in range(int(header['NAXIS2']/nrows)):
+            for i in range(int(header['NAXIS2']/nrows)-1):
                 new_header = self.make_fits_header(fil_file2.headerinfo,first=False)
 #EE_fil2                new_header = self.make_fits_header(fil_file.header,first=False)
 #EE_fil                next_rows = fil_file.read_rows(i*nrows+1,nrows)

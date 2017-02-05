@@ -207,7 +207,8 @@ class FITSHandle:
         try:
 #EE_fil            first_row = fil_file.read_row(0)
 #            first_row = np.array(first_row,dtype=np.float64)
-            first_row = np.array(fil_file.data[0],dtype=np.uint32)
+            first_row = np.array(fil_file.data[0].astype(np.uint32))
+
             header = self.make_fits_header(fil_file2.headerinfo)
 #EE_fil2            header = self.make_fits_header(fil_file.header)
         except:
@@ -263,7 +264,7 @@ class FITSHandle:
                 new_header = self.make_fits_header(fil_file2.headerinfo,first=False)
 #EE_fil2                new_header = self.make_fits_header(fil_file.header,first=False)
 #EE_fil                next_rows = fil_file.read_rows(i*nrows+1,nrows)
-                next_rows = np.array(fil_file.data[i+1],dtype=np.uint32)
+                next_rows = np.array(fil_file.data[i+1].astype(np.uint32))
 
                 for j, new_filename in enumerate(new_filenames):
                     if not to_create[j]:

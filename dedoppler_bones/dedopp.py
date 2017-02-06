@@ -33,7 +33,7 @@ class hist_vals:
 
 class DedopplerTask:
     """ """
-    def __init__(self, fitsfile, max_drift, min_drift=0, snr = 25.0, bw=0, rfiwindow = 2, split_dir='/tmp', obs_info=None, LOFAR=False):
+    def __init__(self, fitsfile, max_drift, min_drift=0, snr = 25.0, bw=0, rfiwindow = 2, out_dir='/tmp', obs_info=None, LOFAR=False):
         self.min_drift = min_drift
         self.max_drift = max_drift
         self.snr = snr
@@ -42,9 +42,9 @@ class DedopplerTask:
         else:
             self.bw = 0
         self.rfiwindow = rfiwindow
-        self.split_dir = split_dir
+        self.out_dir = out_dir
         self.LOFAR = LOFAR
-        self.fits_handle = fits_wrapper.FITSHandle(fitsfile, split_dir=self.split_dir)
+        self.fits_handle = fits_wrapper.FITSHandle(fitsfile, out_dir=self.out_dir)
         if (self.fits_handle is None) or (self.fits_handle.status is False):
             raise IOError("FITS file error, aborting...")
         logger.info(self.fits_handle.get_info())
@@ -65,8 +65,8 @@ class DedopplerTask:
         for target_fits in self.fits_handle.fits_list:
 ##EE-debuging        for i,target_fits in enumerate(self.fits_handle.fits_list[-13:-10]):
 ##EE-debuging        for i,target_fits in enumerate(self.fits_handle.fits_list[-8:-6]):
-            self.logwriter = file_writers.LogWriter('%s/%s.log'%(self.split_dir.rstrip('/'), target_fits.filename.split('/')[-1].replace('.fits','').replace('.fil','')))
-            self.filewriter = file_writers.FileWriter('%s/%s.dat'%(self.split_dir.rstrip('/'), target_fits.filename.split('/')[-1].replace('.fits','').replace('.fil','')))
+            self.logwriter = file_writers.LogWriter('%s/%s.log'%(self.out_dir.rstrip('/'), target_fits.filename.split('/')[-1].replace('.fits','').replace('.fil','')))
+            self.filewriter = file_writers.FileWriter('%s/%s.dat'%(self.out_dir.rstrip('/'), target_fits.filename.split('/')[-1].replace('.fits','').replace('.fil','')))
 
             self.search_fits(target_fits)
 #            cProfile.runctx('self.search_fits(target_fits)',globals(),locals(),filename='profile_feb')
@@ -203,7 +203,7 @@ class DedopplerTask:
                     logger.debug(info_str)
                     self.logwriter.info(info_str)
 
-        ##EE-debuging                    np.save(self.split_dir + '/spectrum_dr%f.npy'%(drift_rate),spectrum)
+        ##EE-debuging                    np.save(self.out_dir + '/spectrum_dr%f.npy'%(drift_rate),spectrum)
 
 ##EE-debuging                    hist_val.histsnr[kk] = spectrum
 ##EE-debuging                    hist_val.histdrift[kk] = drift_rate
@@ -248,7 +248,7 @@ class DedopplerTask:
                     logger.debug(info_str)
                     self.logwriter.info(info_str)
 
-        ##EE-debuging                    np.save(self.split_dir + '/spectrum_dr%f.npy'%(drift_rate),spectrum)
+        ##EE-debuging                    np.save(self.out_dir + '/spectrum_dr%f.npy'%(drift_rate),spectrum)
 
 ##EE-debuging                    hist_val.histsnr[kk] = spectrum
 ##EE-debuging                    hist_val.histdrift[kk] = drift_rate
@@ -256,12 +256,12 @@ class DedopplerTask:
 
 #----------------------------------------
 
-##EE-debuging        np.save(self.split_dir + '/histsnr.npy', hist_val.histsnr)
-##EE-debuging        np.save(self.split_dir + '/histdrift.npy', hist_val.histdrift)
+##EE-debuging        np.save(self.out_dir + '/histsnr.npy', hist_val.histsnr)
+##EE-debuging        np.save(self.out_dir + '/histdrift.npy', hist_val.histdrift)
 
         #----------------------------------------
         # Writing to file the top hits.
-        self.filewriter = tophitsearch(tree_dedoppler_original, max_val, tsteps, nframes, fits_obj.header, tdwidth, fftlen, split_dir = self.split_dir, logwriter=self.logwriter, filewriter=self.filewriter, obs_info = self.obs_info)
+        self.filewriter = tophitsearch(tree_dedoppler_original, max_val, tsteps, nframes, fits_obj.header, tdwidth, fftlen, out_dir = self.out_dir, logwriter=self.logwriter, filewriter=self.filewriter, obs_info = self.obs_info)
 
         logger.info("Total number of candidates for "+ fits_obj.filename +" is: %i"%max_val.total_n_candi)
 
@@ -413,7 +413,7 @@ def candsearch(spectrum, specstart, specend, candthresh, drift_rate, header, fft
 
     return j, max_val
 
-def tophitsearch(tree_dedoppler_original, max_val, tsteps, nframes, header, tdwidth, fftlen, split_dir='', logwriter=None, filewriter=None,obs_info=None):
+def tophitsearch(tree_dedoppler_original, max_val, tsteps, nframes, header, tdwidth, fftlen, out_dir='', logwriter=None, filewriter=None,obs_info=None):
     '''This finds the candidate with largest SNR within 2*tsteps frequency channels.
     '''
 
@@ -443,7 +443,7 @@ def tophitsearch(tree_dedoppler_original, max_val, tsteps, nframes, header, tdwi
                 filewriter = filewriter.report_tophit(max_val, i, (lbound, ubound), tdwidth, fftlen, header,obs_info=obs_info)
 #EE: not passing array cut, since not saving in .dat file                filewriter = filewriter.report_tophit(max_val, i, (lbound, ubound), tree_orig[0:nframes, lbound:ubound], header)
 
-##EE : Uncomment if want to save each blob              np.save(split_dir + '/spec_drift_%.4f_id_%d.npy'%(max_val.maxdrift[i],i), tree_orig[0:nframes, lbound:ubound])
+##EE : Uncomment if want to save each blob              np.save(out_dir + '/spec_drift_%.4f_id_%d.npy'%(max_val.maxdrift[i],i), tree_orig[0:nframes, lbound:ubound])
             else:
                 logger.error('Not have filewriter? tell me why.')
 

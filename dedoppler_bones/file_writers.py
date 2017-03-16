@@ -11,14 +11,6 @@ logger = logging.getLogger(__name__)
 def tophits_writer(spectra_slice, hit_indices, header, format='txt'):
     return None
 
-
-def log_writer(filename, info_str):
-    return None
-
-
-def fits_writer(filename, header, fitsdata):
-    return None
-
 class GeneralWriter:
     """ """
     def __init__(self, filename='', mode='a'):
@@ -82,7 +74,7 @@ class FileWriter(GeneralWriter):
         '''
 
         #info_str = 'Source:%s\tMJD: %18.12f\tRA: %10.8f\tDEC: %10.8f\tDELTAT: %10.6f\tDELTAF(Hz): %10.6f\n'%(header['SOURCE'],header['MJD'], header['RA'], header['DEC'], header['DELTAT'], header['DELTAF']*1e6)
-        info_str = 'Source:%s\tMJD: %18.12f\tRA: %s\tDEC: %s\tDELTAT: %10.6f\tDELTAF(Hz): %10.6f\n'%(header['SOURCE'],header['MJD'], header['RA'], header['DEC'], header['DELTAT'], header['DELTAF']*1e6)       
+        info_str = 'Source:%s\tMJD: %18.12f\tRA: %s\tDEC: %s\tDELTAT: %10.6f\tDELTAF(Hz): %10.6f\n'%(header['SOURCE'],header['MJD'], header['RA'], header['DEC'], header['DELTAT'], header['DELTAF']*1e6)
 
         self.write(info_str)
         self.write('--------------------------\n')

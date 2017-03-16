@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
 import numpy as np
-import astropy.io.fits as pyfits
 import sys
 import os
 from helper_functions import chan_freq
-import fits_wrapper
+#import fits_wrapper
+import data_handdler
 import file_writers
 import pyximport
 pyximport.install(setup_args={"include_dirs":np.get_include()}, reload_support=True)
@@ -33,27 +33,23 @@ class hist_vals:
 
 class DedopplerTask:
     """ """
-    def __init__(self, fitsfile, max_drift, min_drift=0, snr = 25.0, bw=0, rfiwindow = 2, out_dir='/tmp', obs_info=None, LOFAR=False):
+    def __init__(self, datafile, max_drift, min_drift=0, snr = 25.0, bw=0, rfiwindow = 2, out_dir='/tmp', obs_info=None, LOFAR=False):
         self.min_drift = min_drift
         self.max_drift = max_drift
         self.snr = snr
-        if bw > 1:  #bw is bw_compress_width, for file compression, but it is not in use, since it has not been tested.
-            self.bw = bw
-        else:
-            self.bw = 0
         self.rfiwindow = rfiwindow
         self.out_dir = out_dir
         self.LOFAR = LOFAR
-        self.fits_handle = fits_wrapper.FITSHandle(fitsfile, out_dir=self.out_dir)
-        if (self.fits_handle is None) or (self.fits_handle.status is False):
-            raise IOError("FITS file error, aborting...")
-        logger.info(self.fits_handle.get_info())
+        self.data_handle = data_handdler.DATAHandle(datafile)
+        if (self.data_handle is None) or (self.data_handle.status is False):
+            raise IOError("File error, aborting...")
+        logger.info(self.data_handle.get_info())
         logger.info("A new Dedoppler Task instance created!")
         self.obs_info = obs_info
         self.status = True
 
     def get_info(self):
-        info_str = "FITS file: %s\n Split FITS files: %s\n drift rates (min, max): (%f, %f)\n SNR: %f\nbw: %f\n"%(self.fits_handle.filename,self.fits_handle.split_filenames, self.min_drift, self.max_drift,self.snr, self.bw)
+        info_str = "File: %s\n Split data: %s\n drift rates (min, max): (%f, %f)\n SNR: %f\nbw: %f\n"%(self.data_handle.filename, self.min_drift, self.max_drift,self.snr)
         return info_str
 
     def search(self):
@@ -62,30 +58,30 @@ class DedopplerTask:
         logger.debug("Start searching...")
         logger.debug(self.get_info())  # EE should print some info here...
 
-        for target_fits in self.fits_handle.fits_list:
-##EE-debuging        for i,target_fits in enumerate(self.fits_handle.fits_list[-13:-10]):
-##EE-debuging        for i,target_fits in enumerate(self.fits_handle.fits_list[-8:-6]):
-            self.logwriter = file_writers.LogWriter('%s/%s.log'%(self.out_dir.rstrip('/'), target_fits.filename.split('/')[-1].replace('.fits','').replace('.fil','')))
-            self.filewriter = file_writers.FileWriter('%s/%s.dat'%(self.out_dir.rstrip('/'), target_fits.filename.split('/')[-1].replace('.fits','').replace('.fil','')))
+        for target_data_obj in self.data_handle.data_list:
+##EE-debuging        for i,target_data_obj in enumerate(self.data_handle.data_list[-13:-10]):
+##EE-debuging        for i,target_data_obj in enumerate(self.data_handle.data_list[-8:-6]):
+            self.logwriter = file_writers.LogWriter('%s/%s.log'%(self.out_dir.rstrip('/'), target_data_obj.filename.split('/')[-1].replace('.h5','').replace('.fits','').replace('.fil','')))
+            self.filewriter = file_writers.FileWriter('%s/%s.dat'%(self.out_dir.rstrip('/'), target_data_obj.filename.split('/')[-1].replace('.h5','').replace('.fits','').replace('.fil','')))
 
-            self.search_fits(target_fits)
-#            cProfile.runctx('self.search_fits(target_fits)',globals(),locals(),filename='profile_feb')
+            self.search_data(target_data_obj)
+#            cProfile.runctx('self.search_data(target_data_obj)',globals(),locals(),filename='profile_feb')
 
-    def search_fits(self, fits_obj):
+    def search_data(self, data_obj):
         '''
         '''
-##EE say here which fits file I'm working with...
+##EE say here which file I'm working with...
 ##EE find out why "get info" doesn't pritn anything.. I think this is not bug, maybe just lack of implementation?
 #EE replaced it with filename for now.
-        logger.info("Start searching for %s"%fits_obj.filename)
-        self.logwriter.info("Start searching for %s"%fits_obj.filename)
-        spectra, drift_indexes = fits_obj.load_data(bw_compress_width = self.bw, logwriter=self.logwriter)
-        tsteps = fits_obj.tsteps
-        tsteps_valid = fits_obj.tsteps_valid
-        tdwidth = fits_obj.tdwidth
-        fftlen = fits_obj.fftlen
+        logger.info("Start searching for %s"%data_obj.filename)
+        self.logwriter.info("Start searching for %s"%data_obj.filename)
+        spectra, drift_indexes = data_obj.load_data()
+        tsteps = data_obj.tsteps
+        tsteps_valid = data_obj.tsteps_valid
+        tdwidth = data_obj.tdwidth
+        fftlen = data_obj.fftlen
         nframes = tsteps_valid
-        shoulder_size = fits_obj.shoulder_size
+        shoulder_size = data_obj.shoulder_size
 
         if self.LOFAR:
             ##EE This flags 10kHz each edge for LOFAR data. (Assuming 1.497456 Hz resolution)
@@ -93,7 +89,7 @@ class DedopplerTask:
             spectra[:,:6678] = median_flag/float(tsteps)
             spectra[:,-6678:] = median_flag/float(tsteps)
         else:
-            ##EE This flags the edges of the PFF for BL data (with 3Hz res)
+            ##EE This flags the edges of the PFF for BL data (with 3Hz res) #EE not sure how I got this values. Need to check notes.
             median_flag = np.median(spectra)
             spectra[:,:100000] = median_flag/float(tsteps)
             spectra[:,-100000:] = median_flag/float(tsteps)
@@ -137,7 +133,7 @@ class DedopplerTask:
 
 ##EE-debuging
         hist_val = hist_vals()
-        hist_len = int(np.ceil(2*(self.max_drift-self.min_drift)/fits_obj.drift_rate_resolution))
+        hist_len = int(np.ceil(2*(self.max_drift-self.min_drift)/data_obj.drift_rate_resolution))
         if hist_val.histsnr == None:
             hist_val.histsnr = np.zeros((hist_len,tdwidth), dtype=np.float64)
         if hist_val.histdrift == None:
@@ -152,7 +148,7 @@ class DedopplerTask:
         #--------------------------------
         #Looping over drift_rate_nblock
         #--------------------------------
-        drift_rate_nblock = int(np.floor(self.max_drift / (fits_obj.drift_rate_resolution*tsteps_valid)))
+        drift_rate_nblock = int(np.floor(self.max_drift / (data_obj.drift_rate_resolution*tsteps_valid)))
 
 ##EE-debuging
         kk = 0
@@ -179,7 +175,7 @@ class DedopplerTask:
                 tt.taylor_flt(tree_dedoppler_flip, tsteps * tdwidth, tsteps)
                 logger.info( "done...")
 
-                complete_drift_range = fits_obj.drift_rate_resolution*np.array(range(-1*tsteps_valid*(np.abs(drift_block)+1)+1,-1*tsteps_valid*(np.abs(drift_block))+1))
+                complete_drift_range = data_obj.drift_rate_resolution*np.array(range(-1*tsteps_valid*(np.abs(drift_block)+1)+1,-1*tsteps_valid*(np.abs(drift_block))+1))
 
                 for k,drift_rate in enumerate(complete_drift_range[(complete_drift_range<self.min_drift) & (complete_drift_range>=-1*self.max_drift)]):
                     indx  = ibrev[drift_indexes[::-1][(complete_drift_range<self.min_drift) & (complete_drift_range>=-1*self.max_drift)][k]] * tdwidth
@@ -196,8 +192,8 @@ class DedopplerTask:
                     #Reverse spectrum back
                     spectrum = spectrum[::-1]
 
-##EE maybe wrong use of reverse            n_candi, max_val = candsearch(spectrum, specstart, specend, self.snr, drift_rate, fits_obj.header, fftlen, tdwidth, channel, max_val, 1)
-                    n_candi, max_val = candsearch(spectrum, specstart, specend, self.snr, drift_rate, fits_obj.header, fftlen, tdwidth, max_val, 0)
+##EE maybe wrong use of reverse            n_candi, max_val = candsearch(spectrum, specstart, specend, self.snr, drift_rate, data_obj.header, fftlen, tdwidth, channel, max_val, 1)
+                    n_candi, max_val = candsearch(spectrum, specstart, specend, self.snr, drift_rate, data_obj.header, fftlen, tdwidth, max_val, 0)
                     info_str = "Found %d candidates at drift rate %15.15f\n"%(n_candi, drift_rate)
                     max_val.total_n_candi += n_candi
                     logger.debug(info_str)
@@ -228,7 +224,7 @@ class DedopplerTask:
                      logger.debug("tree_dedoppler changed")
 
                 ##EE: Calculates the range of drift rates for a full drift block.
-                complete_drift_range = fits_obj.drift_rate_resolution*np.array(range(tsteps_valid*(drift_block),tsteps_valid*(drift_block +1)))
+                complete_drift_range = data_obj.drift_rate_resolution*np.array(range(tsteps_valid*(drift_block),tsteps_valid*(drift_block +1)))
 
                 for k,drift_rate in enumerate(complete_drift_range[(complete_drift_range>=self.min_drift) & (complete_drift_range<=self.max_drift)]):
 
@@ -242,7 +238,7 @@ class DedopplerTask:
                     spectrum -= mean_val
                     spectrum /= stddev
 
-                    n_candi, max_val = candsearch(spectrum, specstart, specend, self.snr, drift_rate, fits_obj.header, fftlen, tdwidth, max_val, 0)
+                    n_candi, max_val = candsearch(spectrum, specstart, specend, self.snr, drift_rate, data_obj.header, fftlen, tdwidth, max_val, 0)
                     info_str = "Found %d candidates at drift rate %15.15f\n"%(n_candi, drift_rate)
                     max_val.total_n_candi += n_candi
                     logger.debug(info_str)
@@ -261,9 +257,9 @@ class DedopplerTask:
 
         #----------------------------------------
         # Writing to file the top hits.
-        self.filewriter = tophitsearch(tree_dedoppler_original, max_val, tsteps, nframes, fits_obj.header, tdwidth, fftlen, out_dir = self.out_dir, logwriter=self.logwriter, filewriter=self.filewriter, obs_info = self.obs_info)
+        self.filewriter = tophitsearch(tree_dedoppler_original, max_val, tsteps, nframes, data_obj.header, tdwidth, fftlen, out_dir = self.out_dir, logwriter=self.logwriter, filewriter=self.filewriter, obs_info = self.obs_info)
 
-        logger.info("Total number of candidates for "+ fits_obj.filename +" is: %i"%max_val.total_n_candi)
+        logger.info("Total number of candidates for "+ data_obj.filename +" is: %i"%max_val.total_n_candi)
 
 
 

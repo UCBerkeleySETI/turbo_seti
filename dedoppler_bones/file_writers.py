@@ -66,14 +66,17 @@ class FileWriter(GeneralWriter):
     """ """
     def __init__(self, filename):
         GeneralWriter.__init__(self, filename)
+        self.write('-------------------------- o --------------------------\n')
+        self.write('-------------------------- o --------------------------\n')
+
         self.write('File ID: %s \n'%filename.split('/')[-1].replace('.dat',''))
+        self.write('Coarse Channel Number: f%'%header['coarse_chan']
         self.tophit_count = 0
 
     def report_header(self, header, obs_info=None,LOFAR=False):
         ''' Write header information per given obs.
         '''
 
-        #info_str = 'Source:%s\tMJD: %18.12f\tRA: %10.8f\tDEC: %10.8f\tDELTAT: %10.6f\tDELTAF(Hz): %10.6f\n'%(header['SOURCE'],header['MJD'], header['RA'], header['DEC'], header['DELTAT'], header['DELTAF']*1e6)
         info_str = 'Source:%s\tMJD: %18.12f\tRA: %s\tDEC: %s\tDELTAT: %10.6f\tDELTAF(Hz): %10.6f\n'%(header['SOURCE'],header['MJD'], header['RA'], header['DEC'], header['DELTAT'], header['DELTAF']*1e6)
 
         self.write(info_str)

@@ -77,7 +77,7 @@ class DATAHandle:
             f_start = f0 + chan*abs(f_delt)*fil_file.n_channels_in_file/n_coarse_chan
             f_stop = f0 + (chan+1)*abs(f_delt)*fil_file.n_channels_in_file/n_coarse_chan
 
-            data_obj = DATAH5(self.filename, f_start=f_start, f_stop=f_stop)
+            data_obj = DATAH5(self.filename, f_start=f_start, f_stop=f_stop,coarse_chan=chan)
 
 #----------------------------------------------------------------
 
@@ -97,7 +97,7 @@ class DATAH5:
         It creates other atributes related to the dedoppler search (load_drift_indexes).
     '''
 
-    def __init__(self, filename, size_limit = SIZE_LIM,f_start=None, f_stop=None,t_start=None, t_stop=None):
+    def __init__(self, filename, size_limit = SIZE_LIM,f_start=None, f_stop=None,t_start=None, t_stop=None,coarse_chan=None):
         self.filename = filename
         self.f_start = f_start
         self.f_stop = f_stop
@@ -128,10 +128,11 @@ class DATAH5:
         self.header = header
         self.header['baryv'] = 0.0
         self.header['barya'] = 0.0
+        self.header['coarse_chan'] =  = coarse_chan
 
         # For now I'm not using a shoulder. This is ok as long as I'm analyzing each coarse channel individually.
         # In general this is parameter is an integer (even number).
-        #This gives two regions, each of n*steps, around spectra[i]
+        # This gives two regions, each of n*steps, around spectra[i]
         self.shoulder_size = 0
         self.tdwidth = self.fftlen + self.shoulder_size*self.tsteps
 
@@ -139,6 +140,11 @@ class DATAH5:
         ''' Read the data from file.
         '''
         self.fil_file.read_data(f_start=self.f_start, f_stop=self.f_stop)
+
+        logger.info('Blanking DC bin.')
+        n_coarse_chan = self.fil_file.calc_n_coarse_chan()
+        self.fil_file.blank_dc(n_coarse_chan)
+
         spec = np.squeeze(self.fil_file.data)
         spectra = np.array(spec, dtype=np.float64)
 

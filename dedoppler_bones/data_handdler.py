@@ -45,7 +45,9 @@ class DATAHandle:
     def get_info(self):
         ''' Returning header.
         '''
-        return self.header
+
+        fil_file = Filterbank2(self.filename,load_data=False)
+        return fil_file.header
 
     def __split_h5(self, size_limit=SIZE_LIM):
         '''Creates a plan to select data from single coarse channels.

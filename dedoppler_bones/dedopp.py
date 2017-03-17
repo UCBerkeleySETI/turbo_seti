@@ -49,7 +49,7 @@ class DedopplerTask:
         self.status = True
 
     def get_info(self):
-        info_str = "File: %s\n Split data: %s\n drift rates (min, max): (%f, %f)\n SNR: %f\nbw: %f\n"%(self.data_handle.filename, self.min_drift, self.max_drift,self.snr)
+        info_str = "File: %s\n drift rates (min, max): (%f, %f)\n SNR: %f\n"%(self.data_handle.filename, self.min_drift, self.max_drift,self.snr)
         return info_str
 
     def search(self):

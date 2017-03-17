@@ -23,7 +23,7 @@ def main():
     opts, args = p.parse_args(sys.argv[1:])
 
     if len(args)!=1:
-        print 'Please specify a FITS file \nExiting.'
+        print 'Please specify a file name \nExiting.'
         sys.exit()
     else:
         filename = args[0]
@@ -62,7 +62,7 @@ def main():
     try:
         logging.basicConfig(format=format,stream=stream,level = level_log)
 
-        mydedopp = dedoppler_bones.dedopp.DedopplerTask(filename, max_drift = opts.max_drift, snr = opts.snr, split_dir = opts.out_dir, obs_info=obs_info, LOFAR=False)
+        mydedopp = dedoppler_bones.dedopp.DedopplerTask(filename, max_drift = opts.max_drift, snr = opts.snr, out_dir = opts.out_dir, obs_info=obs_info)
         mydedopp.search()
 
 

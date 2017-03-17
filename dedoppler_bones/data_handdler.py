@@ -1,22 +1,15 @@
 #!/usr/bin/env python
 
-# import astropy.io.fits as pyfits
 import os
-# import glob
 import numpy as np
-# import math
-# import copy
-# from pkg_resources import resource_filename
-# #import barycenter
-# import onlyreadfilterbank as fr2
-# import filterbank as fr
-
+import math
+from pkg_resources import resource_filename
 from filterbank import Filterbank2
 
 import logging
 logger = logging.getLogger(__name__)
 
-import pdb;# pdb.set_trace()
+#import pdb;# pdb.set_trace()
 
 SIZE_LIM = 256.0   # File size limit in MB. If larger then make a split mapping.
 
@@ -104,16 +97,20 @@ class DATAH5:
 
     def __init__(self, filename, size_limit = SIZE_LIM,f_start=None, f_stop=None,t_start=None, t_stop=None):
         self.filename = filename
+        self.f_start = f_start
+        self.f_stop = f_stop
+        self.t_start = t_start
+        self.t_stop = t_stop
 
         #Instancing file.
         try:
-            self.fil_file = Filterbank2(filename,f_start=f_start, f_stop=f_stop,t_start=t_start, t_stop=t_stop,load_data=False)
+            self.fil_file = Filterbank2(filename,f_start=self.f_start, f_stop=self.f_stop,t_start=self.t_start, t_stop=self.t_stop,load_data=False)
         except:
             logger.error("Error encountered when trying to open file %s"%filename)
 
         #Getting header
         try:
-            header = __make_data_header(self.fil_file.header,coarse=True,f_start=f_start, f_stop=f_stop)
+            header = self.__make_data_header(self.fil_file.header,coarse=True)
         except:
             logger.debug('The fil_file.header is '%self.fil_file.header)
             raise IOError("Error accessing header from file: %s."%self.filename)
@@ -136,11 +133,11 @@ class DATAH5:
         self.shoulder_size = 0
         self.tdwidth = self.fftlen + self.shoulder_size*self.tsteps
 
-    def load_data(self,f_start=None, f_stop=None):
+    def load_data(self,):
         ''' Read the data from file.
         '''
-
-        spec = np.squeeze(self.fil_file.read_data(f_start=f_start, f_stop=f_stop))
+        self.fil_file.read_data(f_start=self.f_start, f_stop=self.f_stop)
+        spec = np.squeeze(self.fil_file.data)
         spectra = np.array(spec, dtype=np.float64)
 
         if spectra.shape != (self.tsteps_valid, self.fftlen):
@@ -163,14 +160,14 @@ class DATAH5:
         drift_indexes = di_array[self.tsteps_valid - 1 - ts2, 0:self.tsteps_valid]
         return drift_indexes
 
-    def __make_data_header(self,header,coarse=False,f_start=None, f_stop=None):
+    def __make_data_header(self,header,coarse=False):
         '''Takes header into fits header format '''
 
         base_header = {}
 
         #Used by file_writers.py
         base_header['SOURCE'] = header['source_name'].replace('\xc2\xa0','_').replace(' ','_')
-        base_header['MJD'] = header['tstart)']
+        base_header['MJD'] = header['tstart']
         base_header['DEC'] = str(header['src_dej'])
         base_header['RA'] = str(header['src_raj'])
         base_header['DELTAF'] =  np.abs(header['foff'])  #EE Need to double check if I want this value to be "abs"
@@ -178,8 +175,8 @@ class DATAH5:
 
         #Used by helper_functions.py
         if coarse:
-            base_header['NAXIS1'] = int((f_start - f_stop)/base_header['DELTAF'])
-            base_header['FCNTR'] = (f_start - f_stop)/2. + f_start
+            base_header['NAXIS1'] = int((self.f_stop - self.f_start)/base_header['DELTAF'])
+            base_header['FCNTR'] = (self.f_stop - self.f_start)/2. + self.f_start
         else:
             base_header['NAXIS1'] = int(header['nchans'])
             base_header['FCNTR'] = float(header['fch1']) + header['foff']*base_header['NAXIS1']/2

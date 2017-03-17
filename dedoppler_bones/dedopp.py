@@ -33,13 +33,12 @@ class hist_vals:
 
 class DedopplerTask:
     """ """
-    def __init__(self, datafile, max_drift, min_drift=0, snr = 25.0, bw=0, rfiwindow = 2, out_dir='/tmp', obs_info=None, LOFAR=False):
+    def __init__(self, datafile, max_drift, min_drift=0, snr = 25.0, bw=0, rfiwindow = 2, out_dir='/tmp', obs_info=None):
         self.min_drift = min_drift
         self.max_drift = max_drift
         self.snr = snr
         self.rfiwindow = rfiwindow
         self.out_dir = out_dir
-        self.LOFAR = LOFAR
         self.data_handle = data_handdler.DATAHandle(datafile)
         if (self.data_handle is None) or (self.data_handle.status is False):
             raise IOError("File error, aborting...")
@@ -83,16 +82,10 @@ class DedopplerTask:
         nframes = tsteps_valid
         shoulder_size = data_obj.shoulder_size
 
-        if self.LOFAR:
-            ##EE This flags 10kHz each edge for LOFAR data. (Assuming 1.497456 Hz resolution)
-            median_flag = np.median(spectra)
-            spectra[:,:6678] = median_flag/float(tsteps)
-            spectra[:,-6678:] = median_flag/float(tsteps)
-        else:
-            ##EE This flags the edges of the PFF for BL data (with 3Hz res) #EE not sure how I got this values. Need to check notes.
-            median_flag = np.median(spectra)
-            spectra[:,:100000] = median_flag/float(tsteps)
-            spectra[:,-100000:] = median_flag/float(tsteps)
+        ##EE This flags the edges of the PFF for BL data (with 3Hz res) #EE not sure how I got this values. Need to check notes.
+        median_flag = np.median(spectra)
+        spectra[:,:100000] = median_flag/float(tsteps)
+        spectra[:,-100000:] = median_flag/float(tsteps)
 
         #EE Flagging spikes in time series.
         time_series=spectra.sum(axis=1)

@@ -70,7 +70,7 @@ class FileWriter(GeneralWriter):
         self.write('-------------------------- o --------------------------\n')
 
         self.write('File ID: %s \n'%filename.split('/')[-1].replace('.dat',''))
-        self.write('Coarse Channel Number: f%'%header['coarse_chan']
+        self.write('Coarse Channel Number: f%'%header['coarse_chan'])
         self.tophit_count = 0
 
     def report_header(self, header, obs_info=None,LOFAR=False):

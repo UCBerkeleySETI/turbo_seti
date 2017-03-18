@@ -64,10 +64,9 @@ class DedopplerTask:
 #         self.logwriter.info("Start search for %s ; coarse channel: %i "%(self.data_handle.data_list[0].filename,self.data_handle.data_list[0].header['coarse_chan']))
 
 
-#        for target_data_obj in self.data_handle.data_list:
+        for target_data_obj in self.data_handle.data_list:
 ##EE-debuging        for i,target_data_obj in enumerate(self.data_handle.data_list[-13:-10]):
-##EE-debuging
-        for i,target_data_obj in enumerate(self.data_handle.data_list[-8:-6]):
+##EE-debuging        for i,target_data_obj in enumerate(self.data_handle.data_list[-8:-6]):
 
             self.search_data(target_data_obj)
 #            cProfile.runctx('self.search_data(target_data_obj)',globals(),locals(),filename='profile_feb')

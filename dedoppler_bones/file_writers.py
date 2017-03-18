@@ -7,7 +7,6 @@ from helper_functions import chan_freq
 import logging
 logger = logging.getLogger(__name__)
 
-
 def tophits_writer(spectra_slice, hit_indices, header, format='txt'):
     return None
 
@@ -60,59 +59,51 @@ class GeneralWriter:
         self.write('')
         self.open('a')
 
-
-
 class FileWriter(GeneralWriter):
     """ """
     def __init__(self, filename):
         GeneralWriter.__init__(self, filename)
-        self.write('-------------------------- o --------------------------\n')
-        self.write('-------------------------- o --------------------------\n')
-
-        self.write('File ID: %s \n'%filename.split('/')[-1].replace('.dat',''))
-        self.write('Coarse Channel Number: f%'%header['coarse_chan'])
+        self.write('File ID: %s \n'%(filename.split('/')[-1].replace('.dat','')+'.h5'))
         self.tophit_count = 0
 
-    def report_header(self, header, obs_info=None,LOFAR=False):
+    def report_coarse_channel(self, header,total_n_candi):
         ''' Write header information per given obs.
         '''
 
-        info_str = 'Source:%s\tMJD: %18.12f\tRA: %s\tDEC: %s\tDELTAT: %10.6f\tDELTAF(Hz): %10.6f\n'%(header['SOURCE'],header['MJD'], header['RA'], header['DEC'], header['DELTAT'], header['DELTAF']*1e6)
+        self.write('-------------------------- o --------------------------\n')
+        self.write('Coarse Channel Number: %i \n'%header['coarse_chan'])
+        info_str = 'Number of hits: %i \n'%total_n_candi
+        info_str += '--------------------------\n'
+        self.write(info_str)
+        self.report_header(header)
+
+
+    def report_header(self, header):
+        ''' Write header information per given obs.
+        '''
+
+        info_str = 'Source:%s\nMJD: %18.12f\tRA: %s\tDEC: %s\nDELTAT: %10.6f\tDELTAF(Hz): %10.6f\n'%(header['SOURCE'],header['MJD'], header['RA'], header['DEC'], header['DELTAT'], header['DELTAF']*1e6)
 
         self.write(info_str)
         self.write('--------------------------\n')
-
-        if obs_info and LOFAR:
-            info_str= 'RA_tile:%f\tDEC_tile:%f\tRA_beam:%f\tDEC_beam:%f\tRA_TAB:%f\tDEC_TAB:%f\n'%(obs_info['RA_tile'],obs_info['DEC_tile'],obs_info['RA_beam'],obs_info['DEC_beam'],obs_info['RA_TAB'],obs_info['DEC_TAB'])
-            info_str+= 'Pulsar_run:%i\tPulsar_found:%i\tPulsar_DM:%f\tPulsar_SNR:%f\n'%(obs_info['pulsar'],obs_info['pulsar_found'],obs_info['pulsar_dm'],obs_info['pulsar_snr'])
-            info_str+= 'RFI_level:%f\tN_stations:%i\n'%(obs_info['RFI_level'],obs_info['N_stations'])
-            info_str+= 'Mean_SEFD:%s\tpsrflux_Sens:%s\n'%(obs_info['Mean_SEFD'],obs_info['psrflux_Sens'])
-            self.write(info_str)
-            self.write('--------------------------\n')
-
+        info_str = 'Top Hit # \t'
+        info_str += 'Drift Rate \t'
+        info_str += 'SNR \t'
+        info_str += 'Uncorrected Frequency \t'
+        info_str += 'Corrected Frequency \t'
+        info_str += 'Index \t'
+        info_str += 'freq_start \t'
+        info_str += 'freq_end \t'
+        info_str += 'SEFD \t'
+        info_str += 'SEFD_freq \t'
+        info_str +='\n'
+        self.write(info_str)
+        self.write('--------------------------\n')
 
     def report_tophit(self, max_val, ind, ind_tuple, tdwidth, fftlen, header,spec_slice=None,obs_info=None):
 
         '''This function looks into the top hit in a region, basically find the local maximum and saves that.
         '''
-        if not self.tophit_count:
-            self.report_header(header,obs_info=obs_info)
-            info_str = 'N_candidates: %i \n'%max_val.total_n_candi
-            self.write(info_str)
-            info_str = '--------------------------\n'
-            info_str += 'Top Hit # \t'
-            info_str += 'Drift Rate \t'
-            info_str += 'SNR \t'
-            info_str += 'Uncorrected Frequency \t'
-            info_str += 'Corrected Frequency \t'
-            info_str += 'Index \t'
-            info_str += 'freq_start \t'
-            info_str += 'freq_end \t'
-            info_str += 'SEFD \t'
-            info_str += 'SEFD_freq \t'
-            info_str +='\n'
-            self.write(info_str)
-            self.write('--------------------------\n')
 
         offset = int((tdwidth - fftlen)/2)
         tdwidth =  len(max_val.maxsnr)
@@ -158,7 +149,6 @@ class FileWriter(GeneralWriter):
 #         self.write('\n')
 
         return self
-
 
 class LogWriter(GeneralWriter):
     """ """

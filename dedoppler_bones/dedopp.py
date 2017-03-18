@@ -57,11 +57,17 @@ class DedopplerTask:
         logger.debug("Start searching...")
         logger.debug(self.get_info())  # EE should print some info here...
 
-        for target_data_obj in self.data_handle.data_list:
+        self.logwriter = file_writers.LogWriter('%s/%s.log'%(self.out_dir.rstrip('/'), self.data_handle.data_list[0].filename.split('/')[-1].replace('.h5','').replace('.fits','').replace('.fil','')))
+        self.filewriter = file_writers.FileWriter('%s/%s.dat'%(self.out_dir.rstrip('/'), self.data_handle.data_list[0].filename.split('/')[-1].replace('.h5','').replace('.fits','').replace('.fil','')))
+
+#         logger.info("Start ET search for %s"%self.data_handle.data_list[0].filename)
+#         self.logwriter.info("Start search for %s ; coarse channel: %i "%(self.data_handle.data_list[0].filename,self.data_handle.data_list[0].header['coarse_chan']))
+
+
+#        for target_data_obj in self.data_handle.data_list:
 ##EE-debuging        for i,target_data_obj in enumerate(self.data_handle.data_list[-13:-10]):
-##EE-debuging        for i,target_data_obj in enumerate(self.data_handle.data_list[-8:-6]):
-            self.logwriter = file_writers.LogWriter('%s/%s.log'%(self.out_dir.rstrip('/'), target_data_obj.filename.split('/')[-1].replace('.h5','').replace('.fits','').replace('.fil','')))
-            self.filewriter = file_writers.FileWriter('%s/%s.dat'%(self.out_dir.rstrip('/'), target_data_obj.filename.split('/')[-1].replace('.h5','').replace('.fits','').replace('.fil','')))
+##EE-debuging
+        for i,target_data_obj in enumerate(self.data_handle.data_list[-8:-6]):
 
             self.search_data(target_data_obj)
 #            cProfile.runctx('self.search_data(target_data_obj)',globals(),locals(),filename='profile_feb')
@@ -72,8 +78,8 @@ class DedopplerTask:
 ##EE say here which file I'm working with...
 ##EE find out why "get info" doesn't pritn anything.. I think this is not bug, maybe just lack of implementation?
 #EE replaced it with filename for now.
-        logger.info("Start searching for %s"%data_obj.filename)
-        self.logwriter.info("Start searching for %s"%data_obj.filename)
+        logger.info("Start searching for coarse channel: %s"%data_obj.header['coarse_chan'])
+        self.logwriter.info("Start searching for %s ; coarse channel: %i "%(data_obj.filename,data_obj.header['coarse_chan']))
         spectra, drift_indexes = data_obj.load_data()
         tsteps = data_obj.tsteps
         tsteps_valid = data_obj.tsteps_valid
@@ -82,10 +88,12 @@ class DedopplerTask:
         nframes = tsteps_valid
         shoulder_size = data_obj.shoulder_size
 
-        ##EE This flags the edges of the PFF for BL data (with 3Hz res) #EE not sure how I got this values. Need to check notes.
+        ##EE This flags the edges of the PFF for BL data (with 3Hz res per channel).
+        ##EE The PFF flat profile falls after around 100k channels.
+        ##EE But it falls slowly enough that could use 50-80k channels.
         median_flag = np.median(spectra)
-        spectra[:,:100000] = median_flag/float(tsteps)
-        spectra[:,-100000:] = median_flag/float(tsteps)
+        spectra[:,:80000] = median_flag/float(tsteps)
+        spectra[:,-80000:] = median_flag/float(tsteps)
 
         #EE Flagging spikes in time series.
         time_series=spectra.sum(axis=1)
@@ -96,7 +104,7 @@ class DedopplerTask:
 
         # allocate array for dedopplering
         # init dedopplering array to zero
-        tree_dedoppler = np.zeros(tsteps * tdwidth,dtype=np.float64)# + median_flag
+        tree_dedoppler = np.zeros(tsteps * tdwidth,dtype=np.float64) + median_flag
 
         # allocate array for holding original
         # Allocates array in a fast way (without initialize)
@@ -143,8 +151,7 @@ class DedopplerTask:
         #--------------------------------
         drift_rate_nblock = int(np.floor(self.max_drift / (data_obj.drift_rate_resolution*tsteps_valid)))
 
-##EE-debuging
-        kk = 0
+##EE-debuging        kk = 0
 
         for drift_block in range(-1*drift_rate_nblock,drift_rate_nblock+1):
             #----------------------------------------------------------------------
@@ -192,7 +199,7 @@ class DedopplerTask:
                     logger.debug(info_str)
                     self.logwriter.info(info_str)
 
-        ##EE-debuging                    np.save(self.out_dir + '/spectrum_dr%f.npy'%(drift_rate),spectrum)
+##EE-debuging                    np.save(self.out_dir + '/spectrum_dr%f.npy'%(drift_rate),spectrum)
 
 ##EE-debuging                    hist_val.histsnr[kk] = spectrum
 ##EE-debuging                    hist_val.histdrift[kk] = drift_rate
@@ -237,7 +244,7 @@ class DedopplerTask:
                     logger.debug(info_str)
                     self.logwriter.info(info_str)
 
-        ##EE-debuging                    np.save(self.out_dir + '/spectrum_dr%f.npy'%(drift_rate),spectrum)
+##EE-debuging                    np.save(self.out_dir + '/spectrum_dr%f.npy'%(drift_rate),spectrum)
 
 ##EE-debuging                    hist_val.histsnr[kk] = spectrum
 ##EE-debuging                    hist_val.histdrift[kk] = drift_rate
@@ -250,9 +257,12 @@ class DedopplerTask:
 
         #----------------------------------------
         # Writing to file the top hits.
-        self.filewriter = tophitsearch(tree_dedoppler_original, max_val, tsteps, nframes, data_obj.header, tdwidth, fftlen, out_dir = self.out_dir, logwriter=self.logwriter, filewriter=self.filewriter, obs_info = self.obs_info)
 
-        logger.info("Total number of candidates for "+ data_obj.filename +" is: %i"%max_val.total_n_candi)
+        self.filewriter.report_coarse_channel(data_obj.header,max_val.total_n_candi)
+
+        self.filewriter = tophitsearch(tree_dedoppler_original, max_val, tsteps, nframes, data_obj.header, tdwidth, fftlen, self.max_drift,data_obj.obs_length, out_dir = self.out_dir, logwriter=self.logwriter, filewriter=self.filewriter, obs_info = self.obs_info)
+
+        logger.info("Total number of candidates for coarse channel "+ str(data_obj.header['coarse_chan']) +" is: %i"%max_val.total_n_candi)
 
 
 
@@ -402,7 +412,7 @@ def candsearch(spectrum, specstart, specend, candthresh, drift_rate, header, fft
 
     return j, max_val
 
-def tophitsearch(tree_dedoppler_original, max_val, tsteps, nframes, header, tdwidth, fftlen, out_dir='', logwriter=None, filewriter=None,obs_info=None):
+def tophitsearch(tree_dedoppler_original, max_val, tsteps, nframes, header, tdwidth, fftlen,max_drift,obs_length, out_dir='', logwriter=None, filewriter=None,obs_info=None):
     '''This finds the candidate with largest SNR within 2*tsteps frequency channels.
     '''
 
@@ -412,8 +422,9 @@ def tophitsearch(tree_dedoppler_original, max_val, tsteps, nframes, header, tdwi
     logger.debug("tree_orig shape: %s"%str(tree_orig.shape))
 
     for i in (maxsnr > 0).nonzero()[0]:
-        lbound = max(0, i - tsteps/2)
-        ubound = min(tdwidth, i + tsteps/2)
+        lbound = int(max(0, i - obs_length*max_drift/2))
+        ubound = int(min(tdwidth, i + obs_length*max_drift/2))
+
         skip = 0
 
         if (maxsnr[lbound:ubound] > maxsnr[i]).nonzero()[0].any():

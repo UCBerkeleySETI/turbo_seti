@@ -128,7 +128,7 @@ class DATAH5:
         self.header = header
         self.header['baryv'] = 0.0
         self.header['barya'] = 0.0
-        self.header['coarse_chan'] =  = coarse_chan
+        self.header['coarse_chan'] = coarse_chan
 
         # For now I'm not using a shoulder. This is ok as long as I'm analyzing each coarse channel individually.
         # In general this is parameter is an integer (even number).

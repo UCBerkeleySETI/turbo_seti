@@ -32,7 +32,7 @@ class hist_vals:
 
 class DedopplerTask:
     """ """
-    def __init__(self, datafile, max_drift, min_drift=0, snr = 25.0, bw=0, rfiwindow = 2, out_dir='/tmp', obs_info=None):
+    def __init__(self, datafile, max_drift, min_drift=0, snr = 25.0, bw=0, rfiwindow = 2, out_dir='/tmp',coarse_chans=None,obs_info=None):
         self.min_drift = min_drift
         self.max_drift = max_drift
         self.snr = snr
@@ -45,6 +45,9 @@ class DedopplerTask:
         logger.info("A new Dedoppler Task instance created!")
         self.obs_info = obs_info
         self.status = True
+
+        if coarse_chans:
+            self.data_handle.data_list = self.data_handle.data_list[coarse_chans[0]:coarse_chans[-1]]
 
     def get_info(self):
         info_str = "File: %s\n drift rates (min, max): (%f, %f)\n SNR: %f\n"%(self.data_handle.filename, self.min_drift, self.max_drift,self.snr)
@@ -73,9 +76,7 @@ class DedopplerTask:
     def search_data(self, data_obj):
         '''
         '''
-##EE say here which file I'm working with...
-##EE find out why "get info" doesn't pritn anything.. I think this is not bug, maybe just lack of implementation?
-#EE replaced it with filename for now.
+
         logger.info("Start searching for coarse channel: %s"%data_obj.header['coarse_chan'])
         self.logwriter.info("Start searching for %s ; coarse channel: %i "%(data_obj.filename,data_obj.header['coarse_chan']))
         spectra, drift_indexes = data_obj.load_data()

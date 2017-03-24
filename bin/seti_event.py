@@ -7,6 +7,9 @@ import dedoppler_bones
 import numpy as np
 import time
 
+def make_list(option, opt_str, value, parser):
+    setattr(parser.values, option.dest, value.replace('[','').replace(']','').split(','))
+
 def main():
     from optparse import OptionParser
 
@@ -20,7 +23,7 @@ def main():
     p.add_option('-p', '--path', dest='out_dir', type='str', default='/tmp', help='In the case that the input file size is too big to handle at once, we\'ll need to split it into smaller FITS files. This option specify where to put those FITS files. Default: /tmp ')
 #    p.add_option('-w', '--width', dest='slice_width', type='int', default=512, help='')
     p.add_option('-l', '--loglevel', dest='loglevel', type='str', default='info', help='Specify log level (info, debug)')
-
+    p.add_option('-c', '--coarse_chans', dest='coarse_chans', type='str', action='callback', default='',callback=make_list help='Coma separated list of coarse channels to analyze.(ie. "5,8" to do from 5th to 8th coarse channels)')
     opts, args = p.parse_args(sys.argv[1:])
 
     if len(args)!=1:

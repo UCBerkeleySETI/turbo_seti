@@ -4,7 +4,6 @@ import numpy as np
 import sys
 import os
 from helper_functions import chan_freq
-#import fits_wrapper
 import data_handdler
 import file_writers
 import pyximport

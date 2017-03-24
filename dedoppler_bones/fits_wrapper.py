@@ -205,7 +205,7 @@ class FITSHandle:
             raise IOError("Error encountered when trying to open FIL file %s"%filename)
 
         try:
-#EE_fil            first_row = fil_file.read_row(0)
+#EE_fil            first_row2 = fil_file2.read_row(0)
 #            first_row = np.array(first_row,dtype=np.float64)
             first_row = np.array(fil_file.data[0].astype(np.uint32))
 

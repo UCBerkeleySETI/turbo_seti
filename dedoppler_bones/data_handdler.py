@@ -4,7 +4,7 @@ import os
 import numpy as np
 import math
 from pkg_resources import resource_filename
-from filterbank import Filterbank2
+from blimpy import Filterbank2
 
 import logging
 logger = logging.getLogger(__name__)

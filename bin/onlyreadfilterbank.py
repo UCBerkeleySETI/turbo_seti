@@ -60,7 +60,7 @@ class DataReader():
         #Observation length (minutes)
         self.tot_time=float(self.headerinfo['Observation length (minutes)'])
         # set binary datatype, unsigned
-        self.dtype='uint'+str(self.nbits)
+        self.dtype='float'+str(self.nbits)
         # open datafile
         self.filfile=open(filename,'rb')
         # go to the start of the file

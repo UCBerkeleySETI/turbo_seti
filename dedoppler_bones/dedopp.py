@@ -32,7 +32,7 @@ class hist_vals:
 
 class DedopplerTask:
     """ """
-    def __init__(self, datafile, max_drift, min_drift=0, snr = 25.0, bw=0, rfiwindow = 2, out_dir='/tmp',coarse_chans=None,obs_info=None):
+    def __init__(self, datafile, max_drift, min_drift=0, snr = 25.0, bw=0, rfiwindow = 2, out_dir='./',coarse_chans=None,obs_info=None):
         self.min_drift = min_drift
         self.max_drift = max_drift
         self.snr = snr
@@ -47,7 +47,7 @@ class DedopplerTask:
         self.status = True
 
         if coarse_chans:
-            self.data_handle.data_list = self.data_handle.data_list[coarse_chans[0]:coarse_chans[-1]]
+            self.data_handle.data_list = self.data_handle.data_list[int(coarse_chans[0]):int(coarse_chans[-1])]
 
     def get_info(self):
         info_str = "File: %s\n drift rates (min, max): (%f, %f)\n SNR: %f\n"%(self.data_handle.filename, self.min_drift, self.max_drift,self.snr)

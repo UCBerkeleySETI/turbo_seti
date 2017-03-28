@@ -6,12 +6,12 @@ import logging
 import dedoppler_bones
 import numpy as np
 import time
+from optparse import OptionParser
 
 def make_list(option, opt_str, value, parser):
     setattr(parser.values, option.dest, value.replace('[','').replace(']','').split(','))
 
 def main():
-    from optparse import OptionParser
 
     p = OptionParser()
     p.set_usage('python seti_event.py <FULL_PATH_TO_FIL_FILE> [options]')
@@ -67,11 +67,11 @@ def main():
 
         logging.basicConfig(format=format,stream=stream,level = level_log)
 
-        mydedopp = dedoppler_bones.dedopp.DedopplerTask(filename, max_drift = opts.max_drift, snr = opts.snr, out_dir = opts.out_dir, obs_info=obs_info)
+        mydedopp = dedoppler_bones.dedopp.DedopplerTask(filename, max_drift = opts.max_drift, snr = opts.snr, out_dir = opts.out_dir,coarse_chans = opts.coarse_chans, obs_info=obs_info)
         mydedopp.search()
 
         t1 = time.time()
-        print 'Conversion time: %4.2f min' % ((t1-t0)/60.)
+        print 'Search time: %4.2f min' % ((t1-t0)/60.)
 
     except Exception as e:
         logging.exception(e)

@@ -27,7 +27,7 @@ class DATAHandle:
                     logger.info("Filterbank .fil detected. Attempting to create .h5 file in current directory...")
                     try:
                         self.__make_h5_file()
-                    except
+                    except:
                         raise IOError('Unable to create .h5 file. Please, try again with correct format.')
 
             self.filestat = os.stat(filename)

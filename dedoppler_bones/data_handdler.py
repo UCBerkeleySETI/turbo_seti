@@ -20,11 +20,19 @@ class DATAHandle:
 
         if filename and os.path.isfile(filename):
             self.filename = filename
+            if '.h5' not in filename:
+                if '.fil' not in filename:
+                    raise IOError('No correct format, need .h5. Try again...')
+                else:
+                    logger.info("Filterbank .fil detected. Attempting to create .h5 file in current directory...")
+                    try:
+                        self.__make_h5_file()
+                    except
+                        raise IOError('Unable to create .h5 file. Please, try again with correct format.')
+
             self.filestat = os.stat(filename)
             self.filesize = self.filestat.st_size/(1024.0**2)
 
-            if '.h5' not in filename:
-                raise FileError('No correct format. Try again...')
 
             if self.filesize > size_limit:
                 logger.info("The file is of size %f MB, exceeding our size limit %f MB. Split needed..."%(self.filesize, size_limit))
@@ -48,6 +56,15 @@ class DATAHandle:
 
         fil_file = Filterbank2(self.filename,load_data=False)
         return fil_file.header
+
+    def __make_h5_file(self,):
+        ''' Converts file to h5 format. Saves output in current dir.
+        '''
+
+        fil_file = Filterbank2(self.filename)
+        new_filename = self.filename.replace('.fil','.h5').split('/')[-1]
+        fil_file.write_to_hdf5(new_filename)
+        self.filename = new_filename
 
     def __split_h5(self, size_limit=SIZE_LIM):
         '''Creates a plan to select data from single coarse channels.

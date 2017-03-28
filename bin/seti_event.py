@@ -20,10 +20,10 @@ def main():
     p.add_option('-M', '--max_drift', dest='max_drift', type='float', default=10.0, help='Set the drift rate to search. Unit: Hz/sec. Default: 10.0')
     p.add_option('-s', '--snr', dest='snr', type='float', default=25.0, help='SNR threshold. Default: 25.0')
 #    p.add_option('-b', '--bw', dest='bw', type='float', default=1, help='Specify the amount of \'compression\' to be done in frequency domain to search for more \'spread out\' signals. Unit:?. Default: ?')
-    p.add_option('-p', '--path', dest='out_dir', type='str', default='/tmp', help='In the case that the input file size is too big to handle at once, we\'ll need to split it into smaller FITS files. This option specify where to put those FITS files. Default: /tmp ')
+    p.add_option('-o', '--out_dir', dest='out_dir', type='str', default='./', help='Location for output files. Default: local dir. ')
 #    p.add_option('-w', '--width', dest='slice_width', type='int', default=512, help='')
     p.add_option('-l', '--loglevel', dest='loglevel', type='str', default='info', help='Specify log level (info, debug)')
-    p.add_option('-c', '--coarse_chans', dest='coarse_chans', type='str', action='callback', default='',callback=make_list help='Coma separated list of coarse channels to analyze.(ie. "5,8" to do from 5th to 8th coarse channels)')
+    p.add_option('-c', '--coarse_chans', dest='coarse_chans', type='str', action='callback', default='',callback=make_list, help='Coma separated list of coarse channels to analyze.(ie. "5,8" to do from 5th to 8th coarse channels)')
     opts, args = p.parse_args(sys.argv[1:])
 
     if len(args)!=1:
@@ -31,7 +31,6 @@ def main():
         sys.exit()
     else:
         filename = args[0]
-
 
     # Stuff needed for LOFAR version. will remove
     obs_info = {}

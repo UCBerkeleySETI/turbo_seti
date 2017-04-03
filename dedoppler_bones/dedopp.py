@@ -32,7 +32,7 @@ class hist_vals:
 
 class DedopplerTask:
     """ """
-    def __init__(self, datafile, max_drift, min_drift=0, snr = 25.0, out_dir='./',coarse_chans=None,obs_info=None):
+    def __init__(self, datafile, max_drift, min_drift = 0, snr = 25.0, out_dir = './', coarse_chans = None, obs_info = None, flagging = None):
         self.min_drift = min_drift
         self.max_drift = max_drift
         self.snr = snr
@@ -44,6 +44,7 @@ class DedopplerTask:
         logger.info("A new Dedoppler Task instance created!")
         self.obs_info = obs_info
         self.status = True
+        self.flagging = flagging
 
         if coarse_chans:
             self.data_handle.data_list = self.data_handle.data_list[int(coarse_chans[0]):int(coarse_chans[-1])]
@@ -67,7 +68,7 @@ class DedopplerTask:
 
         for target_data_obj in self.data_handle.data_list:
             self.search_data(target_data_obj)
-#            cProfile.runctx('self.search_data(target_data_obj)',globals(),locals(),filename='profile_feb')
+##EE-benshmark            cProfile.runctx('self.search_data(target_data_obj)',globals(),locals(),filename='profile_M%2.1f_S%2.1f_t%i'%(self.max_drift,self.snr,int(os.times()[-1])))
 
     def search_data(self, data_obj):
         '''
@@ -83,8 +84,7 @@ class DedopplerTask:
         nframes = tsteps_valid
         shoulder_size = data_obj.shoulder_size
 
-        flagging = 1
-        if flagging:
+        if self.flagging:
             ##EE This flags the edges of the PFF for BL data (with 3Hz res per channel).
             ##EE The PFF flat profile falls after around 100k channels.
             ##EE But it falls slowly enough that could use 50-80k channels.
@@ -100,6 +100,10 @@ class DedopplerTask:
             if mask.any():
                 self.logwriter.info("Found spikes in the time series. Removing ...")
                 spectra[mask,:] = time_series_median/float(fftlen)  # So that the value is not the median in the time_series.
+
+        else:
+            median_flag = np.array([0])
+
 
         # allocate array for dedopplering
         # init dedopplering array to zero
@@ -146,6 +150,11 @@ class DedopplerTask:
         specend = tdwidth - (tsteps * shoulder_size)
 
         #--------------------------------
+        #Stats calc
+
+        self.the_mean_val, self.the_stddev = comp_stats(spectra.sum(axis=0))
+
+        #--------------------------------
         #Looping over drift_rate_nblock
         #--------------------------------
         drift_rate_nblock = int(np.floor(self.max_drift / (data_obj.drift_rate_resolution*tsteps_valid)))
@@ -182,11 +191,9 @@ class DedopplerTask:
                     #/* SEARCH NEGATIVE DRIFT RATES */
                     spectrum = tree_dedoppler_flip[indx: indx + tdwidth]
 
-                    mean_val, stddev = comp_stats(spectrum, tdwidth)
-
                     #/* normalize */
-                    spectrum -= mean_val
-                    spectrum /= stddev
+                    spectrum -= self.the_mean_val
+                    spectrum /= self.the_stddev
 
                     #Reverse spectrum back
                     spectrum = spectrum[::-1]
@@ -232,11 +239,9 @@ class DedopplerTask:
                     #/* SEARCH POSITIVE DRIFT RATES */
                     spectrum = tree_dedoppler[indx: indx+tdwidth]
 
-                    mean_val, stddev = comp_stats(spectrum, tdwidth)
-
                     #/* normalize */
-                    spectrum -= mean_val
-                    spectrum /= stddev
+                    spectrum -= self.the_mean_val
+                    spectrum /= self.the_stddev
 
                     n_candi, max_val = candsearch(spectrum, specstart, specend, self.snr, drift_rate, data_obj.header, fftlen, tdwidth, max_val, 0)
                     info_str = "Found %d candidates at drift rate %15.15f\n"%(n_candi, drift_rate)
@@ -377,18 +382,17 @@ def FlipX(outbuf, xdim, ydim):
         np.copyto(outbuf[indx: indx+xdim], temp[::-1])
     return
 
-def comp_stats(vec, veclen):
-    #Compute mean and stddev of floating point vector vec in a fast way, without using the outliers.
+def comp_stats(arrey):
+    #Compute mean and stddev of floating point vector array in a fast way, without using the outliers.
 
-    new_vec = np.empty_like(vec)
-    np.copyto(new_vec,vec)
-    new_vec.sort()
+    new_vec = np.sort(arrey,axis=None)
+
     #Removing the lowest 5% and highest 5% of data, this takes care of outliers.
-    new_vec = new_vec[int(len(vec)*.05):int(len(vec)*.95)]
-    tmedian = np.median(new_vec)
-    tstddev = new_vec.std()
+    new_vec = new_vec[int(len(new_vec)*.05):int(len(new_vec)*.95)]
+    the_median = np.median(new_vec)
+    the_stddev = new_vec.std()
 
-    return tmedian, tstddev
+    return the_median, the_stddev
 
 def candsearch(spectrum, specstart, specend, candthresh, drift_rate, header, fftlen, tdwidth, max_val, reverse):
     ''' Searches for candidates: each channel if > candthresh.

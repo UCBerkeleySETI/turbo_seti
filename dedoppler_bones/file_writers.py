@@ -5,7 +5,6 @@ import astropy.io.fits as pyfits
 from helper_functions import chan_freq
 
 import logging
-logger = logging.getLogger(__name__)
 
 def tophits_writer(spectra_slice, hit_indices, header, format='txt'):
     return None

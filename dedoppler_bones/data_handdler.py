@@ -4,12 +4,12 @@ import os
 import numpy as np
 import math
 from pkg_resources import resource_filename
-from blimpy import Filterbank2
+from blimpy import Waterfall
 
 import logging
 logger = logging.getLogger(__name__)
 
-#import pdb;# pdb.set_trace()
+import pdb;# pdb.set_trace()
 
 SIZE_LIM = 256.0   # File size limit in MB. If larger then make a split mapping.
 
@@ -24,7 +24,7 @@ class DATAHandle:
                 if '.fil' not in filename:
                     raise IOError('No correct format, need .h5. Try again...')
                 else:
-                    logger.info("Filterbank .fil detected. Attempting to create .h5 file in current directory...")
+                    logger.info("File .fil detected. Attempting to create .h5 file in current directory...")
                     try:
                         self.__make_h5_file()
                     except:
@@ -47,21 +47,21 @@ class DATAHandle:
 
         else:
             self.status = False
-            raise IOError("File %s doesn\'t exists, please check!"%self.filename)
             logger.error("File %s doesn\'t exists, please check!"%self.filename)
+            raise IOError("File %s doesn\'t exists, please check!"%self.filename)
 
     def get_info(self):
         ''' Returning header.
         '''
 
-        fil_file = Filterbank2(self.filename,load_data=False)
+        fil_file = Waterfall(self.filename,load_data=False)
         return fil_file.header
 
     def __make_h5_file(self,):
         ''' Converts file to h5 format. Saves output in current dir.
         '''
 
-        fil_file = Filterbank2(self.filename)
+        fil_file = Waterfall(self.filename)
         new_filename = self.filename.replace('.fil','.h5').split('/')[-1]
         fil_file.write_to_hdf5(new_filename)
         self.filename = new_filename
@@ -74,7 +74,7 @@ class DATAHandle:
 
         #Instancing file.
         try:
-            fil_file = Filterbank2(self.filename)
+            fil_file = Waterfall(self.filename)
         except:
             raise IOError("Error encountered when trying to open file: %s"%self.filename)
 
@@ -110,7 +110,7 @@ class DATAHandle:
         return data_list
 
 class DATAH5:
-    ''' This class is where the filterbank data is loaded, as well as the header info.
+    ''' This class is where the waterfall data is loaded, as well as the header info.
         It creates other atributes related to the dedoppler search (load_drift_indexes).
     '''
 
@@ -123,9 +123,10 @@ class DATAH5:
 
         #Instancing file.
         try:
-            self.fil_file = Filterbank2(filename,f_start=self.f_start, f_stop=self.f_stop,t_start=self.t_start, t_stop=self.t_stop,load_data=False)
+            self.fil_file = Waterfall(filename,f_start=self.f_start, f_stop=self.f_stop,t_start=self.t_start, t_stop=self.t_stop,load_data=False)
         except:
             logger.error("Error encountered when trying to open file %s"%filename)
+            raise IOError("Error encountered when trying to open file %s"%filename)
 
         #Getting header
         try:

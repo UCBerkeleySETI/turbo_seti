@@ -32,11 +32,10 @@ class hist_vals:
 
 class DedopplerTask:
     """ """
-    def __init__(self, datafile, max_drift, min_drift=0, snr = 25.0, bw=0, rfiwindow = 2, out_dir='./',coarse_chans=None,obs_info=None):
+    def __init__(self, datafile, max_drift, min_drift=0, snr = 25.0, out_dir='./',coarse_chans=None,obs_info=None):
         self.min_drift = min_drift
         self.max_drift = max_drift
         self.snr = snr
-        self.rfiwindow = rfiwindow
         self.out_dir = out_dir
         self.data_handle = data_handdler.DATAHandle(datafile)
         if (self.data_handle is None) or (self.data_handle.status is False):
@@ -67,9 +66,6 @@ class DedopplerTask:
 
 
         for target_data_obj in self.data_handle.data_list:
-##EE-debuging        for i,target_data_obj in enumerate(self.data_handle.data_list[-13:-10]):
-##EE-debuging        for i,target_data_obj in enumerate(self.data_handle.data_list[-8:-6]):
-
             self.search_data(target_data_obj)
 #            cProfile.runctx('self.search_data(target_data_obj)',globals(),locals(),filename='profile_feb')
 
@@ -87,19 +83,23 @@ class DedopplerTask:
         nframes = tsteps_valid
         shoulder_size = data_obj.shoulder_size
 
-        ##EE This flags the edges of the PFF for BL data (with 3Hz res per channel).
-        ##EE The PFF flat profile falls after around 100k channels.
-        ##EE But it falls slowly enough that could use 50-80k channels.
-        median_flag = np.median(spectra)
-        spectra[:,:80000] = median_flag/float(tsteps)
-        spectra[:,-80000:] = median_flag/float(tsteps)
+        flagging = 1
+        if flagging:
+            ##EE This flags the edges of the PFF for BL data (with 3Hz res per channel).
+            ##EE The PFF flat profile falls after around 100k channels.
+            ##EE But it falls slowly enough that could use 50-80k channels.
+            median_flag = np.median(spectra)
+#             spectra[:,:80000] = median_flag/float(tsteps)
+#             spectra[:,-80000:] = median_flag/float(tsteps)
 
-        #EE Flagging spikes in time series.
-        time_series=spectra.sum(axis=1)
-        time_series_median = np.median(time_series)
-        mask=(time_series-time_series_median)/time_series.std() > 10   #Flagging spikes > 10 in SNR
-        if mask.any():
-            spectra[mask,:] = time_series_median/float(fftlen)  # So that the value is not the median in the time_series.
+            ##EE Flagging spikes in time series.
+            time_series=spectra.sum(axis=1)
+            time_series_median = np.median(time_series)
+            mask=(time_series-time_series_median)/time_series.std() > 10   #Flagging spikes > 10 in SNR
+
+            if mask.any():
+                self.logwriter.info("Found spikes in the time series. Removing ...")
+                spectra[mask,:] = time_series_median/float(fftlen)  # So that the value is not the median in the time_series.
 
         # allocate array for dedopplering
         # init dedopplering array to zero
@@ -132,14 +132,14 @@ class DedopplerTask:
             max_val.total_n_candi = 0
 
 ##EE-debuging
-        hist_val = hist_vals()
-        hist_len = int(np.ceil(2*(self.max_drift-self.min_drift)/data_obj.drift_rate_resolution))
-        if hist_val.histsnr == None:
-            hist_val.histsnr = np.zeros((hist_len,tdwidth), dtype=np.float64)
-        if hist_val.histdrift == None:
-            hist_val.histdrift = np.zeros((hist_len), dtype=np.float64)
-        if hist_val.histid == None:
-            hist_val.histid = np.zeros(tdwidth, dtype='uint32')
+#         hist_val = hist_vals()
+#         hist_len = int(np.ceil(2*(self.max_drift-self.min_drift)/data_obj.drift_rate_resolution))
+#         if hist_val.histsnr == None:
+#             hist_val.histsnr = np.zeros((hist_len,tdwidth), dtype=np.float64)
+#         if hist_val.histdrift == None:
+#             hist_val.histdrift = np.zeros((hist_len), dtype=np.float64)
+#         if hist_val.histid == None:
+#             hist_val.histid = np.zeros(tdwidth, dtype='uint32')
 
         #EE: Making "shoulders" to avoid "edge effects". Could do further testing.
         specstart = (tsteps*shoulder_size/2)
@@ -203,6 +203,7 @@ class DedopplerTask:
 ##EE-debuging                    hist_val.histsnr[kk] = spectrum
 ##EE-debuging                    hist_val.histdrift[kk] = drift_rate
 ##EE-debuging                    kk+=1
+
             #----------------------------------------------------------------------
             # Positive drift rates search.
             #----------------------------------------------------------------------
@@ -382,8 +383,8 @@ def comp_stats(vec, veclen):
     new_vec = np.empty_like(vec)
     np.copyto(new_vec,vec)
     new_vec.sort()
-    #Removing the lowest 20% and highest 10% of data, this takes care of outliers.
-    new_vec = vec[int(len(vec)*.2):int(len(vec)*.9)]
+    #Removing the lowest 5% and highest 5% of data, this takes care of outliers.
+    new_vec = new_vec[int(len(vec)*.05):int(len(vec)*.95)]
     tmedian = np.median(new_vec)
     tstddev = new_vec.std()
 

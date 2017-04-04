@@ -116,6 +116,7 @@ class DATAH5:
 
     def __init__(self, filename, size_limit = SIZE_LIM,f_start=None, f_stop=None,t_start=None, t_stop=None,coarse_chan=None):
         self.filename = filename
+        self.closed = False
         self.f_start = f_start
         self.f_stop = f_stop
         self.t_start = t_start
@@ -212,3 +213,15 @@ class DATAH5:
         base_header['NAXIS2'] = int(self.fil_file.n_ints_in_file)
 
         return base_header
+
+    def close(self):
+        """Closes file and sets the data attribute `.closed` to
+        True. A closed object can no longer be used for I/O operations.
+        `close()` may be called multiple times without error.
+        """
+
+        # Call file object destructor which should close the file
+        del self.fil_file
+
+        self.closed = True
+

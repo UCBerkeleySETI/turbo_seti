@@ -151,7 +151,6 @@ class DedopplerTask:
 
         #--------------------------------
         #Stats calc
-
         self.the_mean_val, self.the_stddev = comp_stats(spectra.sum(axis=0))
 
         #--------------------------------
@@ -162,6 +161,8 @@ class DedopplerTask:
 ##EE-debuging        kk = 0
 
         for drift_block in range(-1*drift_rate_nblock,drift_rate_nblock+1):
+            logger.debug( "Drift_block %i"%drift_block)
+
             #----------------------------------------------------------------------
             # Negative drift rates search.
             #----------------------------------------------------------------------
@@ -181,7 +182,7 @@ class DedopplerTask:
 
                 logger.info("Doppler correcting reverse...")
                 tt.taylor_flt(tree_dedoppler_flip, tsteps * tdwidth, tsteps)
-                logger.info( "done...")
+                logger.debug( "done...")
 
                 complete_drift_range = data_obj.drift_rate_resolution*np.array(range(-1*tsteps_valid*(np.abs(drift_block)+1)+1,-1*tsteps_valid*(np.abs(drift_block))+1))
 
@@ -249,19 +250,19 @@ class DedopplerTask:
                     logger.debug(info_str)
                     self.logwriter.info(info_str)
 
+                    #-------
+
 ##EE-debuging                    np.save(self.out_dir + '/spectrum_dr%f.npy'%(drift_rate),spectrum)
 
 ##EE-debuging                    hist_val.histsnr[kk] = spectrum
 ##EE-debuging                    hist_val.histdrift[kk] = drift_rate
 ##EE-debuging                    kk+=1
-
-#----------------------------------------
-
+        #-------
 ##EE-debuging        np.save(self.out_dir + '/histsnr.npy', hist_val.histsnr)
 ##EE-debuging        np.save(self.out_dir + '/histdrift.npy', hist_val.histdrift)
 
         #----------------------------------------
-        # Writing to file the top hits.
+        # Writing the top hits to file.
 
         self.filewriter.report_coarse_channel(data_obj.header,max_val.total_n_candi)
 
@@ -269,6 +270,9 @@ class DedopplerTask:
 
         logger.info("Total number of candidates for coarse channel "+ str(data_obj.header['coarse_chan']) +" is: %i"%max_val.total_n_candi)
 
+        #----------------------------------------
+        #Closing instance.
+        data_obj.close()
 
 
 #  ======================================================================  #

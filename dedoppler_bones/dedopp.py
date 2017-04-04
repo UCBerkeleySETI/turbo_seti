@@ -60,7 +60,7 @@ class DedopplerTask:
         logger.debug(self.get_info())  # EE should print some info here...
 
         self.logwriter = file_writers.LogWriter('%s/%s.log'%(self.out_dir.rstrip('/'), self.data_handle.data_list[0].filename.split('/')[-1].replace('.h5','').replace('.fits','').replace('.fil','')))
-        self.filewriter = file_writers.FileWriter('%s/%s.dat'%(self.out_dir.rstrip('/'), self.data_handle.data_list[0].filename.split('/')[-1].replace('.h5','').replace('.fits','').replace('.fil','')))
+        self.filewriter = file_writers.FileWriter('%s/%s.dat'%(self.out_dir.rstrip('/'), self.data_handle.data_list[0].filename.split('/')[-1].replace('.h5','').replace('.fits','').replace('.fil','')),self.data_handle.data_list[0].header)
 
         logger.info("Start ET search for %s"%self.data_handle.data_list[0].filename)
         self.logwriter.info("Start ET search for %s"%(self.data_handle.data_list[0].filename))
@@ -268,10 +268,8 @@ class DedopplerTask:
         #----------------------------------------
         # Writing the top hits to file.
 
-        self.filewriter.report_coarse_channel(data_obj.header,max_val.total_n_candi)
-
+#         self.filewriter.report_coarse_channel(data_obj.header,max_val.total_n_candi)
         self.filewriter = tophitsearch(tree_dedoppler_original, max_val, tsteps, nframes, data_obj.header, tdwidth, fftlen, self.max_drift,data_obj.obs_length, out_dir = self.out_dir, logwriter=self.logwriter, filewriter=self.filewriter, obs_info = self.obs_info)
-
         logger.info("Total number of candidates for coarse channel "+ str(data_obj.header['coarse_chan']) +" is: %i"%max_val.total_n_candi)
 
 
@@ -448,7 +446,7 @@ def tophitsearch(tree_dedoppler_original, max_val, tsteps, nframes, header, tdwi
                 #logwriter.report_tophit(max_val, i, header)
 #EE            logger.debug("slice of spectrum...size: %s"%str(tree_orig[0:nframes, lbound:ubound].shape))
             if filewriter:
-                filewriter = filewriter.report_tophit(max_val, i, (lbound, ubound), tdwidth, fftlen, header,obs_info=obs_info)
+                filewriter = filewriter.report_tophit(max_val, i, (lbound, ubound), tdwidth, fftlen, header,max_val.total_n_candi,obs_info=obs_info)
 #EE: not passing array cut, since not saving in .dat file                filewriter = filewriter.report_tophit(max_val, i, (lbound, ubound), tree_orig[0:nframes, lbound:ubound], header)
 
 ##EE : Uncomment if want to save each blob              np.save(out_dir + '/spec_drift_%.4f_id_%d.npy'%(max_val.maxdrift[i],i), tree_orig[0:nframes, lbound:ubound])

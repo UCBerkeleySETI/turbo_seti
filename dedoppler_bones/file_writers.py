@@ -60,46 +60,49 @@ class GeneralWriter:
 
 class FileWriter(GeneralWriter):
     """ """
-    def __init__(self, filename):
+    def __init__(self, filename, header):
         GeneralWriter.__init__(self, filename)
-        self.write('File ID: %s \n'%(filename.split('/')[-1].replace('.dat','')+'.h5'))
+        self.write('# -------------------------- o --------------------------\n')
+        self.write('# File ID: %s \n'%(filename.split('/')[-1].replace('.dat','')+'.h5'))
+        self.write('# -------------------------- o --------------------------\n')
+        self.report_header(header)
+
         self.tophit_count = 0
 
     def report_coarse_channel(self, header,total_n_candi):
         ''' Write header information per given obs.
         '''
 
-        self.write('-------------------------- o --------------------------\n')
-        self.write('Coarse Channel Number: %i \n'%header['coarse_chan'])
-        info_str = 'Number of hits: %i \n'%total_n_candi
-        info_str += '--------------------------\n'
+        return None
+        self.write('# Coarse Channel Number: %i \n'%header['coarse_chan'])
+        info_str = '# Number of hits: %i \n'%total_n_candi
         self.write(info_str)
-        self.report_header(header)
-
 
     def report_header(self, header):
         ''' Write header information per given obs.
         '''
 
-        info_str = 'Source:%s\nMJD: %18.12f\tRA: %s\tDEC: %s\nDELTAT: %10.6f\tDELTAF(Hz): %10.6f\n'%(header['SOURCE'],header['MJD'], header['RA'], header['DEC'], header['DELTAT'], header['DELTAF']*1e6)
+        info_str = '# Source:%s\n# MJD: %18.12f\tRA: %s\tDEC: %s\n# DELTAT: %10.6f\tDELTAF(Hz): %10.6f\n'%(header['SOURCE'],header['MJD'], header['RA'], header['DEC'], header['DELTAT'], header['DELTAF']*1e6)
 
         self.write(info_str)
-        self.write('--------------------------\n')
-        info_str = 'Top Hit # \t'
-        info_str += 'Drift Rate \t'
+        self.write('# --------------------------\n')
+        info_str = '# Top_Hit_# \t'
+        info_str += 'Drift_Rate \t'
         info_str += 'SNR \t'
-        info_str += 'Uncorrected Frequency \t'
-        info_str += 'Corrected Frequency \t'
+        info_str += 'Uncorrected_Frequency \t'
+        info_str += 'Corrected_Frequency \t'
         info_str += 'Index \t'
         info_str += 'freq_start \t'
         info_str += 'freq_end \t'
         info_str += 'SEFD \t'
         info_str += 'SEFD_freq \t'
+        info_str += 'Coarse_Channel_Number \t'
+        info_str += 'Full_number_of_hits \t'
         info_str +='\n'
         self.write(info_str)
-        self.write('--------------------------\n')
+        self.write('# --------------------------\n')
 
-    def report_tophit(self, max_val, ind, ind_tuple, tdwidth, fftlen, header,spec_slice=None,obs_info=None):
+    def report_tophit(self, max_val, ind, ind_tuple, tdwidth, fftlen, header,total_n_candi,spec_slice=None,obs_info=None):
 
         '''This function looks into the top hit in a region, basically find the local maximum and saves that.
         '''
@@ -130,6 +133,8 @@ class FileWriter(GeneralWriter):
         info_str += '%14.6f\t'%freq_end #freq_end:
         info_str += '%s\t'%obs_info['SEFDs_val'][this_one] #SEFD:
         info_str += '%14.6f\t'%obs_info['SEFDs_freq'][this_one] #SEFD_mid_freq:
+        info_str += '%i\t'%header['coarse_chan'] #
+        info_str += '%i\t'%total_n_candi #
         info_str +='\n'
         self.write(info_str)
 

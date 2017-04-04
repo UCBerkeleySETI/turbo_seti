@@ -178,10 +178,7 @@ class DATAH5:
         ''' The drift indexes are read from an stored file so that no need to recalculate. This speed things up.
         '''
         n = int(np.log2(self.tsteps))
-        if n > 9:
-            di_array = np.genfromtxt(resource_filename('dedoppler_bones', '../drift_indexes/drift_indexes_array_%d.txt'%n), delimiter=' ', dtype=int)
-        else:
-            di_array = np.genfromtxt(resource_filename('dedoppler_bones', '../drift_indexes/drift_indexes_array_%d.txt'%n), delimiter='\t', dtype=int)
+        di_array = np.genfromtxt(resource_filename('dedoppler_bones', '../drift_indexes/drift_indexes_array_%d.txt'%n), delimiter=' ', dtype=int)
 
         ts2 = self.tsteps/2
         drift_indexes = di_array[self.tsteps_valid - 1 - ts2, 0:self.tsteps_valid]

@@ -7,6 +7,7 @@ import dedoppler_bones
 import numpy as np
 import time
 from optparse import OptionParser
+import cProfile
 
 def make_list(option, opt_str, value, parser):
     setattr(parser.values, option.dest, value.replace('[','').replace(']','').split(','))
@@ -69,6 +70,7 @@ def main():
 
         mydedopp = dedoppler_bones.dedopp.DedopplerTask(filename, max_drift = opts.max_drift, snr = opts.snr, out_dir = opts.out_dir,coarse_chans = opts.coarse_chans, obs_info=obs_info)
         mydedopp.search()
+##EE-benshmark    cProfile.runctx('mydedopp.search()',globals(),locals(),filename='profile_search_M%2.1f_S%2.1f_t%i'%(opts.max_drift,opts.snr,int(os.times()[-1])))
 
         t1 = time.time()
         print 'Search time: %4.2f min' % ((t1-t0)/60.)

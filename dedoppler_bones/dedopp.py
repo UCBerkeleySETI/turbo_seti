@@ -11,9 +11,10 @@ pyximport.install(setup_args={"include_dirs":np.get_include()}, reload_support=T
 import taylor_tree as tt
 import logging
 logger = logging.getLogger(__name__)
+import gc   #Garbage collector.
 
-import pdb;# pdb.set_trace()
 import cProfile
+import pdb;# pdb.set_trace()
 
 class max_vals:
     def __init__(self):
@@ -40,14 +41,13 @@ class DedopplerTask:
         self.data_handle = data_handdler.DATAHandle(datafile)
         if (self.data_handle is None) or (self.data_handle.status is False):
             raise IOError("File error, aborting...")
+        if coarse_chans:
+            self.data_handle.data_list = self.data_handle.data_list[int(coarse_chans[0]):int(coarse_chans[-1])]
         logger.info(self.data_handle.get_info())
         logger.info("A new Dedoppler Task instance created!")
         self.obs_info = obs_info
         self.status = True
         self.flagging = flagging
-
-        if coarse_chans:
-            self.data_handle.data_list = self.data_handle.data_list[int(coarse_chans[0]):int(coarse_chans[-1])]
 
     def get_info(self):
         info_str = "File: %s\n drift rates (min, max): (%f, %f)\n SNR: %f\n"%(self.data_handle.filename, self.min_drift, self.max_drift,self.snr)
@@ -62,13 +62,17 @@ class DedopplerTask:
         self.logwriter = file_writers.LogWriter('%s/%s.log'%(self.out_dir.rstrip('/'), self.data_handle.data_list[0].filename.split('/')[-1].replace('.h5','').replace('.fits','').replace('.fil','')))
         self.filewriter = file_writers.FileWriter('%s/%s.dat'%(self.out_dir.rstrip('/'), self.data_handle.data_list[0].filename.split('/')[-1].replace('.h5','').replace('.fits','').replace('.fil','')))
 
-#         logger.info("Start ET search for %s"%self.data_handle.data_list[0].filename)
-#         self.logwriter.info("Start search for %s ; coarse channel: %i "%(self.data_handle.data_list[0].filename,self.data_handle.data_list[0].header['coarse_chan']))
+        logger.info("Start ET search for %s"%self.data_handle.data_list[0].filename)
+        self.logwriter.info("Start ET search for %s"%(self.data_handle.data_list[0].filename))
 
-
-        for target_data_obj in self.data_handle.data_list:
+        for ii,target_data_obj in enumerate(self.data_handle.data_list):
             self.search_data(target_data_obj)
 ##EE-benshmark            cProfile.runctx('self.search_data(target_data_obj)',globals(),locals(),filename='profile_M%2.1f_S%2.1f_t%i'%(self.max_drift,self.snr,int(os.times()[-1])))
+
+            #----------------------------------------
+            #Closing instance. Collect garbage.
+            self.data_handle.data_list[ii].close()
+            gc.collect()
 
     def search_data(self, data_obj):
         '''
@@ -225,7 +229,7 @@ class DedopplerTask:
 
                 logger.info("Doppler correcting forward...")
                 tt.taylor_flt(tree_dedoppler, tsteps * tdwidth, tsteps)
-                logger.info("done...")
+                logger.debug( "done...")
                 if (tree_dedoppler == tree_dedoppler_original).all():
                      logger.error("taylor_flt has no effect?")
                 else:
@@ -269,10 +273,6 @@ class DedopplerTask:
         self.filewriter = tophitsearch(tree_dedoppler_original, max_val, tsteps, nframes, data_obj.header, tdwidth, fftlen, self.max_drift,data_obj.obs_length, out_dir = self.out_dir, logwriter=self.logwriter, filewriter=self.filewriter, obs_info = self.obs_info)
 
         logger.info("Total number of candidates for coarse channel "+ str(data_obj.header['coarse_chan']) +" is: %i"%max_val.total_n_candi)
-
-        #----------------------------------------
-        #Closing instance.
-        data_obj.close()
 
 
 #  ======================================================================  #

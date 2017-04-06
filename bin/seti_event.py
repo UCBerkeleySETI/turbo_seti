@@ -73,7 +73,7 @@ def main():
 ##EE-benshmark    cProfile.runctx('mydedopp.search()',globals(),locals(),filename='profile_search_M%2.1f_S%2.1f_t%i'%(opts.max_drift,opts.snr,int(os.times()[-1])))
 
         t1 = time.time()
-        print 'Search time: %4.2f min' % ((t1-t0)/60.)
+        print 'Search time: %5.2f min' % ((t1-t0)/60.)
 
     except Exception as e:
         logging.exception(e)

@@ -16,10 +16,12 @@ SIZE_LIM = 256.0   # File size limit in MB. If larger then make a split mapping.
 class DATAHandle:
     """
     """
-    def __init__(self, filename=None, size_limit = SIZE_LIM,):
+    def __init__(self, filename=None, size_limit = SIZE_LIM,out_dir='./'):
 
         if filename and os.path.isfile(filename):
             self.filename = filename
+            self.out_dir = out_dir
+
             if '.h5' not in filename:
                 if '.fil' not in filename:
                     raise IOError('No correct format, need .h5. Try again...')
@@ -62,7 +64,7 @@ class DATAHandle:
         '''
 
         fil_file = Waterfall(self.filename)
-        new_filename = self.filename.replace('.fil','.h5').split('/')[-1]
+        new_filename = self.out_dir+self.filename.replace('.fil','.h5').split('/')[-1]
         fil_file.write_to_hdf5(new_filename)
         self.filename = new_filename
 

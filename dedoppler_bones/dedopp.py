@@ -38,7 +38,7 @@ class DedopplerTask:
         self.max_drift = max_drift
         self.snr = snr
         self.out_dir = out_dir
-        self.data_handle = data_handdler.DATAHandle(datafile)
+        self.data_handle = data_handdler.DATAHandle(datafile,out_dir=out_dir)
         if (self.data_handle is None) or (self.data_handle.status is False):
             raise IOError("File error, aborting...")
         if coarse_chans:
@@ -57,7 +57,7 @@ class DedopplerTask:
         '''Top level search.
         '''
         logger.debug("Start searching...")
-        logger.debug(self.get_info())  # EE should print some info here...
+        logger.debug(self.get_info())
 
         self.logwriter = file_writers.LogWriter('%s/%s.log'%(self.out_dir.rstrip('/'), self.data_handle.data_list[0].filename.split('/')[-1].replace('.h5','').replace('.fits','').replace('.fil','')))
         self.filewriter = file_writers.FileWriter('%s/%s.dat'%(self.out_dir.rstrip('/'), self.data_handle.data_list[0].filename.split('/')[-1].replace('.h5','').replace('.fits','').replace('.fil','')),self.data_handle.data_list[0].header)

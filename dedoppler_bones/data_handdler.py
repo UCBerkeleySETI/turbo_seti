@@ -96,7 +96,7 @@ class DATAHandle:
             f_start = f0 + chan*abs(f_delt)*fil_file.n_channels_in_file/n_coarse_chan
             f_stop = f0 + (chan+1)*abs(f_delt)*fil_file.n_channels_in_file/n_coarse_chan
 
-            data_obj = DATAH5(self.filename, f_start=f_start, f_stop=f_stop, coarse_chan=chan)
+            data_obj = DATAH5(self.filename, f_start=f_start, f_stop=f_stop, coarse_chan=chan, tn_coarse_chan=n_coarse_chan)
 
 #----------------------------------------------------------------
 
@@ -116,13 +116,14 @@ class DATAH5:
         It creates other atributes related to the dedoppler search (load_drift_indexes).
     '''
 
-    def __init__(self, filename, size_limit = SIZE_LIM,f_start=None, f_stop=None,t_start=None, t_stop=None,coarse_chan=None):
+    def __init__(self, filename, size_limit = SIZE_LIM,f_start=None, f_stop=None,t_start=None, t_stop=None,coarse_chan=None,tn_coarse_chan=None):
         self.filename = filename
         self.closed = False
         self.f_start = f_start
         self.f_stop = f_stop
         self.t_start = t_start
         self.t_stop = t_stop
+        self.tn_coarse_chan = tn_coarse_chan
 
         #Instancing file.
         try:
@@ -201,7 +202,7 @@ class DATAH5:
 
         #Used by helper_functions.py
         if coarse:
-            base_header['NAXIS1'] = int(np.ceil((self.f_stop - self.f_start)/base_header['DELTAF']))
+            base_header['NAXIS1'] = int(header['nchans'])/self.tn_coarse_chan
             base_header['FCNTR'] = (self.f_stop - self.f_start)/2. + self.f_start
         else:
             base_header['NAXIS1'] = int(header['nchans'])

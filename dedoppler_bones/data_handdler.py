@@ -83,7 +83,7 @@ class DATAHandle:
         #Finding lowest freq in file.
         f_delt = fil_file.header['foff']
         if f_delt < 0:
-            f0 = fil_file.header['fch1'] + fil_file.n_channels_in_file*f_delt
+            f0 = fil_file.header['fch1'] + (fil_file.n_channels_in_file+1)*f_delt  ##EE I think I need this due to the way python uses indexing. I wan't the frequency at the end of the last bin, not at the begning.
         else:
             f0 = fil_file.header['fch1']
 
@@ -96,7 +96,7 @@ class DATAHandle:
             f_start = f0 + chan*abs(f_delt)*fil_file.n_channels_in_file/n_coarse_chan
             f_stop = f0 + (chan+1)*abs(f_delt)*fil_file.n_channels_in_file/n_coarse_chan
 
-            data_obj = DATAH5(self.filename, f_start=f_start, f_stop=f_stop,coarse_chan=chan)
+            data_obj = DATAH5(self.filename, f_start=f_start, f_stop=f_stop, coarse_chan=chan)
 
 #----------------------------------------------------------------
 
@@ -201,7 +201,7 @@ class DATAH5:
 
         #Used by helper_functions.py
         if coarse:
-            base_header['NAXIS1'] = int((self.f_stop - self.f_start)/base_header['DELTAF'])
+            base_header['NAXIS1'] = int(np.ceil((self.f_stop - self.f_start)/base_header['DELTAF']))
             base_header['FCNTR'] = (self.f_stop - self.f_start)/2. + self.f_start
         else:
             base_header['NAXIS1'] = int(header['nchans'])

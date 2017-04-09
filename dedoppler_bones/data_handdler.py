@@ -172,6 +172,7 @@ class DATAH5:
 
         if spectra.shape != (self.tsteps_valid, self.fftlen):
             logger.error('Something is wrong with array size.')
+            raise IOErrror('Something is wrong with array size.')
 
         drift_indexes = self.load_drift_indexes()
 

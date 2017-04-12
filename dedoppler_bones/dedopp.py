@@ -42,6 +42,10 @@ class DedopplerTask:
         if (self.data_handle is None) or (self.data_handle.status is False):
             raise IOError("File error, aborting...")
         if coarse_chans:
+            if int(coarse_chans[-1]) > len(self.data_handle.data_list) or int(coarse_chans[0]) > len(self.data_handle.data_list):
+                raise ValueError('The coarse channel(s) given (%i,%i) is outside the possible range (0,%i) '%(coarse_chans[0],coarse_chans[-1]),len(self.data_handle.data_list))
+            if int(coarse_chans[-1]) < 0 or int(coarse_chans[0]) < 0:
+                raise ValueError('The coarse channel(s) given (%i,%i) is outside the possible range (0,%i) '%(coarse_chans[0],coarse_chans[-1]),len(self.data_handle.data_list))
             self.data_handle.data_list = self.data_handle.data_list[int(coarse_chans[0]):int(coarse_chans[-1])]
         logger.info(self.data_handle.get_info())
         logger.info("A new Dedoppler Task instance created!")

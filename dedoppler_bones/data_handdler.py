@@ -83,7 +83,7 @@ class DATAHandle:
         #Finding lowest freq in file.
         f_delt = fil_file.header['foff']
         if f_delt < 0:
-            f0 = fil_file.header['fch1'] + (fil_file.n_channels_in_file+1)*f_delt  ##EE I think I need this due to the way python uses indexing. I wan't the frequency at the end of the last bin, not at the begning.
+            f0 = fil_file.header['fch1'] + fil_file.n_channels_in_file*f_delt
         else:
             f0 = fil_file.header['fch1']
 
@@ -172,7 +172,7 @@ class DATAH5:
 
         if spectra.shape != (self.tsteps_valid, self.fftlen):
             logger.error('Something is wrong with array size.')
-            raise IOErrror('Something is wrong with array size.')
+            raise IOError('Something is wrong with array size.')
 
         drift_indexes = self.load_drift_indexes()
 

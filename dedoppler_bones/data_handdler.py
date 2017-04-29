@@ -141,7 +141,7 @@ class DATAH5:
 
         self.fftlen = header['NAXIS1']
 
-        #EE Need to figure this two out. should their names be swap? For now will keep like this since this is the way I've been using them.
+        #EE To check if swaping tsteps_valid and tsteps is more appropriate.
         self.tsteps_valid = header['NAXIS2']
         self.tsteps = int(math.pow(2, math.ceil(np.log2(math.floor(self.tsteps_valid)))))
 
@@ -152,9 +152,9 @@ class DATAH5:
         self.header['barya'] = 0.0
         self.header['coarse_chan'] = coarse_chan
 
-        # For now I'm not using a shoulder. This is ok as long as I'm analyzing each coarse channel individually.
-        # In general this is parameter is an integer (even number).
-        # This gives two regions, each of n*steps, around spectra[i]
+        #EE For now I'm not using a shoulder. This is ok as long as I'm analyzing each coarse channel individually.
+        #EE In general this parameter is an integer (even number).
+        #This gives two regions, each of n*steps, around spectra[i]
         self.shoulder_size = 0
         self.tdwidth = self.fftlen + self.shoulder_size*self.tsteps
 

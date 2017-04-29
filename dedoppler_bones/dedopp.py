@@ -130,7 +130,7 @@ class DedopplerTask:
         for i in range(0, tsteps):
             ibrev[i] = bitrev(i, int(np.log2(tsteps)))
 
-##EE: why are these values tdwidth and not fftlen?
+##EE: should double check if tdwidth is really better than fftlen here.
         max_val = max_vals()
         if max_val.maxsnr == None:
             max_val.maxsnr = np.zeros(tdwidth, dtype=np.float64)
@@ -207,7 +207,7 @@ class DedopplerTask:
                     #Reverse spectrum back
                     spectrum = spectrum[::-1]
 
-##EE maybe wrong use of reverse            n_candi, max_val = candsearch(spectrum, specstart, specend, self.snr, drift_rate, data_obj.header, fftlen, tdwidth, channel, max_val, 1)
+##EE old wrong use of reverse            n_candi, max_val = candsearch(spectrum, specstart, specend, self.snr, drift_rate, data_obj.header, fftlen, tdwidth, channel, max_val, 1)
                     n_candi, max_val = candsearch(spectrum, specstart, specend, self.snr, drift_rate, data_obj.header, fftlen, tdwidth, max_val, 0)
                     info_str = "Found %d candidates at drift rate %15.15f\n"%(n_candi, drift_rate)
                     max_val.total_n_candi += n_candi

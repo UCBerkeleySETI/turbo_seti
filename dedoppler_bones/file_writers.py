@@ -138,20 +138,6 @@ class FileWriter(GeneralWriter):
         info_str +='\n'
         self.write(info_str)
 
-
-#EE I dont like this nested for loops, makes it slower, also, really need this formating of the array?
-#EE But may need it ( I'm doing the same in drift_index_test.)
-#EE Well, then maybe need to check if need to save all the time...
-#EE Or maybe the format makes it be too large. Should save as binary instead...or fits?
-
-#         for i in range(0, spec_slice.shape[0]):
-#             info_str = ''
-#             for j in range(0, spec_slice.shape[-1]):
-#                 info_str += '%14.6f '%spec_slice[i, j]
-#             info_str += '\n'
-#             self.write(info_str)
-#         self.write('\n')
-
         return self
 
 class LogWriter(GeneralWriter):

@@ -6,11 +6,16 @@ TURBO_SETI
 
 ## Summary
 
-Based on `dedoppler` [dedoppler](http://github.com/cs150bf/gbt_seti/); which is based on  `rawdopplersearch.c`  [`gbt_seti/src/rawdopplersearch.c`](https://github.com/UCBerkeleySETI/gbt/rawdopplersearch.c))
+
+**turboSETI** is an analysis tool for the search of narrow band signals in filterbank data (frequency vs. time).
+The main purpose of the code is to find artificial signals from space, hopefully one day of extraterrestrial origin.
+It can search the data for hundreds of drift rates (in Hz/sec). It can handle either .fil or .h5 file formats.
+
+Based on `dedoppler` [dedoppler](http://github.com/cs150bf/gbt_seti/); which is based on  `rawdopplersearch.c`  [`gbt_seti/src/rawdopplersearch.c`](https://github.com/UCBerkeleySETI/gbt_seti/tree/master/src/rawdopplersearch.c))
 
 - Python based, with taylor tree in Cython for improved performance.
 - Pre-calculated `drift index arrays`.
-- Output text file.
+- Output plain text file with information on each hit.
 
 **NOTE**:
 This code is under heavy development. I would recommend for now to git-pull it often.
@@ -46,26 +51,6 @@ At the moment it expects a single .h5 file produced with `blimpy.Waterfall` .
 > &nbsp;
 
 
-#### Example:
-
-**NOTE**:
-Notes below are work in progress. Will add an example file here in the near future.
-
-
-
-
-**BL internal**:
-Currently, there is some voyager test data in bls0 at the GBT cluster.
-From the .../turbo_seti/bin/ folder run the next command.
-
-```bash
-$ python seti_event.py /datax/eenriquez/voyager_test/blc07_guppi_57650_67573_Voyager1_0002.gpuspec.0000.fil -p <your_test_folder> -M 2
-```
-
-This will take `/datax/eenriquez/voyager_test/test_dedop_bones/blc07_guppi_57650_67573_Voyager1_0002.gpuspec.0000.fil` as input (and in this particular case it will discover that this file is too big to handle all at once, so it will first partition it into smaller FITS files and save them into the directory specified by option **`-p`**, and then proceed with drift signal search for each small FITS files). Everything else was set to default values.
-
-
-
 **Known bugs:**
 
 1) Once is done creating the H5 files, sometimes the memory allocation goes crazy.
@@ -73,9 +58,14 @@ Just rerun the same command and this time it will understant the H5 files are th
 A bugfix is in progress.
 
 
-#### Sample Outputs
+#### Example:
 
-See `/datax/eenriquez/voyager_test/*/*.log`, `/datax/eenriquez/voyager_test/*.dat` for search results and see `/datax/eenriquez/voyager_test/*.png` for some plots.
+**NOTE**:
+
+Will add an example file here in the near future.
+
+
+#### Sample Outputs
 
 &nbsp;
 
@@ -101,6 +91,22 @@ See `/datax/eenriquez/voyager_test/*/*.log`, `/datax/eenriquez/voyager_test/*.da
 ```python
 > import dedoppler_bones
 ```
+
+**BL internal**:
+
+Currently, there is some voyager test data in bls0 at the GBT cluster.
+From the .../turbo_seti/bin/ folder run the next command.
+
+```bash
+$ python seti_event.py /datax/eenriquez/voyager_test/blc07_guppi_57650_67573_Voyager1_0002.gpuspec.0000.fil -p <your_test_folder> -M 2
+```
+
+This will take `/datax/eenriquez/voyager_test/test_dedop_bones/blc07_guppi_57650_67573_Voyager1_0002.gpuspec.0000.fil` as input (and in this particular case it will discover that this file is too big to handle all at once, so it will first partition it into smaller FITS files and save them into the directory specified by option **`-p`**, and then proceed with drift signal search for each small FITS files). Everything else was set to default values.
+
+Sample Outputs:
+See `/datax/eenriquez/voyager_test/*/*.log`, `/datax/eenriquez/voyager_test/*.dat` for search results and see `/datax/eenriquez/voyager_test/*.png` for some plots.
+
+
 
 &nbsp;
 --------------------------

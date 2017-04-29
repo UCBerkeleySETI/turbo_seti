@@ -9,24 +9,22 @@ TURBO_SETI
 Based on `dedoppler` [dedoppler](http://github.com/cs150bf/gbt_seti/); which is based on  `rawdopplersearch.c`  [`gbt_seti/src/rawdopplersearch.c`](https://github.com/UCBerkeleySETI/gbt/rawdopplersearch.c))
 
 - Python based, with taylor tree in Cython for improved performance.
-- Pre-calculated `drift_indexes`.
+- Pre-calculated `drift index arrays`.
 - Output text file.
 
-**TO DO**:
-This code is under heavy development. I would recommend for now to git pull it every time you use it.
+**NOTE**:
+This code is under heavy development. I would recommend for now to git-pull it often.
 
 &nbsp;
 
 -------------------
 
-## Installation
-
-
 ### Dependencies
 
 - astropy
 - pyximport
-
+- numpy
+- blimpy (Breakthrough Listen I/O Methods for Python :  https://github.com/UCBerkeleySETI/blimpy)
 
 &nbsp;
 
@@ -37,7 +35,7 @@ This code is under heavy development. I would recommend for now to git pull it e
 
 ### Expected Inputs
 
-At the moment it expects a single .fil file produced by gpuspec.
+At the moment it expects a single .h5 file produced with `blimpy.Waterfall` .
 
 ### Command Line
 
@@ -46,17 +44,17 @@ At the moment it expects a single .fil file produced by gpuspec.
 > Use `$ python seti_event.py -h` to view usage details.
 >
 > &nbsp;
->
-> Parameters:
-> - `max_drift`:
-> - `snr`:
->
-> (and so on...)
-
 
 
 #### Example:
 
+**NOTE**:
+Notes below are work in progress. Will add an example file here in the near future.
+
+
+
+
+**BL internal**:
 Currently, there is some voyager test data in bls0 at the GBT cluster.
 From the .../turbo_seti/bin/ folder run the next command.
 
@@ -66,9 +64,12 @@ $ python seti_event.py /datax/eenriquez/voyager_test/blc07_guppi_57650_67573_Voy
 
 This will take `/datax/eenriquez/voyager_test/test_dedop_bones/blc07_guppi_57650_67573_Voyager1_0002.gpuspec.0000.fil` as input (and in this particular case it will discover that this file is too big to handle all at once, so it will first partition it into smaller FITS files and save them into the directory specified by option **`-p`**, and then proceed with drift signal search for each small FITS files). Everything else was set to default values.
 
-Known bug:
-Once is done creating the FITS files, it will crash.
-Just rerun the same command and this time it will understant the FITS files are there and continue with the rest of the analysis.
+
+
+**Known bugs:**
+
+1) Once is done creating the H5 files, sometimes the memory allocation goes crazy.
+Just rerun the same command and this time it will understant the H5 files are there and continue with the rest of the analysis.
 A bugfix is in progress.
 
 

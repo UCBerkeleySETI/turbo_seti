@@ -7,18 +7,21 @@ TURBO_SETI
 ## Summary
 
 
-**turboSETI** is an analysis tool for the search of narrow band signals in filterbank data (frequency vs. time).
-The main purpose of the code is to find artificial signals from space, hopefully one day of extraterrestrial origin.
+***turbo*SETI** is an analysis tool for the search of narrow band drifting signals in filterbank data (frequency vs. time).
+The main purpose of the code is to hopefully one day find signals of extraterrestrial origin!!
 It can search the data for hundreds of drift rates (in Hz/sec). It can handle either .fil or .h5 file formats.
 
-Based on `dedoppler` [dedoppler](http://github.com/cs150bf/gbt_seti/); which is based on  `rawdopplersearch.c`  [`gbt_seti/src/rawdopplersearch.c`](https://github.com/UCBerkeleySETI/gbt_seti/tree/master/src/rawdopplersearch.c))
+**NOTE**:
+This code is stable, but new features are currently under development.  'Git pull' for the latest version.
+
+Some details for the expert eye:
 
 - Python based, with taylor tree in Cython for improved performance.
 - Pre-calculated `drift index arrays`.
 - Output plain text file with information on each hit.
+- Including output reader into a pandas DataFrame.
 
-**NOTE**:
-This code is under heavy development. I would recommend for now to git-pull it often.
+It was originally based on `dedoppler` [dedoppler](http://github.com/cs150bf/gbt_seti/); which is based on  `rawdopplersearch.c`  [`gbt_seti/src/rawdopplersearch.c`](https://github.com/UCBerkeleySETI/gbt_seti/tree/master/src/rawdopplersearch.c))
 
 &nbsp;
 

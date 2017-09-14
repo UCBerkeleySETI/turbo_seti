@@ -169,12 +169,12 @@ class DATAH5:
 
         spec = np.squeeze(self.fil_file.data)
         spectra = np.array(spec, dtype=np.float64)
-        
-        #This check will add rows of zeros if the obs is too short
+
+        #This check will add rows of zeros if the obs is too short (and thus not a power of two rows).
         while spectra.shape[0] != self.tsteps:
                 spectra = np.append(spectra,np.zeros((1,self.fftlen)),axis=0)
         self.tsteps_valid = self.tsteps
-        self.obs_length = self.tsteps * header['DELTAT']
+        self.obs_length = self.tsteps * self.header['DELTAT']
 
         if spectra.shape != (self.tsteps_valid, self.fftlen):
             logger.error('Something is wrong with array size.')

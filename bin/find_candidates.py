@@ -154,7 +154,7 @@ def search_hits(A_table_list,B_table, SNR_cut = 15, zero_drift=False):
     AnB_table = Asc_table[Asc_table['RFI_in_range'] == 0]
     if not (len(AnB_table) > 2):
         print 'NOTE: Found no hits present only on the A observations.'
-        return make_table('',init=True)
+        return AnB_table
     else:
         print 'NOTE: Found hits present only on the A observations.'
 
@@ -167,7 +167,7 @@ def search_hits(A_table_list,B_table, SNR_cut = 15, zero_drift=False):
         AA_table = A1nB_table[A1nB_table['ON_in_range'] == 2]
     else:
         print 'NOTE: Found no hits present in all three A observations.'
-        return make_table('',init=True)
+        return AnB_table
 
     if len(AA_table) > 0:
         print 'NOTE: Found some candidates! :)'

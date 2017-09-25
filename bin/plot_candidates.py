@@ -83,7 +83,7 @@ def plot_waterfall(fil, f_start=None, f_stop=None, if_id=0, logged=True,cb=False
 
     return this_plot
 
-def make_waterfall_plots(filenames_list,target,f_start,f_stop,ion = False,epoch='00',plot_pdf=False,**kwargs):
+def make_waterfall_plots(filenames_list,target,f_start,f_stop,ion = False,epoch='00',plot_pdf=False,saving_fig=False,**kwargs):
     ''' Makes waterfall plots per group of ON-OFF pairs (up to 6 plots.)
     '''
 
@@ -140,9 +140,10 @@ def make_waterfall_plots(filenames_list,target,f_start,f_stop,ion = False,epoch=
     # all but bottom plot.
     plt.subplots_adjust(hspace=0,wspace=0)
 
-    plt.savefig('Candidate_waterfall_plots.'+target+'.'+epoch+'.png',bbox_inches='tight')
-    if plot_pdf:
-        plt.savefig('Candidate_waterfall_plots.'+target+'.'+epoch+'.pdf', format='pdf', dpi=300,bbox_inches='tight')
+    if saving_fig:
+        plt.savefig('Candidate_waterfall_plots.'+target+'.'+epoch+'.png',bbox_inches='tight')
+        if plot_pdf:
+            plt.savefig('Candidate_waterfall_plots.'+target+'.'+epoch+'.pdf', format='pdf', dpi=300,bbox_inches='tight')
 
 
 def get_single_event_info(filename,freq_range = 0.001,make_latex_table=False,all=False):

@@ -145,12 +145,16 @@ def make_waterfall_plots(filenames_list,target,f_start,f_stop,ion = False,epoch=
         plt.savefig('Candidate_waterfall_plots.'+target+'.'+epoch+'.pdf', format='pdf', dpi=300,bbox_inches='tight')
 
 
-def get_single_event_info(filename,freq_range = 0.001,make_latex_table=False):
+def get_single_event_info(filename,freq_range = 0.001,make_latex_table=False,all=False):
     '''
     '''
 
     #filename = full_path+ csv
     AAA_candidates = pd.read_csv(filename)
+
+    if all:
+        return AAA_candidates
+
     targets = list(AAA_candidates.groupby('Source').count().index)
 
     if len(targets) > 1:
@@ -158,7 +162,6 @@ def get_single_event_info(filename,freq_range = 0.001,make_latex_table=False):
     else:
         target = targets[0]
 
-    pdb.set_trace()
     #Taking only one hit per event !!!
     AAA_single = AAA_candidates[AAA_candidates['Source'] == target]
     AAA1_single = AAA_single[AAA_single['status'] == 'A1_table'].sort('SNR')

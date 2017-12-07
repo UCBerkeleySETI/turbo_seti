@@ -83,7 +83,7 @@ def plot_waterfall(fil, f_start=None, f_stop=None, if_id=0, logged=True,cb=False
 
     return this_plot
 
-def make_waterfall_plots(filenames_list,target,f_start,f_stop,ion = False,epoch='00',plot_pdf=False,saving_fig=False,**kwargs):
+def make_waterfall_plots(filenames_list,target,f_start,f_stop,ion = False,epoch='00',save_pdf_plot=False,saving_fig=False,**kwargs):
     ''' Makes waterfall plots per group of ON-OFF pairs (up to 6 plots.)
     '''
 
@@ -120,7 +120,7 @@ def make_waterfall_plots(filenames_list,target,f_start,f_stop,ion = False,epoch=
         this_plot = plot_waterfall(fil,f_start=f_start, f_stop=f_stop,vmin=A1_avg-A1_std*min_val,vmax=A1_avg+max_val*A1_std,**kwargs)
 
         if i == 0:
-            plt.title(target)
+            plt.title(target.replace('HIP','HIP '))
 
         if i < len(filenames_list)-1:
             plt.xticks(np.arange(f_start, f_stop, delta_f/4.), ['','','',''])
@@ -142,7 +142,7 @@ def make_waterfall_plots(filenames_list,target,f_start,f_stop,ion = False,epoch=
 
     if saving_fig:
         plt.savefig('Candidate_waterfall_plots.'+target+'.'+epoch+'.png',bbox_inches='tight')
-        if plot_pdf:
+        if save_pdf_plot:
             plt.savefig('Candidate_waterfall_plots.'+target+'.'+epoch+'.pdf', format='pdf', dpi=300,bbox_inches='tight')
 
 
@@ -182,6 +182,8 @@ def get_single_event_info(filename,freq_range = 0.001,make_latex_table=False,all
 if __name__ == "__main__":
     ''' Make it happen moment.
     '''
+
+    raise Error('This is deprecated. Sorry ...')
 
     #---------------------------
     # Read in the full "A list" of stars

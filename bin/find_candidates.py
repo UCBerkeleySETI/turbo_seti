@@ -4,7 +4,7 @@ Script to find candidates in a group of ABACAD observations.
     1) It compares ON vs OFF observations
     2) any signal found only in the ON is checked to be found in all the 3 ONs following the frequency drift of the signal.
 
-Usage:
+Usage (beta):
     import find_candidates_test as fact
     TEST_LIST = ['dir/filename_A1.dat','dir/filename_B1.dat','dir/filename_A2.dat','dir/filename_B2.dat','dir/filename_A3.dat','dir/filename_B3.dat']
     fact.find_candidates(TEST_LIST)
@@ -18,6 +18,7 @@ import time
 from blimpy import Filterbank
 import numpy as np
 from blimpy.utils import db, lin, rebin, closest
+import plot_candidates
 
 pd.options.mode.chained_assignment = None  # To remove pandas warnings: default='warn'
 
@@ -262,7 +263,7 @@ def find_candidates(file_list):
     return AAA_table
 
 
-#
+#     Some snippets for possible upgrades of the code.
 #     stop
 #
 #     #Concatenating all the candidates.
@@ -275,18 +276,77 @@ def find_candidates(file_list):
 #     #Looking at some stats.
 #     plt.ion()
 #     plt.figure()
-#     AAA_candidates['Freq'].plot.hist(bins=100,logy=True)
-#
+#     AAA_candidates['Freq'].plot.hist(bins=100,logy=True)#
 #     plt.savefig('Frequency_hist.png')
 #
 #     plt.figure()
 #     AAA_candidates['DriftRate'].plot.hist(bins=25,logy=True)
 #
-#     stop
-#
-#
-#
-#
 #     #Removing a bunch of RFI regions (GPS and so on).
 #     AAA_candidates = remomve_RFI_regions(AAA_candidates)
-#
+
+
+
+
+
+def main():
+    """ Main funtion for find_candidate scripts. """
+
+    p = OptionParser()
+    p.set_usage('python find_candidates.py [options]')
+#    p.add_option('-o', '--out_dir', dest='out_dir', type='str', default='', help='Location for output files. Default: local dir. ')
+    p.add_option('-n', '--number_files', dest='n_files', type='int', default=6, help='Number of files to check for candidates, standard is 6, for an ABACAD config.')
+    p.add_option('-l', '--list', dest='file_list', type='str', default='out_dats.lst', help='List of files to run (without the path).')
+    p.add_option('-p', '--plotting', dest='plotting', action='store_false', default=True, help='Boolean for plotting.')
+    p.add_option('-s', '--saving', dest='saving', action='store_true', default=False, help='Boolean for saving plot and csv data.')
+
+    opts, args = p.parse_args(sys.argv[1:])
+
+#    out_dir = opts.out_dir
+    n_files = opts.n_files
+    file_list = opts.file_list
+    plotting = opts.plotting
+    saving = opts.saving
+    #---------------------
+
+    #Opening list of files
+    file_list = open(file_list).readlines()
+    file_list = [files.replace('\n','') for files in file_list]
+
+    #Check
+    if len(file_list) < n_files:
+        print "It seems len(file_list) < n_files assuming len(file_list) = n_files."
+        n_files = len(file_list)
+
+    #---------------------
+    #Finding candidates.
+
+    #Looping over n_files chunks.
+    for i in len(file_list)/n_files:
+
+        file_sublist = file_list[n_files*i:n_files*(i+1)-1]
+
+        candidates = find_candidates(file_sublist)
+
+        if len(candidates) and plotting:
+
+            filenames = open('../processed_targets.lst').readlines()
+            filenames = [files.replace('\n','') for files in filenames]
+
+            n_candidates = candidates['FreqEnd'].index.unique()
+
+            #Plotting individual candidates
+            for ii in len(n_candidates):
+
+                Freq_Start = candidates['FreqStart'][ii].unique()[0]
+                Freq_End = candidates['FreqEnd'][ii].unique()[0]
+
+                plot_candidates.make_waterfall_plots(filenames[n_files*i:n_files*(i+1)-1],candidates['Source'].unique()[0],Freq_Start,Freq_End,ion=True,save_pdf_plot=saving,saving_fig=saving)
+
+        #Saving csv
+        if saving:
+            candidates.to_csv('Candidates_%.0f.csv'%time.time())
+
+
+if __name__ == "__main__":
+    main()

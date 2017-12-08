@@ -329,7 +329,7 @@ def main():
     #Finding candidates.
 
     #Looping over n_files chunks.
-    for i in len(file_list)/n_files:
+    for i in range(len(file_list)/n_files):
 
         file_sublist = file_list[n_files*i:n_files*(i+1)-1]
 
@@ -343,7 +343,7 @@ def main():
             n_candidates = candidates['FreqEnd'].index.unique()
 
             #Plotting individual candidates
-            for ii in len(n_candidates):
+            for ii in range(len(n_candidates)):
 
                 Freq_Start = candidates['FreqStart'][ii].unique()[0]
                 Freq_End = candidates['FreqEnd'][ii].unique()[0]

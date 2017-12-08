@@ -132,14 +132,14 @@ def follow_candidate(hit,A_table,get_count=True):
     else:
         return new_A_table
 
-def search_hits(A_table_list,B_table, SNR_cut = 15, zero_drift=False):
+def search_hits(A_table_list,B_table, SNR_cut = 15, check_zero_drift=False):
     '''Rejects hits based on some logic.
     '''
 
     A_table = pd.concat(A_table_list)
 
     #Removing non-drift signals
-    if zero_drift:
+    if check_zero_drift:
         And0_table = A_table
     else:
         And0_table = A_table[A_table['DriftRate'] != 0.0]
@@ -195,7 +195,7 @@ def search_hits(A_table_list,B_table, SNR_cut = 15, zero_drift=False):
 
     return AAA_table
 
-def find_candidates(file_list):
+def find_candidates(file_list,SNR_cut=10,check_zero_drift=False):
     ''' Reads a list of flat turboSETI files, the list should be in the ABACAD configuration.
         It calls other functions to find candidates within this group of files.
     '''
@@ -252,7 +252,7 @@ def find_candidates(file_list):
 #            continue
 
     print 'Finding all candidates for this A-B set.'
-    AAA_table = search_hits(A_table_list,B_table)
+    AAA_table = search_hits(A_table_list,B_table,SNR_cut=SNR_cut,check_zero_drift=check_zero_drift)
 
     if len(AAA_table) > 0:
         print 'Found: %2.2f'%(len(AAA_table)/3.)
@@ -299,8 +299,10 @@ def main():
 #    p.add_option('-o', '--out_dir', dest='out_dir', type='str', default='', help='Location for output files. Default: local dir. ')
     p.add_option('-n', '--number_files', dest='n_files', type='int', default=6, help='Number of files to check for candidates, standard is 6, for an ABACAD config.')
     p.add_option('-l', '--list', dest='file_list', type='str', default='out_dats.lst', help='List of files to run (without the path).')
-    p.add_option('-p', '--plotting', dest='plotting', action='store_false', default=True, help='Boolean for plotting.')
-    p.add_option('-s', '--saving', dest='saving', action='store_true', default=False, help='Boolean for saving plot and csv data.')
+    p.add_option('-p', '--plotting', dest='plotting', action='store_false', default=True, help='Boolean for plotting. Default True, use for False.')
+    p.add_option('-s', '--saving', dest='saving', action='store_true', default=False, help='Boolean for saving plot and csv data. Default False, use for True.')
+    p.add_option('-r', '--SNR_cut', dest='SNR_cut', type='int', default=10, help='SNR cut, default SNR=10.')
+    p.add_option('-z', '--check_zero_drift', dest='check_zero_drift', action='store_true', default=False, help='Boolean for not ignoring zero drift hits, if True it will search them if only present in the ON. Default False, use for True.')
 
     opts, args = p.parse_args(sys.argv[1:])
 
@@ -309,6 +311,9 @@ def main():
     file_list = opts.file_list
     plotting = opts.plotting
     saving = opts.saving
+    SNR_cut = opts.SNR_cut
+    check_zero_drift = opts.check_zero_drift
+
     #---------------------
 
     #Opening list of files
@@ -328,7 +333,7 @@ def main():
 
         file_sublist = file_list[n_files*i:n_files*(i+1)-1]
 
-        candidates = find_candidates(file_sublist)
+        candidates = find_candidates(file_sublist,SNR_cut=SNR_cut,check_zero_drift=check_zero_drift)
 
         if len(candidates) and plotting:
 

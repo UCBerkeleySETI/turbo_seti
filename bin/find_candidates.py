@@ -18,6 +18,7 @@ import time
 from blimpy import Filterbank
 import numpy as np
 from blimpy.utils import db, lin, rebin, closest
+from optparse import OptionParser
 import plot_candidates
 
 pd.options.mode.chained_assignment = None  # To remove pandas warnings: default='warn'

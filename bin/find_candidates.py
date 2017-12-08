@@ -264,10 +264,10 @@ def find_candidates(file_list,SNR_cut=10,check_zero_drift=False,flag_threshold=3
     t1 = time.time()
     print 'Search time: %.2f sec' % ((t1-t0))
 
-    if flag_level > flag_threshold:
-        return AAA_table
-    else:
+    if flag_level < flag_threshold:
         return None
+    else:
+        return AAA_table
 
 
 #     Some snippets for possible upgrades of the code.
@@ -308,6 +308,7 @@ def main():
     p.add_option('-s', '--saving', dest='saving', action='store_true', default=False, help='Boolean for saving plot and csv data. Default False, use for True.')
     p.add_option('-r', '--SNR_cut', dest='SNR_cut', type='int', default=10, help='SNR cut, default SNR=10.')
     p.add_option('-z', '--check_zero_drift', dest='check_zero_drift', action='store_true', default=False, help='Boolean for not ignoring zero drift hits, if True it will search them if only present in the ON. Default False, use for True.')
+    p.add_option('-f', '--flag_threshold', dest='flag_threshold', type='int', default=3, help='Flag_threshold allows the return of a table of candidates with hits at different levels of filtering.')
 
     opts, args = p.parse_args(sys.argv[1:])
 
@@ -338,7 +339,7 @@ def main():
 
         file_sublist = file_list[n_files*i:n_files*(i+1)]
 
-        candidates = find_candidates(file_sublist,SNR_cut=SNR_cut,check_zero_drift=check_zero_drift,flag_threshold=2)
+        candidates = find_candidates(file_sublist,SNR_cut=SNR_cut,check_zero_drift=check_zero_drift,flag_threshold=flag_threshold)
 
         if len(candidates) and plotting:
 

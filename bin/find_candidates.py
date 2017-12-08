@@ -148,7 +148,7 @@ def search_hits(A_table_list,B_table, SNR_cut = 15, check_zero_drift=False):
     Asc_table = And0_table[And0_table['SNR']> SNR_cut]
     if not (len(Asc_table) > 0):
         print 'NOTE: Found no hits above the SNR cut.'
-        return Asc_table
+        return Asc_table,0
     else:
         print 'NOTE: Found hits above the SNR cut.'
 
@@ -157,7 +157,7 @@ def search_hits(A_table_list,B_table, SNR_cut = 15, check_zero_drift=False):
     AnB_table = Asc_table[Asc_table['RFI_in_range'] == 0]
     if not (len(AnB_table) > 2):
         print 'NOTE: Found no hits present only on the A observations.'
-        return AnB_table
+        return AnB_table, 1
     else:
         print 'NOTE: Found hits present only on the A observations.'
 
@@ -170,13 +170,13 @@ def search_hits(A_table_list,B_table, SNR_cut = 15, check_zero_drift=False):
         AA_table = A1nB_table[A1nB_table['ON_in_range'] == 2]
     else:
         print 'NOTE: Found no hits present in all three A observations.'
-        return AnB_table
+        return AnB_table,2
 
     if len(AA_table) > 0:
         print 'NOTE: Found some candidates! :)'
     else:
         print 'NOTE: Found no candidates. :('
-        return AA_table
+        return AA_table,2
 
     #Create list of candidates.
     AAA_table_list = []
@@ -193,11 +193,13 @@ def search_hits(A_table_list,B_table, SNR_cut = 15, check_zero_drift=False):
 
     AAA_table = pd.concat(AAA_table_list)
 
-    return AAA_table
+    return AAA_table,3
 
-def find_candidates(file_list,SNR_cut=10,check_zero_drift=False):
+def find_candidates(file_list,SNR_cut=10,check_zero_drift=False,flag_threshold=3):
     ''' Reads a list of flat turboSETI files, the list should be in the ABACAD configuration.
         It calls other functions to find candidates within this group of files.
+        Flag_threshold allows the return of a table of candidates with hits at different levels of filtering.
+        Flag_threshold = [1,2,3] means [ hits above an SNR cut witout AB check, only in some As, only in all As]
     '''
     #---------------------------
     #Setting things up.
@@ -252,7 +254,7 @@ def find_candidates(file_list,SNR_cut=10,check_zero_drift=False):
 #            continue
 
     print 'Finding all candidates for this A-B set.'
-    AAA_table = search_hits(A_table_list,B_table,SNR_cut=SNR_cut,check_zero_drift=check_zero_drift)
+    AAA_table,flag_level = search_hits(A_table_list,B_table,SNR_cut=SNR_cut,check_zero_drift=check_zero_drift)
 
     if len(AAA_table) > 0:
         print 'Found: %2.2f'%(len(AAA_table)/3.)
@@ -262,7 +264,10 @@ def find_candidates(file_list,SNR_cut=10,check_zero_drift=False):
     t1 = time.time()
     print 'Search time: %.2f sec' % ((t1-t0))
 
-    return AAA_table
+    if flag_level > flag_threshold:
+        return AAA_table
+    else:
+        return None
 
 
 #     Some snippets for possible upgrades of the code.
@@ -333,7 +338,7 @@ def main():
 
         file_sublist = file_list[n_files*i:n_files*(i+1)]
 
-        candidates = find_candidates(file_sublist,SNR_cut=SNR_cut,check_zero_drift=check_zero_drift)
+        candidates = find_candidates(file_sublist,SNR_cut=SNR_cut,check_zero_drift=check_zero_drift,flag_threshold=2)
 
         if len(candidates) and plotting:
 

@@ -144,8 +144,10 @@ def make_waterfall_plots(filenames_list,target,f_start,f_stop,ion = False,epoch=
     plt.subplots_adjust(hspace=0,wspace=0)
 
     if saving_fig:
+        print 'Saving png figure.'
         plt.savefig('Candidate_waterfall_plots.%s.t%.0f.f%.0f.png'%(target,epoch,mid_f*1e6),bbox_inches='tight')
         if save_pdf_plot:
+            print 'Saving pdf figure.'
             plt.savefig('Candidate_waterfall_plots.%s.t%.0f.f%.0f.pdf'%(target,epoch,mid_f*1e6), format='pdf', dpi=300,bbox_inches='tight')
 
 

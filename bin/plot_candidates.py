@@ -107,7 +107,7 @@ def make_waterfall_plots(filenames_list,target,f_start,f_stop,ion = False,epoch=
     A1_std = np.std(fil.data)
 
     if not epoch:
-        epoch = '%.0f'%fil.header['tstart']
+        epoch = fil.header['tstart']
 
     labeling = ['A','B','A','C','A','D']
 
@@ -144,9 +144,9 @@ def make_waterfall_plots(filenames_list,target,f_start,f_stop,ion = False,epoch=
     plt.subplots_adjust(hspace=0,wspace=0)
 
     if saving_fig:
-        plt.savefig('Candidate_waterfall_plots.'+target+'.t'+epoch+'.f'+mid_f+'.png',bbox_inches='tight')
+        plt.savefig('Candidate_waterfall_plots.%s.t%.0f.f%.0f.png'%(target,epoch,mid_f*1e6),bbox_inches='tight')
         if save_pdf_plot:
-            plt.savefig('Candidate_waterfall_plots.'+target+'.t'+epoch+'.f'+mid_f+'.pdf', format='pdf', dpi=300,bbox_inches='tight')
+            plt.savefig('Candidate_waterfall_plots.%s.t%.0f.f%.0f.pdf'%(target,epoch,mid_f*1e6), format='pdf', dpi=300,bbox_inches='tight')
 
 
 def get_single_event_info(filename,freq_range = 0.001,make_latex_table=False,all=False):

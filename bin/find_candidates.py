@@ -265,7 +265,7 @@ def find_candidates(file_list,SNR_cut=10,check_zero_drift=False,flag_threshold=3
     print 'Search time: %.2f sec' % ((t1-t0))
 
     if flag_level < flag_threshold:
-        return None
+        return pd.DataFrame({'This is an empty Data Frame' : []})
     else:
         return AAA_table
 
@@ -342,7 +342,7 @@ def main():
 
         candidates = find_candidates(file_sublist,SNR_cut=SNR_cut,check_zero_drift=check_zero_drift,flag_threshold=flag_threshold)
 
-        if candidates and plotting:
+        if not candidates.empty and plotting:
 
             filenames = open('../processed_targets.lst').readlines()
             filenames = [files.replace('\n','') for files in filenames]
@@ -358,8 +358,8 @@ def main():
                 plot_candidates.make_waterfall_plots(filenames[n_files*i:n_files*(i+1)],candidates['Source'].unique()[0],Freq_Start,Freq_End,ion=True,save_pdf_plot=saving,saving_fig=saving)
 
         #Saving csv
-        if candidates and saving:
-            candidates.to_csv('Candidates_%.0f.csv'%time.time())
+        if not candidates.empty and saving:
+            candidates.to_csv('Candidates_%s.t%.0f.csv'%(candidates['Source'].unique()[0],candidates['MJD'].unique()[0]))
 
 
 if __name__ == "__main__":

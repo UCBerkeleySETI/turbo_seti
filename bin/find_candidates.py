@@ -342,7 +342,7 @@ def main():
 
         candidates = find_candidates(file_sublist,SNR_cut=SNR_cut,check_zero_drift=check_zero_drift,flag_threshold=flag_threshold)
 
-        if len(candidates) and plotting:
+        if candidates and plotting:
 
             filenames = open('../processed_targets.lst').readlines()
             filenames = [files.replace('\n','') for files in filenames]

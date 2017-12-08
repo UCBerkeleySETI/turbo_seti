@@ -340,10 +340,10 @@ def main():
             filenames = open('../processed_targets.lst').readlines()
             filenames = [files.replace('\n','') for files in filenames]
 
-            n_candidates = candidates['FreqEnd'].index.unique()
+            candidate_index = candidates['FreqEnd'].index.unique()
 
             #Plotting individual candidates
-            for ii in range(len(n_candidates)):
+            for ii in candidate_index:
 
                 Freq_Start = candidates['FreqStart'][ii].unique()[0]
                 Freq_End = candidates['FreqEnd'][ii].unique()[0]

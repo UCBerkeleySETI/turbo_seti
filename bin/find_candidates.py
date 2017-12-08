@@ -20,6 +20,7 @@ import numpy as np
 from blimpy.utils import db, lin, rebin, closest
 from optparse import OptionParser
 import plot_candidates
+import sys
 
 pd.options.mode.chained_assignment = None  # To remove pandas warnings: default='warn'
 

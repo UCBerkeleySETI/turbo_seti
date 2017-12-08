@@ -319,6 +319,7 @@ def main():
     saving = opts.saving
     SNR_cut = opts.SNR_cut
     check_zero_drift = opts.check_zero_drift
+    flag_threshold = opts.flag_threshold
 
     #---------------------
 

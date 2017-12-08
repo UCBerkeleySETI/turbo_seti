@@ -359,7 +359,7 @@ def main():
 
         #Saving csv
         if not candidates.empty and saving:
-            candidates.to_csv('Candidates_%s.t%.0f.csv'%(candidates['Source'].unique()[0],candidates['MJD'].unique()[0]))
+            candidates.to_csv('Candidates_%s.t%.0f.csv'%(candidates['Source'].unique()[0],float(candidates['MJD'].unique()[0])))
 
 
 if __name__ == "__main__":

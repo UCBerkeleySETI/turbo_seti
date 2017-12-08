@@ -331,7 +331,7 @@ def main():
     #Looping over n_files chunks.
     for i in range(len(file_list)/n_files):
 
-        file_sublist = file_list[n_files*i:n_files*(i+1)-1]
+        file_sublist = file_list[n_files*i:n_files*(i+1)]
 
         candidates = find_candidates(file_sublist,SNR_cut=SNR_cut,check_zero_drift=check_zero_drift)
 

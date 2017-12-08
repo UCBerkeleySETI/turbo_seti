@@ -348,7 +348,7 @@ def main():
                 Freq_Start = candidates['FreqStart'][ii].unique()[0]
                 Freq_End = candidates['FreqEnd'][ii].unique()[0]
 
-                plot_candidates.make_waterfall_plots(filenames[n_files*i:n_files*(i+1)-1],candidates['Source'].unique()[0],Freq_Start,Freq_End,ion=True,save_pdf_plot=saving,saving_fig=saving)
+                plot_candidates.make_waterfall_plots(filenames[n_files*i:n_files*(i+1)],candidates['Source'].unique()[0],Freq_Start,Freq_End,ion=True,save_pdf_plot=saving,saving_fig=saving)
 
         #Saving csv
         if saving:

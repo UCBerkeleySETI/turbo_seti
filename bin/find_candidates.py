@@ -21,6 +21,7 @@ from blimpy.utils import db, lin, rebin, closest
 from optparse import OptionParser
 import plot_candidates
 import sys
+import socket
 
 pd.options.mode.chained_assignment = None  # To remove pandas warnings: default='warn'
 
@@ -323,6 +324,8 @@ def main():
 
     #---------------------
 
+    local_host = socket.gethostname()
+
     #Opening list of files
     file_list = open(file_list).readlines()
     file_list = [files.replace('\n','') for files in file_list]
@@ -359,7 +362,7 @@ def main():
                     Freq_Start = candidates['FreqStart'][ii]
                     Freq_End = candidates['FreqEnd'][ii]
 
-                plot_candidates.make_waterfall_plots(filenames[n_files*i:n_files*(i+1)],candidates['Source'].unique()[0],Freq_Start,Freq_End,ion=True,save_pdf_plot=saving,saving_fig=saving)
+                plot_candidates.make_waterfall_plots(filenames[n_files*i:n_files*(i+1)],candidates['Source'].unique()[0],Freq_Start,Freq_End,ion=True,save_pdf_plot=saving,saving_fig=saving,local_host=local_host)
 
         #Saving csv
         if not candidates.empty and saving:

@@ -83,7 +83,7 @@ def plot_waterfall(fil, f_start=None, f_stop=None, if_id=0, logged=True,cb=False
 
     return this_plot
 
-def make_waterfall_plots(filenames_list,target,f_start,f_stop,ion = False,epoch=None,save_pdf_plot=False,saving_fig=False,**kwargs):
+def make_waterfall_plots(filenames_list,target,f_start,f_stop,ion = False,epoch=None,local_host='',save_pdf_plot=False,saving_fig=False,**kwargs):
     ''' Makes waterfall plots per group of ON-OFF pairs (up to 6 plots.)
     '''
 
@@ -145,10 +145,10 @@ def make_waterfall_plots(filenames_list,target,f_start,f_stop,ion = False,epoch=
 
     if saving_fig:
         print 'Saving png figure.'
-        plt.savefig('Candidate_waterfall_plots.%s.t%.0f.f%.0f.png'%(target,epoch,mid_f*1e6),bbox_inches='tight')
+        plt.savefig('Candidate_waterfall_plots.%s.t%.0f.%s.f%.0f.png'%(target,epoch,local_host,mid_f*1e6),bbox_inches='tight')
         if save_pdf_plot:
             print 'Saving pdf figure.'
-            plt.savefig('Candidate_waterfall_plots.%s.t%.0f.f%.0f.pdf'%(target,epoch,mid_f*1e6), format='pdf', dpi=300,bbox_inches='tight')
+            plt.savefig('Candidate_waterfall_plots.%s.t%.0f.%s.f%.0f.pdf'%(target,epoch,local_host,mid_f*1e6), format='pdf', dpi=300,bbox_inches='tight')
 
 
 def get_single_event_info(filename,freq_range = 0.001,make_latex_table=False,all=False):
@@ -223,7 +223,7 @@ if __name__ == "__main__":
 
         epoch = AAA1_single['MJD'].values[-1]
 
-        make_waterfall_plots(filenames_list,target,f_start,f_stop,ion=True,epoch=epoch)
+        make_waterfall_plots(filenames_list,target,f_start,f_stop,ion=True,epoch=epoch,local_host=local_host)
 
         if make_latex_table:
             # For making table of events

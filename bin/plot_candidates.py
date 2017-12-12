@@ -189,55 +189,55 @@ if __name__ == "__main__":
     '''
 
     raise Error('This is deprecated. Sorry ...')
-
-    #---------------------------
-    # Read in the full "A list" of stars
-    # This comes from the BL database.
-    #---------------------------
-    local_host = socket.gethostname()
-
-    if 'bl' in local_host:
-        dat_dit = '/datax/users/eenriquez/L_band_headquarters/hits_logistics/'
-
-    else:
-        dat_dit = '/Users/jeenriquez/RESEARCH/software/Lband_seti/analysis/'
-
-    make_latex_table = False
-
-    #---------------------------
-    AAA_candidates = pd.read_csv(dat_dit+'AAA_candidates.v4_1492476400.csv')
-    targets = list(AAA_candidates.groupby('Source').count().index)
-
-    table_events =''
-
-    for target in targets:
-        AAA_single = AAA_candidates[AAA_candidates['Source'] == target]
-        print target
-        filenames_list = get_filenames_list(target)
-
-        AAA1_single = AAA_single[AAA_single['status'] == 'A1_table'].sort('SNR')
-
-        f_start = AAA1_single['Freq'].values[-1] - 0.001
-        f_stop = AAA1_single['Freq'].values[-1] + 0.001
-        coarse_channel=AAA1_single['CoarseChanNum'].values[-1]
-
-        epoch = AAA1_single['MJD'].values[-1]
-
-        make_waterfall_plots(filenames_list,target,f_start,f_stop,ion=True,epoch=epoch,local_host=local_host)
-
-        if make_latex_table:
-            # For making table of events
-            for_table = [AAA1_single['Source'].values[0],'%.5f'%AAA1_single['Freq'].values[-1],'%.3f'%AAA1_single['DriftRate'].values[-1],'%.1f'%AAA1_single['SNR'].values[-1]]
-            table_events+='  &  '.join(for_table)+'\ \ \n'
-
-    stop
-
-
-    #Making table of events
-    with open('L_band_top_events.lst','w') as file_list:
-        file_list.write(table_events)
-
-    #Removing a bunch of RFI regions (GPS and so on).
-    AAA_candidates = remomve_RFI_regions(AAA_candidates)
+#
+#     #---------------------------
+#     # Read in the full "A list" of stars
+#     # This comes from the BL database.
+#     #---------------------------
+#     local_host = socket.gethostname()
+#
+#     if 'bl' in local_host:
+#         dat_dit = '/datax/users/eenriquez/L_band_headquarters/hits_logistics/'
+#
+#     else:
+#         dat_dit = '/Users/jeenriquez/RESEARCH/software/Lband_seti/analysis/'
+#
+#     make_latex_table = False
+#
+#     #---------------------------
+#     AAA_candidates = pd.read_csv(dat_dit+'AAA_candidates.v4_1492476400.csv')
+#     targets = list(AAA_candidates.groupby('Source').count().index)
+#
+#     table_events =''
+#
+#     for target in targets:
+#         AAA_single = AAA_candidates[AAA_candidates['Source'] == target]
+#         print target
+#         filenames_list = get_filenames_list(target)
+#
+#         AAA1_single = AAA_single[AAA_single['status'] == 'A1_table'].sort('SNR')
+#
+#         f_start = AAA1_single['Freq'].values[-1] - 0.001
+#         f_stop = AAA1_single['Freq'].values[-1] + 0.001
+#         coarse_channel=AAA1_single['CoarseChanNum'].values[-1]
+#
+#         epoch = AAA1_single['MJD'].values[-1]
+#
+#         make_waterfall_plots(filenames_list,target,f_start,f_stop,ion=True,epoch=epoch,local_host=local_host)
+#
+#         if make_latex_table:
+#             # For making table of events
+#             for_table = [AAA1_single['Source'].values[0],'%.5f'%AAA1_single['Freq'].values[-1],'%.3f'%AAA1_single['DriftRate'].values[-1],'%.1f'%AAA1_single['SNR'].values[-1]]
+#             table_events+='  &  '.join(for_table)+'\ \ \n'
+#
+#     stop
+#
+#
+#     #Making table of events
+#     with open('L_band_top_events.lst','w') as file_list:
+#         file_list.write(table_events)
+#
+#     #Removing a bunch of RFI regions (GPS and so on).
+#     AAA_candidates = remomve_RFI_regions(AAA_candidates)
 
 

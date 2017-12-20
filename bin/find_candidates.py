@@ -149,7 +149,7 @@ def search_hits(A_table_list,B_table, SNR_cut = 15, check_zero_drift=False):
     Asc_table = And0_table[And0_table['SNR']> SNR_cut]
     if not (len(Asc_table) > 0):
         print 'NOTE: Found no hits above the SNR cut.'
-        return Asc_table #,0
+        return Asc_table, 0
     else:
         print 'NOTE: Found hits above the SNR cut.'
 
@@ -158,7 +158,7 @@ def search_hits(A_table_list,B_table, SNR_cut = 15, check_zero_drift=False):
     AnB_table = Asc_table[Asc_table['RFI_in_range'] == 0]
     if not (len(AnB_table) > 2):
         print 'NOTE: Found no hits present only on the A observations.'
-        return AnB_table #, 1
+        return AnB_table, 1
     else:
         print 'NOTE: Found hits present only on the A observations.'
 
@@ -171,13 +171,13 @@ def search_hits(A_table_list,B_table, SNR_cut = 15, check_zero_drift=False):
         AA_table = A1nB_table[A1nB_table['ON_in_range'] == 2]
     else:
         print 'NOTE: Found no hits present in all three A observations.'
-        return AnB_table #,2
+        return AnB_table, 2
 
     if len(AA_table) > 0:
         print 'NOTE: Found some candidates! :)'
     else:
         print 'NOTE: Found no candidates. :('
-        return AA_table #,2
+        return AA_table, 2
 
     #Create list of candidates.
     AAA_table_list = []
@@ -194,7 +194,7 @@ def search_hits(A_table_list,B_table, SNR_cut = 15, check_zero_drift=False):
 
     AAA_table = pd.concat(AAA_table_list)
 
-    return AAA_table #,3
+    return AAA_table, 3
 
 def find_candidates(dat_file_list,SNR_cut=10,check_zero_drift=False,filter_threshold=3):
     ''' Reads a list of flat turboSETI files, the list should be in the ABACAD configuration.

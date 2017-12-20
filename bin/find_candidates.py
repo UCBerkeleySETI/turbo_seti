@@ -196,11 +196,11 @@ def search_hits(A_table_list,B_table, SNR_cut = 15, check_zero_drift=False):
 
     return AAA_table,3
 
-def find_candidates(file_list,SNR_cut=10,check_zero_drift=False,flag_threshold=3):
+def find_candidates(dat_file_list,SNR_cut=10,check_zero_drift=False,filter_threshold=3):
     ''' Reads a list of flat turboSETI files, the list should be in the ABACAD configuration.
         It calls other functions to find candidates within this group of files.
-        Flag_threshold allows the return of a table of candidates with hits at different levels of filtering.
-        Flag_threshold = [1,2,3] means [ hits above an SNR cut witout AB check, only in some As, only in all As]
+        Filter_threshold allows the return of a table of candidates with hits at different levels of filtering.
+        Filter_threshold = [1,2,3] means [ hits above an SNR cut witout AB check, only in some As, only in all As]
     '''
     #---------------------------
     #Setting things up.
@@ -213,7 +213,7 @@ def find_candidates(file_list,SNR_cut=10,check_zero_drift=False,flag_threshold=3
     A_table_list = []
     B_table_list = []
 
-    for i,flat_file in enumerate(file_list):
+    for i,flat_file in enumerate(dat_file_list):
         kk = 1   # counter for table name.
         ll = 1   # counter for table name.
 
@@ -255,7 +255,7 @@ def find_candidates(file_list,SNR_cut=10,check_zero_drift=False,flag_threshold=3
 #            continue
 
     print 'Finding all candidates for this A-B set.'
-    AAA_table,flag_level = search_hits(A_table_list,B_table,SNR_cut=SNR_cut,check_zero_drift=check_zero_drift)
+    AAA_table,filter_level = search_hits(A_table_list,B_table,SNR_cut=SNR_cut,check_zero_drift=check_zero_drift)
 
     if len(AAA_table) > 0:
         print 'Found: %2.2f'%(len(AAA_table)/3.)
@@ -265,7 +265,7 @@ def find_candidates(file_list,SNR_cut=10,check_zero_drift=False,flag_threshold=3
     t1 = time.time()
     print 'Search time: %.2f sec' % ((t1-t0))
 
-    if flag_level < flag_threshold:
+    if filter_level < filter_threshold:
         return pd.DataFrame({'This is an empty Data Frame' : []})
     else:
         return AAA_table
@@ -304,50 +304,52 @@ def main():
     p.set_usage('python find_candidates.py [options]')
 #    p.add_option('-o', '--out_dir', dest='out_dir', type='str', default='', help='Location for output files. Default: local dir. ')
     p.add_option('-n', '--number_files', dest='n_files', type='int', default=6, help='Number of files to check for candidates, standard is 6, for an ABACAD config.')
-    p.add_option('-l', '--list', dest='file_list', type='str', default='out_dats.lst', help='List of files to run (without the path).')
+    p.add_option('-l', '--list_dats', dest='dat_file_list', type='str', default='out_dats.lst', help='List of .dat files to run (without the path).')
+    p.add_option('-L', '--list_fils', dest='fil_file_list', type='str', default='../processed_targets.lst', help='List of .fil files to run (with the path).')
     p.add_option('-p', '--plotting', dest='plotting', action='store_false', default=True, help='Boolean for plotting. Default True, use for False.')
     p.add_option('-s', '--saving', dest='saving', action='store_true', default=False, help='Boolean for saving plot and csv data. Default False, use for True.')
     p.add_option('-r', '--SNR_cut', dest='SNR_cut', type='int', default=10, help='SNR cut, default SNR=10.')
     p.add_option('-z', '--check_zero_drift', dest='check_zero_drift', action='store_true', default=False, help='Boolean for not ignoring zero drift hits, if True it will search them if only present in the ON. Default False, use for True.')
-    p.add_option('-f', '--flag_threshold', dest='flag_threshold', type='int', default=3, help='Flag_threshold allows the return of a table of candidates with hits at different levels of filtering.')
+    p.add_option('-f', '--filter_threshold', dest='filter_threshold', type='int', default=3, help='Filter_threshold allows the return of a table of candidates with hits at different levels of filtering.')
 
     opts, args = p.parse_args(sys.argv[1:])
 
 #    out_dir = opts.out_dir
     n_files = opts.n_files
-    file_list = opts.file_list
+    dat_file_list = opts.dat_file_list
+    fil_file_list = opts.fil_file_list
     plotting = opts.plotting
     saving = opts.saving
     SNR_cut = opts.SNR_cut
     check_zero_drift = opts.check_zero_drift
-    flag_threshold = opts.flag_threshold
+    filter_threshold = opts.filter_threshold
 
     #---------------------
 
     local_host = socket.gethostname()
 
     #Opening list of files
-    file_list = open(file_list).readlines()
-    file_list = [files.replace('\n','') for files in file_list]
+    dat_file_list = open(dat_file_list).readlines()
+    dat_file_list = [files.replace('\n','') for files in dat_file_list]
 
     #Check
-    if len(file_list) < n_files:
-        print "It seems len(file_list) < n_files assuming len(file_list) = n_files."
-        n_files = len(file_list)
+    if len(dat_file_list) < n_files:
+        print "It seems len(dat_file_list) < n_files assuming len(dat_file_list) = n_files."
+        n_files = len(dat_file_list)
 
     #---------------------
     #Finding candidates.
 
     #Looping over n_files chunks.
-    for i in range(len(file_list)/n_files):
+    for i in range(len(dat_file_list)/n_files):
 
-        file_sublist = file_list[n_files*i:n_files*(i+1)]
+        file_sublist = dat_file_list[n_files*i:n_files*(i+1)]
 
-        candidates = find_candidates(file_sublist,SNR_cut=SNR_cut,check_zero_drift=check_zero_drift,flag_threshold=flag_threshold)
+        candidates = find_candidates(file_sublist,SNR_cut=SNR_cut,check_zero_drift=check_zero_drift,filter_threshold=filter_threshold)
 
         if not candidates.empty and plotting:
 
-            filenames = open('../processed_targets.lst').readlines()
+            filenames = open(fil_file_list).readlines()
             filenames = [files.replace('\n','') for files in filenames]
 
             candidate_index = candidates['FreqEnd'].index.unique()

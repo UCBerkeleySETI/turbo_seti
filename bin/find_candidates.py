@@ -27,7 +27,7 @@ pd.options.mode.chained_assignment = None  # To remove pandas warnings: default=
 
 #------
 #Hardcoded values
-MAX_DRIFT_RATE = 2.0
+MAX_DRIFT_RATE = 2.0    # NOTE: these two values needs to be updated.
 OBS_LENGHT = 300.
 #------
 
@@ -36,7 +36,7 @@ def make_table(filename,init=False):
     '''
 
     if init:
-        columns = ['FileID','Source','MJD','RA','DEC','TopHitNum','DriftRate', 'SNR', 'Freq', 'ChanIndx', 'FreqStart', 'FreqEnd', 'CoarseChanNum', 'FullNumHitsInRange','status','Hit_ID','ON_in_range','RFI_in_range']
+        columns = ['FileID','Source','MJD','RA','DEC', 'DELTAT','DELTAF','TopHitNum','DriftRate', 'SNR', 'Freq', 'ChanIndx', 'FreqStart', 'FreqEnd', 'CoarseChanNum', 'FullNumHitsInRange','status','Hit_ID','ON_in_range','RFI_in_range']
         df_data = pd.DataFrame(columns=columns)
 
     else:
@@ -51,6 +51,9 @@ def make_table(filename,init=False):
         MJD = hits[4].strip().split('\t')[0].split(':')[-1].strip()
         RA = hits[4].strip().split('\t')[1].split(':')[-1].strip()
         DEC = hits[4].strip().split('\t')[2].split(':')[-1].strip()
+
+        DELTAT = hits[5].strip().split('\t')[0].split(':')[-1].strip()   # s
+        DELTAF = hits[5].strip().split('\t')[1].split(':')[-1].strip()   # Hz
 
         #Info from individual Hits
         all_hits = [hit.strip().split('\t') for hit in hits[9:]]
@@ -85,6 +88,8 @@ def make_table(filename,init=False):
         df_data['MJD'] = MJD
         df_data['RA'] = RA
         df_data['DEC'] = DEC
+        df_data['DELTAT'] = DELTAT
+        df_data['DELTAF'] = DELTAF
 
         #Adding extra columns.
         df_data['Hit_ID'] = ''
@@ -102,6 +107,9 @@ def calc_freq_range(hit,delta_t=0,max_dr=True,follow=False):
         drift_rate = MAX_DRIFT_RATE
     else:
         drift_rate = hit['DriftRate']
+
+    if drift_rate == 0.0:
+        drift_rate = float(hit['DELTAF'])/float(hit['DELTAT'])
 
     if follow:
         freq = hit['Freq'] + drift_rate*(delta_t)/1000.
@@ -133,11 +141,9 @@ def follow_candidate(hit,A_table,get_count=True):
     else:
         return new_A_table
 
-def search_hits(A_table_list,B_table, SNR_cut = 15, check_zero_drift=False):
+def search_hits(A_table,B_table, SNR_cut = 15, check_zero_drift=False):
     '''Rejects hits based on some logic.
     '''
-
-    A_table = pd.concat(A_table_list)
 
     #Removing non-drift signals
     if check_zero_drift:
@@ -223,31 +229,29 @@ def find_candidates(dat_file_list,SNR_cut=10,check_zero_drift=False,filter_thres
 
         # Checking if on A or B observation.
         if i%2:
-
             Bi_table=make_table(flat_file)
             Bi_table['status'] = 'B%i_table'%ll
-            print 'Ther are %i hits on this file.'%len(Bi_table)
-
+            print 'There are %i hits on this file.'%len(Bi_table)
             #---------------------------
             #Grouping all hits per obs set.
             B_table_list.append(Bi_table)
-
             ll+=1
-
         else:
             Ai_table=make_table(flat_file)
             Ai_table['status'] = 'A%i_table'%kk
-            print 'Ther are %i hits on this file.'%len(Ai_table)
-
+            print 'There are %i hits on this file.'%len(Ai_table)
             #---------------------------
             #Grouping all hits per obs set.
             A_table_list.append(Ai_table)
-
             kk+=1
 
     #Concatenating
     A_table = pd.concat(A_table_list)
     B_table = pd.concat(B_table_list)
+
+    #Calculating delta_t, to follow the signal.
+    ref_time = float(A_table[A_table['status'] == 'A1_table']['MJD'].unique()[0])
+    A_table['delta_t'] = A_table['MJD'].apply(lambda x: (float(x) - ref_time)*3600*2)
 
     #To save all the hits. Uncomment these 3 lines.
 #             all_candidates_list.append(A_table)  This blows up the mem. Caution.
@@ -255,7 +259,7 @@ def find_candidates(dat_file_list,SNR_cut=10,check_zero_drift=False,filter_thres
 #            continue
 
     print 'Finding all candidates for this A-B set.'
-    AAA_table,filter_level = search_hits(A_table_list,B_table,SNR_cut=SNR_cut,check_zero_drift=check_zero_drift)
+    AAA_table,filter_level = search_hits(A_table,B_table,SNR_cut=SNR_cut,check_zero_drift=check_zero_drift)
 
     if len(AAA_table) > 0:
         print 'Found: %2.2f'%(len(AAA_table)/3.)
@@ -364,7 +368,7 @@ def main():
                     Freq_Start = candidates['FreqStart'][ii]
                     Freq_End = candidates['FreqEnd'][ii]
 
-                plot_candidates.make_waterfall_plots(filenames[n_files*i:n_files*(i+1)],candidates['Source'].unique()[0],Freq_Start,Freq_End,ion=True,save_pdf_plot=saving,saving_fig=saving,local_host=local_host)
+                plot_candidates.make_waterfall_plots(filenames[n_files*i:n_files*(i+1)],candidates['Source'].unique()[0],Freq_Start,Freq_End,save_pdf_plot=saving,saving_fig=saving,local_host=local_host)
 
         #Saving csv
         if not candidates.empty and saving:

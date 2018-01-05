@@ -310,7 +310,7 @@ def main():
     p.add_option('-n', '--number_files', dest='n_files', type='int', default=6, help='Number of files to check for candidates, standard is 6, for an ABACAD config.')
     p.add_option('-l', '--list_dats', dest='dat_file_list', type='str', default='out_dats.lst', help='List of .dat files to run (without the path).')
     p.add_option('-L', '--list_fils', dest='fil_file_list', type='str', default='../processed_targets.lst', help='List of .fil files to run (with the path).')
-    p.add_option('-p', '--plotting', dest='plotting', action='store_false', default=True, help='Boolean for plotting. Default True, use for False.')
+    p.add_option('-p', '--plotting', dest='plotting', action='store_true', default=False, help='Boolean for plotting. Default False, use for True.')
     p.add_option('-s', '--saving', dest='saving', action='store_true', default=False, help='Boolean for saving plot and csv data. Default False, use for True.')
     p.add_option('-r', '--SNR_cut', dest='SNR_cut', type='int', default=10, help='SNR cut, default SNR=10.')
     p.add_option('-z', '--check_zero_drift', dest='check_zero_drift', action='store_true', default=False, help='Boolean for not ignoring zero drift hits, if True it will search them if only present in the ON. Default False, use for True.')
@@ -351,9 +351,13 @@ def main():
 
         candidates = find_candidates(file_sublist,SNR_cut=SNR_cut,check_zero_drift=check_zero_drift,filter_threshold=filter_threshold)
 
-        if not candidates.empty and plotting:
+        #Saving csv
+        if not candidates.empty and saving:
+            candidates.to_csv('Candidates_%s.t%.0f.csv'%(candidates['Source'].unique()[0],float(candidates['MJD'].unique()[0])))
 
-            filenames = open(fil_file_list).readlines()
+        if not candidates.empty and plotting:
+            filenames = open(fil_file_list)
+            filenames = filenames.readlines()
             filenames = [files.replace('\n','') for files in filenames]
 
             candidate_index = candidates['FreqEnd'].index.unique()
@@ -370,9 +374,6 @@ def main():
 
                 plot_candidates.make_waterfall_plots(filenames[n_files*i:n_files*(i+1)],candidates['Source'].unique()[0],Freq_Start,Freq_End,save_pdf_plot=saving,saving_fig=saving,local_host=local_host)
 
-        #Saving csv
-        if not candidates.empty and saving:
-            candidates.to_csv('Candidates_%s.t%.0f.csv'%(candidates['Source'].unique()[0],float(candidates['MJD'].unique()[0])))
 
 
 if __name__ == "__main__":

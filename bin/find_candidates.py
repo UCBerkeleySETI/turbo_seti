@@ -194,7 +194,10 @@ def search_hits(A_table,B_table, SNR_cut = 15, check_zero_drift=False):
     #Create list of candidates.
     AAA_table_list = []
 
+#    A1i_table = AA_table
+
     for hit_index, hit in AA_table.iterrows():
+#        A1i_table['Hit_ID'][hit_index] = hit['Source']+'_'+str(hit_index)
         A1i_table = follow_candidate(hit,A1nB_table,get_count=False)
         A1i_table['Hit_ID'] = hit['Source']+'_'+str(hit_index)
         A2i_table = follow_candidate(hit,A2nB_table,get_count=False)
@@ -265,7 +268,7 @@ def find_candidates(dat_file_list,SNR_cut=10,check_zero_drift=False,filter_thres
 
     #Calculating delta_t, to follow the signal.
     ref_time = float(A_table[A_table['status'] == 'A1_table']['MJD'].unique()[0])
-    A_table['delta_t'] = A_table['MJD'].apply(lambda x: (float(x) - ref_time)*3600*2)
+    A_table['delta_t'] = A_table['MJD'].apply(lambda x: (float(x) - ref_time)*3600*24)
 
     #To save all the hits. Uncomment these 3 lines.
 #             all_candidates_list.append(A_table)  This blows up the mem. Caution.
@@ -368,14 +371,16 @@ def main():
         if not candidates.empty and saving:
             candidates.to_csv('Candidates_%s.t%.0f.csv'%(candidates['Source'].unique()[0],float(candidates['MJD'].unique()[0])))
 
+        #Plotting individual candidates
         if not candidates.empty and plotting:
             filenames = open(fil_file_list)
             filenames = filenames.readlines()
             filenames = [files.replace('\n','') for files in filenames]
 
-            candidate_index = candidates['FreqEnd'].index.unique()
+            #Choosing only a few candidates when having too many.
+            A1_candidates = candidates[candidates['status'] == 'A1_table'].sort_values(by='SNR')
+            candidate_index = A1_candidates['FreqEnd'].index.unique()[-5:]
 
-            #Plotting individual candidates
             for ii in candidate_index:
 
                 try:

@@ -58,29 +58,35 @@ def make_table(filename,init=False):
         #Info from individual Hits
         all_hits = [hit.strip().split('\t') for hit in hits[9:]]
 
-        TopHitNum = zip(*all_hits)[0]
-        DriftRate = zip(*all_hits)[1]
-        SNR = zip(*all_hits)[2]
-        Freq = zip(*all_hits)[3]
-        ChanIndx = zip(*all_hits)[5]
-        FreqStart = zip(*all_hits)[6]
-        FreqEnd = zip(*all_hits)[7]
-        CoarseChanNum = zip(*all_hits)[10]
-        FullNumHitsInRange = zip(*all_hits)[11]
+        if all_hits:
 
-        data = {'TopHitNum':TopHitNum,
-                'DriftRate':[float(df) for df in DriftRate],
-                'SNR':[float(ss) for ss in SNR],
-                'Freq':[float(ff) for ff in Freq],
-                'ChanIndx':ChanIndx,
-                'FreqStart':FreqStart,
-                'FreqEnd':FreqEnd,
-                'CoarseChanNum':CoarseChanNum,
-                'FullNumHitsInRange':FullNumHitsInRange
-                }
+            TopHitNum = zip(*all_hits)[0]
+            DriftRate = [float(df) for df in zip(*all_hits)[1]]
+            SNR = [float(ss) for ss in zip(*all_hits)[2]]
+            Freq = [float(ff) for ff in zip(*all_hits)[3]]
+            ChanIndx = zip(*all_hits)[5]
+            FreqStart = zip(*all_hits)[6]
+            FreqEnd = zip(*all_hits)[7]
+            CoarseChanNum = zip(*all_hits)[10]
+            FullNumHitsInRange = zip(*all_hits)[11]
 
-        df_data = pd.DataFrame(data)
-        df_data = df_data.apply(pd.to_numeric)
+            data = {'TopHitNum':TopHitNum,
+                    'DriftRate':DriftRate,
+                    'SNR':SNR,
+                    'Freq':Freq,
+                    'ChanIndx':ChanIndx,
+                    'FreqStart':FreqStart,
+                    'FreqEnd':FreqEnd,
+                    'CoarseChanNum':CoarseChanNum,
+                    'FullNumHitsInRange':FullNumHitsInRange
+                    }
+
+            #Creating dataframe from data
+            df_data = pd.DataFrame(data)
+            df_data = df_data.apply(pd.to_numeric)
+
+        else:
+            df_data = pd.DataFrame()
 
         #Adding header information.
         df_data['FileID'] = FileID
@@ -240,14 +246,22 @@ def find_candidates(dat_file_list,SNR_cut=10,check_zero_drift=False,filter_thres
             Ai_table=make_table(flat_file)
             Ai_table['status'] = 'A%i_table'%kk
             print 'There are %i hits on this file.'%len(Ai_table)
+
+            if not len(Ai_table) and kk == 1:
+                print 'Exiting, since A1_table is empty.'
+                t1 = time.time()
+                print 'Search time: %.2f sec' % ((t1-t0))
+                print '------   o   -------'
+                return pd.DataFrame({'This is an empty Data Frame' : []})
+
             #---------------------------
             #Grouping all hits per obs set.
             A_table_list.append(Ai_table)
             kk+=1
 
     #Concatenating
-    A_table = pd.concat(A_table_list)
-    B_table = pd.concat(B_table_list)
+    A_table = pd.concat(A_table_list,ignore_index=True)
+    B_table = pd.concat(B_table_list,ignore_index=True)
 
     #Calculating delta_t, to follow the signal.
     ref_time = float(A_table[A_table['status'] == 'A1_table']['MJD'].unique()[0])
@@ -264,10 +278,9 @@ def find_candidates(dat_file_list,SNR_cut=10,check_zero_drift=False,filter_thres
     if len(AAA_table) > 0:
         print 'Found: %2.2f'%(len(AAA_table)/3.)
 
-    print '------   o   -------'
-
     t1 = time.time()
     print 'Search time: %.2f sec' % ((t1-t0))
+    print '------   o   -------'
 
     if filter_level < filter_threshold:
         return pd.DataFrame({'This is an empty Data Frame' : []})

@@ -101,10 +101,19 @@ def make_waterfall_plots(filenames_list,target,f_start,f_stop,ion = False,epoch=
     n_plots = len(filenames_list)
     fig = plt.subplots(n_plots, sharex=True, sharey=True,figsize=(10, 2*n_plots))
 
+    #finding plotting values range
     fil = Filterbank(filenames_list[0], f_start=f_start, f_stop=f_stop)
-    A1_avg = np.median(fil.data)
-    A1_max = fil.data.max()
-    A1_std = np.std(fil.data)
+    plot_f, plot_data = fil.grab_data(f_start, f_stop, 0)
+    dec_fac_x, dec_fac_y = 1, 1
+    if plot_data.shape[0] > MAX_IMSHOW_POINTS[0]:
+        dec_fac_x = plot_data.shape[0] / MAX_IMSHOW_POINTS[0]
+    if plot_data.shape[1] > MAX_IMSHOW_POINTS[1]:
+        dec_fac_y =  plot_data.shape[1] /  MAX_IMSHOW_POINTS[1]
+    plot_data = rebin(plot_data, dec_fac_x, dec_fac_y)
+
+    A1_avg = np.median(plot_data)
+    A1_max = plot_data.max()
+    A1_std = np.std(plot_data)
 
     if not epoch:
         epoch = fil.header['tstart']

@@ -27,7 +27,7 @@ setup(
     author="Emilio Enriquez",
     author_email="e.enriquez@berkeley.edu",
     description="Analysis tool for the search of narrow band drifting signals in filterbank data",
-    license="PLEASECHANGE",
+    license="MIT License",
     keywords="astronomy",
     url="https://github.com/UCBerkeleySETI/turbo_seti",
     classifiers=[

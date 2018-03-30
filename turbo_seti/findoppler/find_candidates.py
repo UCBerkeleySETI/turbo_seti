@@ -161,16 +161,16 @@ def search_hits(A_table,B_table, SNR_cut = 15, check_zero_drift=False):
     Asc_table = And0_table[And0_table['SNR']> SNR_cut]
     if not (len(Asc_table) > 0):
         print 'NOTE: Found no hits above the SNR cut.'
-        return Asc_table, 0
+        return And0_table, 0
     else:
         print 'NOTE: Found hits above the SNR cut.'
 
     # Finding RFI within a freq range by comparing ON to OFF obs.
     Asc_table['RFI_in_range'] = Asc_table.apply(lambda hit: len(B_table[((B_table['Freq'] > calc_freq_range(hit)[0]) & (B_table['Freq'] < calc_freq_range(hit)[1]))]),axis=1)
     AnB_table = Asc_table[Asc_table['RFI_in_range'] == 0]
-    if not (len(AnB_table) > 2):
+    if not (len(AnB_table) > 1):
         print 'NOTE: Found no hits present only on the A observations.'
-        return AnB_table, 1
+        return Asc_table, 1
     else:
         print 'NOTE: Found hits present only on the A observations.'
 

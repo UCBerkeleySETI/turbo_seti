@@ -1,20 +1,21 @@
 #!/usr/bin/env python
 
+
+import .data_handdler
+import .file_writers
+import .taylor_tree as tt
+from .helper_functions import chan_freq
 import numpy as np
 import sys
 import os
-from helper_functions import chan_freq
-import data_handdler
-import file_writers
 import pyximport
 pyximport.install(setup_args={"include_dirs":np.get_include()}, reload_support=True)
-import taylor_tree as tt
 import logging
 logger = logging.getLogger(__name__)
 import gc   #Garbage collector.
 
 import cProfile
-import pdb;# pdb.set_trace()
+#import pdb;# pdb.set_trace()
 
 class max_vals:
     def __init__(self):

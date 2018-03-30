@@ -3,7 +3,7 @@
 import sys
 import os
 import logging
-import dedoppler_bones
+import dedopp
 import numpy as np
 import time
 from optparse import OptionParser
@@ -68,7 +68,7 @@ def main():
 
         logging.basicConfig(format=format,stream=stream,level = level_log)
 
-        mydedopp = dedoppler_bones.dedopp.DedopplerTask(filename, max_drift = opts.max_drift, snr = opts.snr, out_dir = opts.out_dir,coarse_chans = opts.coarse_chans, obs_info=obs_info)
+        mydedopp = dedopp.DedopplerTask(filename, max_drift = opts.max_drift, snr = opts.snr, out_dir = opts.out_dir,coarse_chans = opts.coarse_chans, obs_info=obs_info)
         mydedopp.search()
 ##EE-benshmark    cProfile.runctx('mydedopp.search()',globals(),locals(),filename='profile_search_M%2.1f_S%2.1f_t%i'%(opts.max_drift,opts.snr,int(os.times()[-1])))
 

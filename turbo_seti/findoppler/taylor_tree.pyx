@@ -1,13 +1,11 @@
 """This is a function to Taylor-tree-sum a data stream. It assumes that
 the arrangement of data stream is, all points in first spectra, all
 points in second spectra, etc...  Data are summed across time.
-         Original version: R. Ramachandran, 07-Nov-97, nfra.
-         Modified 2011 A. Siemion float/64 bit addressing
+         Original algorithm: R. Ramachandran, 07-Nov-97, nfra.
+         Modified 2011 A. Siemion float/64 bit addressing (C-code)
          Modified 2014 H. Chen python version
          Modified 1-Feb-2016 E. Enriquez + P.Schellart cython version
-            - This speeds up the code ~1k times from the python version.
 """
-
 
 import numpy as np
 cimport numpy as np

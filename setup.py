@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-__version__ = "0.0.1"
+__version__ = "0.7"
 
 
 install_requires = [
@@ -10,12 +10,13 @@ install_requires = [
     'blimpy',
 ]
 
-scripts = [
-    'scripts/find_candidates.py',
-    'scripts/plot_candidates.py',
-    'scripts/seti_event.py',
-    'scripts/taylor_tree.pyx',
-]
+entry_points = {
+    'console_scripts' :
+        ['turboSETI = turbo_seti.findoppler.seti_event:main',
+         'find_candidates = turbo_seti.findoppler.find_candidates:main',
+         'plot_candidates = turbo_seti.findoppler.plot_candidates:main',
+     ]
+}
 
 setup(
     name="turbo_seti",

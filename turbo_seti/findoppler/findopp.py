@@ -12,6 +12,7 @@ from .data_handdler import DATAHandle
 from .file_writers import FileWriter, LogWriter
 from .helper_functions import chan_freq
 
+#For importing cython code
 import pyximport
 pyximport.install(setup_args={"include_dirs":np.get_include()}, reload_support=True)
 from . import taylor_tree as tt
@@ -35,7 +36,7 @@ class hist_vals:
         self.histdrift = None
         self.histid = None
 
-class DedopplerTask:
+class FinDoppler:
     """ """
     def __init__(self, datafile, max_drift, min_drift = 0, snr = 25.0, out_dir = './', coarse_chans = None, obs_info = None, flagging = None):
         self.min_drift = min_drift
@@ -52,7 +53,7 @@ class DedopplerTask:
                 raise ValueError('The coarse channel(s) given (%i,%i) is outside the possible range (0,%i) '%(coarse_chans[0],coarse_chans[-1]),len(self.data_handle.data_list))
             self.data_handle.data_list = self.data_handle.data_list[int(coarse_chans[0]):int(coarse_chans[-1])]
         logger.info(self.data_handle.get_info())
-        logger.info("A new Dedoppler Task instance created!")
+        logger.info("A new FinDoppler instance created!")
         self.obs_info = obs_info
         self.status = True
         self.flagging = flagging
@@ -117,16 +118,16 @@ class DedopplerTask:
             median_flag = np.array([0])
 
 
-        # allocate array for dedopplering
-        # init dedopplering array to zero
-        tree_dedoppler = np.zeros(tsteps * tdwidth,dtype=np.float64) + median_flag
+        # allocate array for findopplering
+        # init findopplering array to zero
+        tree_findoppler = np.zeros(tsteps * tdwidth,dtype=np.float64) + median_flag
 
         # allocate array for holding original
         # Allocates array in a fast way (without initialize)
-        tree_dedoppler_original = np.empty_like(tree_dedoppler)
+        tree_findoppler_original = np.empty_like(tree_findoppler)
 
         #/* allocate array for negative doppler rates */
-        tree_dedoppler_flip = np.empty_like(tree_dedoppler)
+        tree_findoppler_flip = np.empty_like(tree_findoppler)
 
         #/* build index mask for in-place tree doppler correction */
         ibrev = np.zeros(tsteps, dtype=np.int32)
@@ -180,20 +181,20 @@ class DedopplerTask:
             #----------------------------------------------------------------------
             if drift_block <= 0:
 
-                #Populates the dedoppler tree with the spectra
-                populate_tree(spectra,tree_dedoppler,nframes,tdwidth,tsteps,fftlen,shoulder_size,roll=drift_block,reverse=1)
+                #Populates the findoppler tree with the spectra
+                populate_tree(spectra,tree_findoppler,nframes,tdwidth,tsteps,fftlen,shoulder_size,roll=drift_block,reverse=1)
 
                 #/* populate original array */
-                np.copyto(tree_dedoppler_original, tree_dedoppler)
+                np.copyto(tree_findoppler_original, tree_findoppler)
 
                 #/* populate neg doppler array */
-                np.copyto(tree_dedoppler_flip, tree_dedoppler_original)
+                np.copyto(tree_findoppler_flip, tree_findoppler_original)
 
                 #/* Flip matrix across X dimension to search negative doppler drift rates */
-                FlipX(tree_dedoppler_flip, tdwidth, tsteps)
+                FlipX(tree_findoppler_flip, tdwidth, tsteps)
 
                 logger.info("Doppler correcting reverse...")
-                tt.taylor_flt(tree_dedoppler_flip, tsteps * tdwidth, tsteps)
+                tt.taylor_flt(tree_findoppler_flip, tsteps * tdwidth, tsteps)
                 logger.debug( "done...")
 
                 complete_drift_range = data_obj.drift_rate_resolution*np.array(range(-1*tsteps_valid*(np.abs(drift_block)+1)+1,-1*tsteps_valid*(np.abs(drift_block))+1))
@@ -202,7 +203,7 @@ class DedopplerTask:
                     indx  = ibrev[drift_indexes[::-1][(complete_drift_range<self.min_drift) & (complete_drift_range>=-1*self.max_drift)][k]] * tdwidth
 
                     #/* SEARCH NEGATIVE DRIFT RATES */
-                    spectrum = tree_dedoppler_flip[indx: indx + tdwidth]
+                    spectrum = tree_findoppler_flip[indx: indx + tdwidth]
 
                     #/* normalize */
                     spectrum -= self.the_mean_val
@@ -229,19 +230,19 @@ class DedopplerTask:
             #----------------------------------------------------------------------
             if drift_block >= 0:
 
-                #Populates the dedoppler tree with the spectra
-                populate_tree(spectra,tree_dedoppler,nframes,tdwidth,tsteps,fftlen,shoulder_size,roll=drift_block,reverse=1)
+                #Populates the findoppler tree with the spectra
+                populate_tree(spectra,tree_findoppler,nframes,tdwidth,tsteps,fftlen,shoulder_size,roll=drift_block,reverse=1)
 
                 #/* populate original array */
-                np.copyto(tree_dedoppler_original, tree_dedoppler)
+                np.copyto(tree_findoppler_original, tree_findoppler)
 
                 logger.info("Doppler correcting forward...")
-                tt.taylor_flt(tree_dedoppler, tsteps * tdwidth, tsteps)
+                tt.taylor_flt(tree_findoppler, tsteps * tdwidth, tsteps)
                 logger.debug( "done...")
-                if (tree_dedoppler == tree_dedoppler_original).all():
+                if (tree_findoppler == tree_findoppler_original).all():
                      logger.error("taylor_flt has no effect?")
                 else:
-                     logger.debug("tree_dedoppler changed")
+                     logger.debug("tree_findoppler changed")
 
                 ##EE: Calculates the range of drift rates for a full drift block.
                 complete_drift_range = data_obj.drift_rate_resolution*np.array(range(tsteps_valid*(drift_block),tsteps_valid*(drift_block +1)))
@@ -250,7 +251,7 @@ class DedopplerTask:
 
                     indx  = (ibrev[drift_indexes[k]] * tdwidth)
                     #/* SEARCH POSITIVE DRIFT RATES */
-                    spectrum = tree_dedoppler[indx: indx+tdwidth]
+                    spectrum = tree_findoppler[indx: indx+tdwidth]
 
                     #/* normalize */
                     spectrum -= self.the_mean_val
@@ -277,14 +278,14 @@ class DedopplerTask:
         # Writing the top hits to file.
 
 #         self.filewriter.report_coarse_channel(data_obj.header,max_val.total_n_candi)
-        self.filewriter = tophitsearch(tree_dedoppler_original, max_val, tsteps, nframes, data_obj.header, tdwidth, fftlen, self.max_drift,data_obj.obs_length, out_dir = self.out_dir, logwriter=self.logwriter, filewriter=self.filewriter, obs_info = self.obs_info)
+        self.filewriter = tophitsearch(tree_findoppler_original, max_val, tsteps, nframes, data_obj.header, tdwidth, fftlen, self.max_drift,data_obj.obs_length, out_dir = self.out_dir, logwriter=self.logwriter, filewriter=self.filewriter, obs_info = self.obs_info)
         logger.info("Total number of candidates for coarse channel "+ str(data_obj.header['coarse_chan']) +" is: %i"%max_val.total_n_candi)
 
 
 #  ======================================================================  #
 
-def populate_tree(spectra,tree_dedoppler,nframes,tdwidth,tsteps,fftlen,shoulder_size,roll=0,reverse=0):
-    """ This script populates the dedoppler tree with the spectra.
+def populate_tree(spectra,tree_findoppler,nframes,tdwidth,tsteps,fftlen,shoulder_size,roll=0,reverse=0):
+    """ This script populates the findoppler tree with the spectra.
         It creates two "shoulders" (each region of tsteps*(shoulder_size/2) in size) to avoid "edge" issues.
         It uses np.roll() for drift-rate blocks higher than 1.
     """
@@ -302,19 +303,19 @@ def populate_tree(spectra,tree_dedoppler,nframes,tdwidth,tsteps,fftlen,shoulder_
         sind = tdwidth*i + tsteps*shoulder_size/2
         cplen = fftlen
 
-        ##EE copy spectra into tree_dedoppler, leaving two regions in each side blanck (each region of tsteps*(shoulder_size/2) in size).
-#        np.copyto(tree_dedoppler[sind: sind + cplen], spectra[i])
-        # Copy spectra into tree_dedoppler, with rolling.
-        np.copyto(tree_dedoppler[sind: sind + cplen], np.roll(spectra[i],roll*i*direction))
+        ##EE copy spectra into tree_findoppler, leaving two regions in each side blanck (each region of tsteps*(shoulder_size/2) in size).
+#        np.copyto(tree_findoppler[sind: sind + cplen], spectra[i])
+        # Copy spectra into tree_findoppler, with rolling.
+        np.copyto(tree_findoppler[sind: sind + cplen], np.roll(spectra[i],roll*i*direction))
 
 #EE code below will be replaced, since I think is better to use the median of the data as "flag" than to add other data into the shoulders.
 
-#         ##EE loads the end part of the current spectrum into the left hand side black region in tree_dedoppler (comment below says "next spectra" but for that need i+1...bug?)
+#         ##EE loads the end part of the current spectrum into the left hand side black region in tree_findoppler (comment below says "next spectra" but for that need i+1...bug?)
          #//load end of current spectra into left hand side of next spectra
         sind = i * tdwidth
-        np.copyto(tree_dedoppler[sind: sind + tsteps*shoulder_size/2], spectra[i, fftlen-(tsteps*shoulder_size/2):fftlen])
+        np.copyto(tree_findoppler[sind: sind + tsteps*shoulder_size/2], spectra[i, fftlen-(tsteps*shoulder_size/2):fftlen])
 
-    return tree_dedoppler
+    return tree_findoppler
 
 #  ======================================================================  #
 #  This function bit-reverses the given value "inval" with the number of   #
@@ -426,13 +427,13 @@ def candsearch(spectrum, specstart, specend, candthresh, drift_rate, header, fft
 
     return j, max_val
 
-def tophitsearch(tree_dedoppler_original, max_val, tsteps, nframes, header, tdwidth, fftlen,max_drift,obs_length, out_dir='', logwriter=None, filewriter=None,obs_info=None):
+def tophitsearch(tree_findoppler_original, max_val, tsteps, nframes, header, tdwidth, fftlen,max_drift,obs_length, out_dir='', logwriter=None, filewriter=None,obs_info=None):
     '''This finds the candidate with largest SNR within 2*tsteps frequency channels.
     '''
 
     maxsnr = max_val.maxsnr
-    logger.debug("original matrix size: %d\t(%d, %d)"%(len(tree_dedoppler_original), tsteps, tdwidth))
-    tree_orig = tree_dedoppler_original.reshape((tsteps, tdwidth))
+    logger.debug("original matrix size: %d\t(%d, %d)"%(len(tree_findoppler_original), tsteps, tdwidth))
+    tree_orig = tree_findoppler_original.reshape((tsteps, tdwidth))
     logger.debug("tree_orig shape: %s"%str(tree_orig.shape))
 
     for i in (maxsnr > 0).nonzero()[0]:

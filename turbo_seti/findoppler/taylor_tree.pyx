@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """This is a function to Taylor-tree-sum a data stream. It assumes that
 the arrangement of data stream is, all points in first spectra, all
 points in second spectra, etc...  Data are summed across time.

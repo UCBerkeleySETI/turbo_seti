@@ -9,7 +9,9 @@ from blimpy import Waterfall
 import logging
 logger = logging.getLogger(__name__)
 
-import pdb;# pdb.set_trace()
+#For debugging
+#import cProfile
+#import pdb;# pdb.set_trace()
 
 SIZE_LIM = 256.0   # File size limit in MB. If larger then make a split mapping.
 

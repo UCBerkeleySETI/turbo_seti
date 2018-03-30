@@ -1,13 +1,17 @@
 #!/usr/bin/env python
 
+from .findopp import FinDoppler
+
 import sys
 import os
 import logging
-import dedopp
 import numpy as np
 import time
 from optparse import OptionParser
-import cProfile
+
+#For debugging
+#import cProfile
+#import pdb;# pdb.set_trace()
 
 def make_list(option, opt_str, value, parser):
     setattr(parser.values, option.dest, value.replace('[','').replace(']','').split(','))
@@ -68,16 +72,16 @@ def main():
 
         logging.basicConfig(format=format,stream=stream,level = level_log)
 
-        mydedopp = dedopp.DedopplerTask(filename, max_drift = opts.max_drift, snr = opts.snr, out_dir = opts.out_dir,coarse_chans = opts.coarse_chans, obs_info=obs_info)
-        mydedopp.search()
-##EE-benshmark    cProfile.runctx('mydedopp.search()',globals(),locals(),filename='profile_search_M%2.1f_S%2.1f_t%i'%(opts.max_drift,opts.snr,int(os.times()[-1])))
+        find_seti_event = FinDoppler(filename, max_drift = opts.max_drift, snr = opts.snr, out_dir = opts.out_dir,coarse_chans = opts.coarse_chans, obs_info=obs_info)
+        find_seti_event.search()
+##EE-benshmark    cProfile.runctx('find_seti_event.search()',globals(),locals(),filename='profile_search_M%2.1f_S%2.1f_t%i'%(opts.max_drift,opts.snr,int(os.times()[-1])))
 
         t1 = time.time()
         print 'Search time: %5.2f min' % ((t1-t0)/60.)
 
     except Exception as e:
         logging.exception(e)
-        raise Exception(1,'[turbo_SETI] Some issue with dedoppler.',e)
+        raise Exception(1,'[turbo_SETI] Some issue with FinDoppler.',e)
 
 if __name__=='__main__':
     main()

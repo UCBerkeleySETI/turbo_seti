@@ -118,7 +118,7 @@ class DATAH5:
         It creates other atributes related to the dedoppler search (load_drift_indexes).
     '''
 
-    def __init__(self, filename, size_limit = SIZE_LIM,f_start=None, f_stop=None,t_start=None, t_stop=None,coarse_chan=None,tn_coarse_chan=None):
+    def __init__(self, filename, size_limit = SIZE_LIM,f_start=None, f_stop=None,t_start=None, t_stop=None,coarse_chan=1,tn_coarse_chan=None):
         self.filename = filename
         self.closed = False
         self.f_start = f_start
@@ -136,7 +136,10 @@ class DATAH5:
 
         #Getting header
         try:
-            header = self.__make_data_header(self.fil_file.header,coarse=True)
+            if self.tn_coarse_chan:
+                header = self.__make_data_header(self.fil_file.header,coarse=True)
+            else:
+                header = self.__make_data_header(self.fil_file.header)
         except:
             logger.debug('The fil_file.header is '%self.fil_file.header)
             raise IOError("Error accessing header from file: %s."%self.filename)
@@ -190,7 +193,7 @@ class DATAH5:
         ''' The drift indexes are read from an stored file so that no need to recalculate. This speed things up.
         '''
         n = int(np.log2(self.tsteps))
-        di_array = np.genfromtxt(resource_filename('dedoppler_bones', '../drift_indexes/drift_indexes_array_%d.txt'%n), delimiter=' ', dtype=int)
+        di_array = np.genfromtxt(resource_filename('turbo_seti.findoppler', '../drift_indexes/drift_indexes_array_%d.txt'%n), delimiter=' ', dtype=int)
 
         ts2 = self.tsteps/2
         drift_indexes = di_array[self.tsteps_valid - 1 - ts2, 0:self.tsteps_valid]

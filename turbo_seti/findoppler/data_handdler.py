@@ -80,6 +80,7 @@ class DATAHandle:
         try:
             fil_file = Waterfall(self.filename)
         except:
+            logger.error("Error encountered when trying to open file: %s"%self.filename)
             raise IOError("Error encountered when trying to open file: %s"%self.filename)
 
         #Finding lowest freq in file.
@@ -90,7 +91,9 @@ class DATAHandle:
             f0 = fil_file.header['fch1']
 
         #Looping over the number of coarse channels.
-        n_coarse_chan = fil_file.calc_n_coarse_chan()
+        n_coarse_chan = int(fil_file.calc_n_coarse_chan())
+        if n_coarse_chan != fil_file.calc_n_coarse_chan():
+            logger.warning('The file/selection is not an integer number of coarse channels. This could have unexpected consequences. Let op!')
 
         for chan in range(n_coarse_chan):
 
@@ -168,8 +171,10 @@ class DATAH5:
         '''
         self.fil_file.read_data(f_start=self.f_start, f_stop=self.f_stop)
 
-        logger.info('Blanking DC bin.')
-        n_coarse_chan = self.fil_file.calc_n_coarse_chan()
+        logger.info('Attempting to blank DC bin.')
+        n_coarse_chan = int(self.fil_file.calc_n_coarse_chan())
+        if n_coarse_chan != self.fil_file.calc_n_coarse_chan():
+            logger.warning('The file/selection is not an integer number of coarse channels. This could have unexpected consequences. Let op!')
         self.fil_file.blank_dc(n_coarse_chan)
 
         spec = np.squeeze(self.fil_file.data)

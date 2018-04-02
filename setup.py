@@ -4,15 +4,14 @@ from Cython.Distutils import build_ext
 import numpy
 from setuptools.extension import Extension
 
-
 __version__ = "0.7.2"
-
 
 install_requires = [
     'astropy',
     'cython',
     'numpy',
     'blimpy',
+    'pandas'
 ]
 
 entry_points = {
@@ -29,18 +28,15 @@ extensions = [Extension(
         include_dirs=[numpy.get_include()],
         )
     ]
+cmdclass = {'build_ext': build_ext}
 
 
-
+# Need to copy over index files, generate filenames
 idxs = [2,3,4,5,6,7,8,9,10,11]
 drift_idxs = ['drift_indexes/drift_indexes_array_%i.txt' % ii for ii in idxs]
-
-
 package_data={
     'turbo_seti': drift_idxs,
 }
-
-cmdclass = {'build_ext': build_ext}
 
 setup(
     name="turbo_seti",

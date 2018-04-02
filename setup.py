@@ -1,6 +1,10 @@
 from setuptools import setup, find_packages
+from Cython.Build import cythonize
+import numpy
+from setuptools.extension import Extension
 
-__version__ = "0.7.1"
+
+__version__ = "0.7.2"
 
 
 install_requires = [
@@ -18,10 +22,18 @@ entry_points = {
      ]
 }
 
+extensions = [Extension(
+        name="taylor_tree",
+        sources=["turbo_seti/findoppler/taylor_tree.pyx"],
+        include_dirs=[numpy.get_include()],
+        )
+    ]
+
 setup(
     name="turbo_seti",
     version=__version__,
     packages=find_packages(),
+    ext_modules = cythonize("turbo_seti/findoppler/*.pyx"),
     install_requires=install_requires,
     entry_points=entry_points,
     author="Emilio Enriquez",

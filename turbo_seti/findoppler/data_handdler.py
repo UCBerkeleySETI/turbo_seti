@@ -85,10 +85,7 @@ class DATAHandle:
 
         #Finding lowest freq in file.
         f_delt = fil_file.header['foff']
-        if f_delt < 0:
-            f0 = fil_file.header['fch1'] + fil_file.n_channels_in_file*f_delt
-        else:
-            f0 = fil_file.header['fch1']
+        f0 = fil_file.header['fch1']
 
         #Looping over the number of coarse channels.
         n_coarse_chan = int(fil_file.calc_n_coarse_chan())
@@ -98,8 +95,11 @@ class DATAHandle:
         for chan in range(n_coarse_chan):
 
             #Calculate freq range for given course channel.
-            f_start = f0 + chan*abs(f_delt)*fil_file.n_channels_in_file/n_coarse_chan
-            f_stop = f0 + (chan+1)*abs(f_delt)*fil_file.n_channels_in_file/n_coarse_chan
+            f_start = f0 + chan*(f_delt)*fil_file.n_channels_in_file/n_coarse_chan
+            f_stop = f0 + (chan+1)*(f_delt)*fil_file.n_channels_in_file/n_coarse_chan
+
+            if f_start > f_stop:
+                f_start, f_stop = f_stop, f_start
 
             data_obj = DATAH5(self.filename, f_start=f_start, f_stop=f_stop, coarse_chan=chan, tn_coarse_chan=n_coarse_chan)
 
@@ -154,7 +154,7 @@ class DATAH5:
         self.tsteps = int(math.pow(2, math.ceil(np.log2(math.floor(self.tsteps_valid)))))
 
         self.obs_length = self.tsteps_valid * header['DELTAT']
-        self.drift_rate_resolution = (1e6 * header['DELTAF']) / self.obs_length   # in Hz/sec
+        self.drift_rate_resolution = (1e6 * np.abs(header['DELTAF'])) / self.obs_length   # in Hz/sec
         self.header = header
         self.header['baryv'] = 0.0
         self.header['barya'] = 0.0
@@ -171,7 +171,7 @@ class DATAH5:
         '''
         self.fil_file.read_data(f_start=self.f_start, f_stop=self.f_stop)
 
-        logger.info('Attempting to blank DC bin.')
+        #Blanking DC bin.
         n_coarse_chan = int(self.fil_file.calc_n_coarse_chan())
         if n_coarse_chan != self.fil_file.calc_n_coarse_chan():
             logger.warning('The file/selection is not an integer number of coarse channels. This could have unexpected consequences. Let op!')
@@ -214,7 +214,7 @@ class DATAH5:
         base_header['MJD'] = header['tstart']
         base_header['DEC'] = str(header['src_dej'])
         base_header['RA'] = str(header['src_raj'])
-        base_header['DELTAF'] =  np.abs(header['foff'])  #EE Need to double check if I want this value to be "abs"
+        base_header['DELTAF'] =  header['foff']
         base_header['DELTAT'] = float(header['tsamp'])
 
         #Used by helper_functions.py

@@ -1,0 +1,23 @@
+language: python
+python:
+  - "2.7"
+  
+# command to install dependencies
+install:
+  - sudo apt-get update -qq
+  - sudo apt-get install -qq libhdf5-serial-dev
+  - pip install --upgrade pip setuptools wheel
+  - pip install --only-binary=numpy,scipy numpy scipy
+  - pip install matplotlib
+  - pip install git+https://github.com/h5py/h5py
+  - pip install git+https://github.com/ucberkeleyseti/blimpy
+  - pip install git+https://github.com/kiyo-masui/bitshuffle
+  - python setup.py install
+
+# command to install dependencies
+script: 
+    - turboSETI voyager_test/Voyager1.single_coarse.fine_res.h5
+    
+branches:
+  only:
+- master

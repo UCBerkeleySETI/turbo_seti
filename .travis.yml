@@ -10,7 +10,7 @@ install:
   - pip install --only-binary=numpy,scipy numpy scipy
   - pip install matplotlib
   - pip install pandas
-  - pip install h5py
+  - pip install h5py==2.5.0
   - pip install git+https://github.com/ucberkeleyseti/blimpy
   - pip install git+https://github.com/kiyo-masui/bitshuffle
   - python setup.py install

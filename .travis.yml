@@ -14,7 +14,7 @@ install:
   - pip install git+https://github.com/kiyo-masui/bitshuffle
   - python setup.py install
 
-# command to install dependencies
+# Command to run test
 script: 
     - turboSETI voyager_test/Voyager1.single_coarse.fine_res.h5
     

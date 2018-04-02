@@ -9,6 +9,7 @@ install:
   - pip install --upgrade pip setuptools wheel
   - pip install --only-binary=numpy,scipy numpy scipy
   - pip install matplotlib
+  - pip install pandas
   - pip install h5py
   - pip install git+https://github.com/ucberkeleyseti/blimpy
   - pip install git+https://github.com/kiyo-masui/bitshuffle

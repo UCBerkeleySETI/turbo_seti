@@ -8,7 +8,7 @@ import logging
 logger = logging.getLogger(__name__)
 import gc   #Garbage collector.
 
-from .data_handdler import DATAHandle
+from .data_handler import DATAHandle
 from .file_writers import FileWriter, LogWriter
 from .helper_functions import chan_freq
 

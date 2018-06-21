@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from .findopp import FinDoppler
+from findopp import FinDoppler
 
 import sys
 import os

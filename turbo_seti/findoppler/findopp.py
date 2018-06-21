@@ -8,14 +8,14 @@ import logging
 logger = logging.getLogger(__name__)
 import gc   #Garbage collector.
 
-from .data_handdler import DATAHandle
-from .file_writers import FileWriter, LogWriter
-from .helper_functions import chan_freq
+from data_handdler import DATAHandle
+from file_writers import FileWriter, LogWriter
+from helper_functions import chan_freq
 
 #For importing cython code
 import pyximport
 pyximport.install(setup_args={"include_dirs":np.get_include()}, reload_support=True)
-from . import taylor_tree as tt
+import taylor_tree as tt
 
 #For debugging
 #import cProfile

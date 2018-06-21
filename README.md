@@ -92,7 +92,8 @@ Will add an example file here in the near future.
 ### Use as a package
 
 ```python
-> import dedoppler_bones
+> import turbo_seti
+> from turbo_seti.findoppler.findopp import FinDoppler
 ```
 
 **BL internal**:
@@ -101,10 +102,10 @@ Currently, there is some voyager test data in bls0 at the GBT cluster.
 From the .../turbo_seti/bin/ folder run the next command.
 
 ```bash
-$ python seti_event.py /datax/eenriquez/voyager_test/blc07_guppi_57650_67573_Voyager1_0002.gpuspec.0000.fil -p <your_test_folder> -M 2
+$ python seti_event.py /datax/users/eenriquez/voyager_test/blc07_guppi_57650_67573_Voyager1_0002.gpuspec.0000.fil -o <your_test_folder> -M 2
 ```
 
-This will take `/datax/eenriquez/voyager_test/test_dedop_bones/blc07_guppi_57650_67573_Voyager1_0002.gpuspec.0000.fil` as input (and in this particular case it will discover that this file is too big to handle all at once, so it will first partition it into smaller FITS files and save them into the directory specified by option **`-p`**, and then proceed with drift signal search for each small FITS files). Everything else was set to default values.
+This will take `/datax/users/eenriquez/voyager_test/blc07_guppi_57650_67573_Voyager1_0002.gpuspec.0000.fil` as input (and in this particular case it will discover that this file is too big to handle all at once, so it will first partition it into smaller FITS files and save them into the directory specified by option **`-o`**, and then proceed with drift signal search for each small FITS files). Everything else was set to default values.
 
 Sample Outputs:
 See `/datax/eenriquez/voyager_test/*/*.log`, `/datax/eenriquez/voyager_test/*.dat` for search results and see `/datax/eenriquez/voyager_test/*.png` for some plots.

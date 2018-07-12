@@ -5,6 +5,8 @@ import numpy as np
 import math
 from pkg_resources import resource_filename
 from blimpy import Waterfall
+from blimpy import sigproc
+import h5py
 
 import logging
 logger = logging.getLogger(__name__)
@@ -24,8 +26,8 @@ class DATAHandle:
             self.filename = filename
             self.out_dir = out_dir
 
-            if '.h5' not in filename:
-                if '.fil' not in filename:
+            if not h5py.is_hdf5(filename):
+                if not sigproc.is_filterbank(filename):
                     raise IOError('No correct format, need .h5. Try again...')
                 else:
                     logger.info("File .fil detected. Attempting to create .h5 file in current directory...")

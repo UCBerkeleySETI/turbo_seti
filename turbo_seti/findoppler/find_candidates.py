@@ -22,7 +22,7 @@ from optparse import OptionParser
 
 try:
     from . import plot_candidates
-else:
+except:
     import plot_candidates
 
 import sys

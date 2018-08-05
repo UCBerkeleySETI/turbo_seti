@@ -11,7 +11,6 @@ from blimpy import Filterbank
 from blimpy import Waterfall
 import numpy as np
 from blimpy.utils import db, lin, rebin, closest
-import find_candidates
 
 pd.options.mode.chained_assignment = None  # To remove pandas warnings: default='warn'
 

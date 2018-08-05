@@ -32,7 +32,7 @@ def main():
     opts, args = p.parse_args(sys.argv[1:])
 
     if len(args)!=1:
-        print('Please specify a file name \nExiting.'
+        print('Please specify a file name \nExiting.')
         sys.exit()
     else:
         filename = args[0]

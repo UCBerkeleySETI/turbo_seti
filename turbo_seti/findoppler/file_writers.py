@@ -2,7 +2,10 @@
 
 import numpy as np
 import astropy.io.fits as pyfits
-from helper_functions import chan_freq
+try:
+    from .helper_functions import chan_freq
+except:
+    from helper_functions import chan_freq
 
 import logging
 

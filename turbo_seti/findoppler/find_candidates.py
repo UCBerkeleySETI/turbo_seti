@@ -19,7 +19,12 @@ from blimpy import Filterbank
 import numpy as np
 from blimpy.utils import db, lin, rebin, closest
 from optparse import OptionParser
-import plot_candidates
+
+try:
+    from . import plot_candidates
+else:
+    import plot_candidates
+
 import sys
 import socket
 

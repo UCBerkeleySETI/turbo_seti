@@ -97,8 +97,8 @@ class FinDoppler:
         '''
         '''
 
-        logger.info("Start searching for coarse channel: %s"%data_obj.header['coarse_chan'])
-        self.logwriter.info("Start searching for %s ; coarse channel: %i "%(data_obj.filename,data_obj.header['coarse_chan']))
+        logger.info("Start searching for coarse channel: %s"%data_obj.header[u'coarse_chan'])
+        self.logwriter.info("Start searching for %s ; coarse channel: %i "%(data_obj.filename,data_obj.header[u'coarse_chan']))
         spectra, drift_indexes = data_obj.load_data()
         tsteps = data_obj.tsteps
         tsteps_valid = data_obj.tsteps_valid
@@ -289,7 +289,7 @@ class FinDoppler:
 
 #         self.filewriter.report_coarse_channel(data_obj.header,max_val.total_n_candi)
         self.filewriter = tophitsearch(tree_findoppler_original, max_val, tsteps, nframes, data_obj.header, tdwidth, fftlen, self.max_drift,data_obj.obs_length, out_dir = self.out_dir, logwriter=self.logwriter, filewriter=self.filewriter, obs_info = self.obs_info)
-        logger.info("Total number of candidates for coarse channel "+ str(data_obj.header['coarse_chan']) +" is: %i"%max_val.total_n_candi)
+        logger.info("Total number of candidates for coarse channel "+ str(data_obj.header[u'coarse_chan']) +" is: %i"%max_val.total_n_candi)
 
 
 #  ======================================================================  #

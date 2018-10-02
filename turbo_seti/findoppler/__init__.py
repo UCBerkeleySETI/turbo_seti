@@ -1,4 +1,1 @@
-try:
-    from . import *
-except:
-    import *
+from . import *

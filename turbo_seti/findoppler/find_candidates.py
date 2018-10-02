@@ -19,7 +19,12 @@ from blimpy import Filterbank
 import numpy as np
 from blimpy.utils import db, lin, rebin, closest
 from optparse import OptionParser
-import plot_candidates
+
+try:
+    from . import plot_candidates
+except:
+    import plot_candidates
+
 import sys
 import socket
 
@@ -160,19 +165,19 @@ def search_hits(A_table,B_table, SNR_cut = 15, check_zero_drift=False):
     #Make the SNR_cut
     Asc_table = And0_table[And0_table['SNR']> SNR_cut]
     if not (len(Asc_table) > 0):
-        print 'NOTE: Found no hits above the SNR cut.'
+        print('NOTE: Found no hits above the SNR cut.')
         return And0_table, 0
     else:
-        print 'NOTE: Found hits above the SNR cut.'
+        print('NOTE: Found hits above the SNR cut.')
 
     # Finding RFI within a freq range by comparing ON to OFF obs.
     Asc_table['RFI_in_range'] = Asc_table.apply(lambda hit: len(B_table[((B_table['Freq'] > calc_freq_range(hit)[0]) & (B_table['Freq'] < calc_freq_range(hit)[1]))]),axis=1)
     AnB_table = Asc_table[Asc_table['RFI_in_range'] == 0]
     if not (len(AnB_table) > 1):
-        print 'NOTE: Found no hits present only on the A observations.'
+        print('NOTE: Found no hits present only on the A observations.')
         return Asc_table, 1
     else:
-        print 'NOTE: Found hits present only on the A observations.'
+        print('NOTE: Found hits present only on the A observations.')
 
     #Find the ones that are present in all the 3 ON obs, and follow the drifted signal.
     A1nB_table = AnB_table[AnB_table['status'] == 'A1_table']
@@ -182,13 +187,13 @@ def search_hits(A_table,B_table, SNR_cut = 15, check_zero_drift=False):
         A1nB_table['ON_in_range'] = A1nB_table.apply(lambda hit: follow_candidate(hit,A2nB_table) + follow_candidate(hit,A3nB_table) ,axis=1)
         AA_table = A1nB_table[A1nB_table['ON_in_range'] == 2]
     else:
-        print 'NOTE: Found no hits present in all three A observations.'
+        print('NOTE: Found no hits present in all three A observations.')
         return AnB_table, 2
 
     if len(AA_table) > 0:
-        print 'NOTE: Found some candidates! :)'
+        print('NOTE: Found some candidates! :)')
     else:
-        print 'NOTE: Found no candidates. :('
+        print('NOTE: Found no candidates. :(')
         return AA_table, 2
 
     #Create list of candidates.
@@ -234,13 +239,13 @@ def find_candidates(dat_file_list,SNR_cut=10,check_zero_drift=False,filter_thres
     for i,flat_file in enumerate(dat_file_list):
         #---------------------------
         # Reading hits data
-        print 'Reading hits data for %s.'%flat_file
+        print('Reading hits data for %s.'%flat_file)
 
         # Checking if on A or B observation.
         if i%2:
             Bi_table=make_table(flat_file)
             Bi_table['status'] = 'B%i_table'%ll
-            print 'There are %i hits on this file.'%len(Bi_table)
+            print('There are %i hits on this file.'%len(Bi_table))
             #---------------------------
             #Grouping all hits per obs set.
             B_table_list.append(Bi_table)
@@ -248,13 +253,13 @@ def find_candidates(dat_file_list,SNR_cut=10,check_zero_drift=False,filter_thres
         else:
             Ai_table=make_table(flat_file)
             Ai_table['status'] = 'A%i_table'%kk
-            print 'There are %i hits on this file.'%len(Ai_table)
+            print('There are %i hits on this file.'%len(Ai_table))
 
             if not len(Ai_table) and kk == 1:
-                print 'Exiting, since A1_table is empty.'
+                print('Exiting, since A1_table is empty.')
                 t1 = time.time()
-                print 'Search time: %.2f sec' % ((t1-t0))
-                print '------   o   -------'
+                print('Search time: %.2f sec' % ((t1-t0)))
+                print('------   o   -------')
                 return pd.DataFrame({'This is an empty Data Frame' : []})
 
             #---------------------------
@@ -275,15 +280,15 @@ def find_candidates(dat_file_list,SNR_cut=10,check_zero_drift=False,filter_thres
 #             all_candidates_list.append(B_table)
 #            continue
 
-    print 'Finding all candidates for this A-B set.'
+    print('Finding all candidates for this A-B set.')
     AAA_table,filter_level = search_hits(A_table,B_table,SNR_cut=SNR_cut,check_zero_drift=check_zero_drift)
 
     if len(AAA_table) > 0:
-        print 'Found: %2.2f'%(len(AAA_table)/3.)
+        print('Found: %2.2f'%(len(AAA_table)/3.))
 
     t1 = time.time()
-    print 'Search time: %.2f sec' % ((t1-t0))
-    print '------   o   -------'
+    print('Search time: %.2f sec' % ((t1-t0)))
+    print('------   o   -------')
 
     if filter_level < filter_threshold:
         return pd.DataFrame({'This is an empty Data Frame' : []})
@@ -354,7 +359,7 @@ def main():
 
     #Check
     if len(dat_file_list) < n_files:
-        print "It seems len(dat_file_list) < n_files assuming len(dat_file_list) = n_files."
+        print("It seems len(dat_file_list) < n_files assuming len(dat_file_list) = n_files.")
         n_files = len(dat_file_list)
 
     #---------------------

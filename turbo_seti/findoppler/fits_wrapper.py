@@ -486,7 +486,7 @@ class FITS:
             self.tdwidth = self.fftlen + 8*self.tsteps
             self.nom_max_drift = self.drift_rate_resolution * self.tsteps_valid
             for i in range(0, self.tsteps_valid+1):
-#                print "loading row %d..."%(i*decimate_factor)
+#                print("loading row %d..."%(i*decimate_factor))
                 np.copyto(spectra[i], hdulist[i*decimate_factor].data[0])
                 for k in range(1, decimate_factor):
                     # ???

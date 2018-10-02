@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
-from findopp import FinDoppler
+try:
+    from .findopp import FinDoppler
+except:
+    from findopp import FinDoppler
 
 import sys
 import os
@@ -32,7 +35,7 @@ def main():
     opts, args = p.parse_args(sys.argv[1:])
 
     if len(args)!=1:
-        print 'Please specify a file name \nExiting.'
+        print('Please specify a file name \nExiting.')
         sys.exit()
     else:
         filename = args[0]
@@ -77,7 +80,7 @@ def main():
 ##EE-benshmark    cProfile.runctx('find_seti_event.search()',globals(),locals(),filename='profile_search_M%2.1f_S%2.1f_t%i'%(opts.max_drift,opts.snr,int(os.times()[-1])))
 
         t1 = time.time()
-        print 'Search time: %5.2f min' % ((t1-t0)/60.)
+        print('Search time: %5.2f min' % ((t1-t0)/60.))
 
     except Exception as e:
         logging.exception(e)

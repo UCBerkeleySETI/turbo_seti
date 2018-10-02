@@ -11,7 +11,6 @@ from blimpy import Filterbank
 from blimpy import Waterfall
 import numpy as np
 from blimpy.utils import db, lin, rebin, closest
-import find_candidates
 
 pd.options.mode.chained_assignment = None  # To remove pandas warnings: default='warn'
 
@@ -96,7 +95,7 @@ def make_waterfall_plots(filenames_list,target,f_start,f_stop,ion = False,epoch=
     max_val = 5.
     factor = 1e6
     units = 'Hz'
-    print target
+    print(target)
 
     n_plots = len(filenames_list)
     fig = plt.subplots(n_plots, sharex=True, sharey=True,figsize=(10, 2*n_plots))
@@ -125,7 +124,7 @@ def make_waterfall_plots(filenames_list,target,f_start,f_stop,ion = False,epoch=
     mid_f = np.abs(f_start+f_stop)/2.
 
     for i,filename in enumerate(filenames_list):
-        print filename
+        print(filename)
         plt.subplot(n_plots,1,i+1)
 
         fil = Filterbank(filename, f_start=f_start, f_stop=f_stop)
@@ -140,7 +139,7 @@ def make_waterfall_plots(filenames_list,target,f_start,f_stop,ion = False,epoch=
     #Some plot formatting.
     ax = plt.gca()
     ax.get_xaxis().get_major_formatter().set_useOffset(False)
-    print 'delta_f', delta_f
+    print('delta_f', delta_f)
     plt.xticks(np.arange(f_start, f_stop, delta_f/4.),[round(loc_freq) for loc_freq in np.arange((f_start-mid_f), (f_stop-mid_f), delta_f/4.)*factor ])
     plt.xlabel("Relative Frequency [%s] from %f MHz"%(units,mid_f),fontdict=font)
 
@@ -156,10 +155,10 @@ def make_waterfall_plots(filenames_list,target,f_start,f_stop,ion = False,epoch=
         if not plot_name:
             plot_name = 'Candidate_waterfall_plots.%s.t%.0f.%s.f%.0f.png'%(target,epoch,local_host,mid_f*1e6)
 
-        print 'Saving png figure.'
+        print('Saving png figure.')
         plt.savefig(plot_name,bbox_inches='tight')
         if save_pdf_plot:
-            print 'Saving pdf figure.'
+            print('Saving pdf figure.')
             plt.savefig(plot_name.replace('.png','')+'.pdf', format='pdf', dpi=300,bbox_inches='tight')
 
 def get_single_event_info(filename,freq_range = 0.001,make_latex_table=False,all=False):
@@ -223,7 +222,7 @@ if __name__ == "__main__":
 #
 #     for target in targets:
 #         AAA_single = AAA_candidates[AAA_candidates['Source'] == target]
-#         print target
+#         print(target)
 #         filenames_list = get_filenames_list(target)
 #
 #         AAA1_single = AAA_single[AAA_single['status'] == 'A1_table'].sort('SNR')

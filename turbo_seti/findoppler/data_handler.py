@@ -150,7 +150,7 @@ class DATAH5:
             else:
                 header = self.__make_data_header(self.fil_file.header)
         except:
-            logger.debug('The fil_file.header is ' % header)
+            logger.debug('The fil_file.header is ' % self.fil_file.header)
             raise IOError("Error accessing header from file: %s." % self.filename)
 
         self.header = header
@@ -225,7 +225,7 @@ class DATAH5:
         di_array = np.genfromtxt(resource_filename('turbo_seti', 'drift_indexes/drift_indexes_array_%d.txt'%n), delimiter=' ', dtype=int)
 
         ts2 = int(self.tsteps/2)
-        drift_indexes = di_array[0:(self.tsteps_valid - 1 - ts2), 0:self.tsteps_valid]
+        drift_indexes = di_array[(self.tsteps_valid - 1 - ts2), 0:self.tsteps_valid]
         return drift_indexes
 
     def __make_data_header(self,header,coarse=False):
@@ -268,7 +268,7 @@ class DATAH5:
                 base_header[b'FCNTR'] = (self.f_stop - self.f_start)/2. + self.f_start
             else:
                 base_header[b'NAXIS1'] = int(header[b'nchans'])
-                base_header[b'FCNTR'] = float(header[b'fch1']) + header[b'foff']*base_header[b'naxis1']/2
+                base_header[b'FCNTR'] = float(header[b'fch1']) + header[b'foff']*base_header[b'NAXIS1']/2
 
             #other header values.
             base_header[b'NAXIS'] = 2

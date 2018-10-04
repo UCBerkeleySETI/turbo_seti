@@ -172,7 +172,7 @@ class FinDoppler:
 #             hist_val.histid = np.zeros(tdwidth, dtype='uint32')
 
         #EE: Making "shoulders" to avoid "edge effects". Could do further testing.
-        specstart = (tsteps*shoulder_size/2)
+        specstart = int(tsteps*shoulder_size/2)
         specend = tdwidth - (tsteps * shoulder_size)
 
         #--------------------------------
@@ -202,26 +202,19 @@ class FinDoppler:
 
                 #/* populate neg doppler array */
                 np.copyto(tree_findoppler_flip, tree_findoppler_original)
-                print(tree_findoppler_flip.shape)
+                
                 #/* Flip matrix across X dimension to search negative doppler drift rates */
                 FlipX(tree_findoppler_flip, tdwidth, tsteps)
-                print(tree_findoppler_flip.shape)
                 logger.info("Doppler correcting reverse...")
                 tt.taylor_flt(tree_findoppler_flip, tsteps * tdwidth, tsteps)
                 logger.debug( "done...")
                 
                 complete_drift_range = data_obj.drift_rate_resolution*np.array(range(-1*tsteps_valid*(np.abs(drift_block)+1)+1,-1*tsteps_valid*(np.abs(drift_block))+1))
-                print(tree_findoppler_flip.shape, complete_drift_range.shape)
                 for k,drift_rate in enumerate(complete_drift_range[(complete_drift_range<self.min_drift) & (complete_drift_range>=-1*self.max_drift)]):
                     # indx  = ibrev[drift_indices[::-1][k]] * tdwidth
                     indx  = ibrev[drift_indices[::-1][(complete_drift_range<self.min_drift) & (complete_drift_range>=-1*self.max_drift)][k]] * tdwidth
 
                     #/* SEARCH NEGATIVE DRIFT RATES */
-                    print(indx, tdwidth)
-                    print(indx + tdwidth)
-                    print(type(indx), type(tdwidth), type(indx[0]))
-                    print(indx.shape, (indx+tdwidth).shape, tree_findoppler_flip.shape, ibrev.shape)
-                    
                     spectrum = tree_findoppler_flip[indx: indx + tdwidth]
 
                     #/* normalize */
@@ -298,8 +291,10 @@ class FinDoppler:
 
 #         self.filewriter.report_coarse_channel(data_obj.header,max_val.total_n_candi)
         self.filewriter = tophitsearch(tree_findoppler_original, max_val, tsteps, nframes, data_obj.header, tdwidth, fftlen, self.max_drift,data_obj.obs_length, out_dir = self.out_dir, logwriter=self.logwriter, filewriter=self.filewriter, obs_info = self.obs_info)
-        logger.info("Total number of candidates for coarse channel "+ str(data_obj.header[u'coarse_chan']) +" is: %i"%max_val.total_n_candi)
-
+        try:
+            logger.info("Total number of candidates for coarse channel "+ str(data_obj.header[u'coarse_chan']) +" is: %i"%max_val.total_n_candi)
+        except:
+            logger.info("Total number of candidates for coarse channel "+ str(data_obj.header[b'coarse_chan']) +" is: %i"%max_val.total_n_candi)
 
 #  ======================================================================  #
 

@@ -86,8 +86,12 @@ class DATAHandle:
             raise IOError("Error encountered when trying to open file: %s"%self.filename)
 
         #Finding lowest freq in file.
-        f_delt = fil_file.header[u'foff']
-        f0 = fil_file.header[u'fch1']
+        try:
+            f_delt = fil_file.header[u'foff']
+            f0 = fil_file.header[u'fch1']
+        except:
+            f_delt = fil_file.header[b'foff']
+            f0 = fil_file.header[b'fch1']
 
         #Looping over the number of coarse channels.
         n_coarse_chan = int(fil_file.calc_n_coarse_chan())
@@ -146,22 +150,37 @@ class DATAH5:
             else:
                 header = self.__make_data_header(self.fil_file.header)
         except:
-            logger.debug('The fil_file.header is '%self.fil_file.header)
-            raise IOError("Error accessing header from file: %s."%self.filename)
+            logger.debug('The fil_file.header is ' % header)
+            raise IOError("Error accessing header from file: %s." % self.filename)
 
-        self.fftlen = header[u'NAXIS1']
-
-        #EE To check if swaping tsteps_valid and tsteps is more appropriate.
-        self.tsteps_valid = header[u'NAXIS2']
-        self.tsteps = int(math.pow(2, math.ceil(np.log2(math.floor(self.tsteps_valid)))))
-
-        self.obs_length = self.tsteps_valid * header[u'DELTAT']
-        self.drift_rate_resolution = (1e6 * np.abs(header[u'DELTAF'])) / self.obs_length   # in Hz/sec
         self.header = header
-        self.header[u'baryv'] = 0.0
-        self.header[u'barya'] = 0.0
-        self.header[u'coarse_chan'] = coarse_chan
 
+        try:
+            self.fftlen = header[u'NAXIS1']
+
+            #EE To check if swapping tsteps_valid and tsteps is more appropriate.
+            self.tsteps_valid = header[u'NAXIS2']
+            self.tsteps = int(math.pow(2, math.ceil(np.log2(math.floor(self.tsteps_valid)))))
+    
+            self.obs_length = self.tsteps_valid * header[u'DELTAT']
+            self.drift_rate_resolution = (1e6 * np.abs(header[u'DELTAF'])) / self.obs_length   # in Hz/sec
+            self.header[u'baryv'] = 0.0
+            self.header[u'barya'] = 0.0
+            self.header[u'coarse_chan'] = coarse_chan
+
+        except:
+             self.fftlen = header[b'NAXIS1']
+ 
+             #EE To check if swapping tsteps_valid and tsteps is more appropriate.
+             self.tsteps_valid = header[b'NAXIS2']
+             self.tsteps = int(math.pow(2, math.ceil(np.log2(math.floor(self.tsteps_valid)))))
+ 
+             self.obs_length = self.tsteps_valid * header[b'DELTAT']
+             self.drift_rate_resolution = (1e6 * np.abs(header[b'DELTAF'])) / self.obs_length   # in Hz/sec
+             self.header[b'baryv'] = 0.0
+             self.header[b'barya'] = 0.0
+             self.header[b'coarse_chan'] = coarse_chan
+        
         #EE For now I'm not using a shoulder. This is ok as long as I'm analyzing each coarse channel individually.
         #EE In general this parameter is an integer (even number).
         #This gives two regions, each of n*steps, around spectra[i]
@@ -186,7 +205,10 @@ class DATAH5:
         while spectra.shape[0] != self.tsteps:
                 spectra = np.append(spectra,np.zeros((1,self.fftlen)),axis=0)
         self.tsteps_valid = self.tsteps
-        self.obs_length = self.tsteps * self.header[u'DELTAT']
+        try:
+            self.obs_length = self.tsteps * self.header[u'DELTAT']
+        except:
+            self.obs_length = self.tsteps * self.header[b'DELTAT']
 
         if spectra.shape != (self.tsteps_valid, self.fftlen):
             logger.error('Something is wrong with array size.')
@@ -202,8 +224,8 @@ class DATAH5:
         n = int(np.log2(self.tsteps))
         di_array = np.genfromtxt(resource_filename('turbo_seti', 'drift_indexes/drift_indexes_array_%d.txt'%n), delimiter=' ', dtype=int)
 
-        ts2 = self.tsteps/2
-        drift_indexes = di_array[self.tsteps_valid - 1 - ts2, 0:self.tsteps_valid]
+        ts2 = int(self.tsteps/2)
+        drift_indexes = di_array[0:(self.tsteps_valid - 1 - ts2), 0:self.tsteps_valid]
         return drift_indexes
 
     def __make_data_header(self,header,coarse=False):
@@ -211,26 +233,46 @@ class DATAH5:
 
         base_header = {}
 
-        #Used by file_writers.py
-        base_header[u'SOURCE'] = header[u'source_name'].replace('\xc2\xa0','_').replace(' ','_')
-        base_header[u'MJD'] = header[u'tstart']
-        base_header[u'DEC'] = str(header[u'src_dej'])
-        base_header[u'RA'] = str(header[u'src_raj'])
-        base_header[u'DELTAF'] =  header[u'foff']
-        base_header[u'DELTAT'] = float(header[u'tsamp'])
+        try:
+            #used by file_writers.py
+            base_header[u'SOURCE'] = header[u'source_name'].replace(b'\xc2\xa0',b'_').replace(b' ',b'_')
+            base_header[u'MJD'] = header[u'tstart']
+            base_header[u'DEC'] = str(header[u'src_dej'])
+            base_header[u'RA'] = str(header[u'src_raj'])
+            base_header[u'DELTAF'] =  header[u'foff']
+            base_header[u'DELTAT'] = float(header[u'tsamp'])
 
-        #Used by helper_functions.py
-        if coarse:
-            base_header[u'NAXIS1'] = int(header[u'nchans'])/self.tn_coarse_chan
-            base_header[u'FCNTR'] = (self.f_stop - self.f_start)/2. + self.f_start
-        else:
-            base_header[u'NAXIS1'] = int(header[u'nchans'])
-            base_header[u'FCNTR'] = float(header[u'fch1']) + header[u'foff']*base_header[u'NAXIS1']/2
+            #used by helper_functions.py
+            if coarse:
+                base_header[u'NAXIS1'] = int(header[u'nchans']/self.tn_coarse_chan)
+                base_header[u'FCNTR'] = (self.f_stop - self.f_start)/2. + self.f_start
+            else:
+                base_header[u'NAXIS1'] = int(header[u'nchans'])
+                base_header[u'FCNTR'] = float(header[u'fch1']) + header[u'foff']*base_header[u'naxis1']/2
 
-        #Other header values.
-        base_header[u'NAXIS'] = 2
-        base_header[u'NAXIS2'] = int(self.fil_file.n_ints_in_file)
+            #other header values.
+            base_header[u'NAXIS'] = 2
+            base_header[u'NAXIS2'] = int(self.fil_file.n_ints_in_file)
+        except:
+            #used by file_writers.py
+            base_header[b'SOURCE'] = header[b'source_name'].replace(b'\xc2\xa0',b'_').replace(b' ',b'_')
+            base_header[b'MJD'] = header[b'tstart']
+            base_header[b'DEC'] = str(header[b'src_dej'])
+            base_header[b'RA'] = str(header[b'src_raj'])
+            base_header[b'DELTAF'] =  header[b'foff']
+            base_header[b'DELTAT'] = float(header[b'tsamp'])
 
+            #used by helper_functions.py
+            if coarse:
+                base_header[b'NAXIS1'] = int(header[b'nchans']/self.tn_coarse_chan)
+                base_header[b'FCNTR'] = (self.f_stop - self.f_start)/2. + self.f_start
+            else:
+                base_header[b'NAXIS1'] = int(header[b'nchans'])
+                base_header[b'FCNTR'] = float(header[b'fch1']) + header[b'foff']*base_header[b'naxis1']/2
+
+            #other header values.
+            base_header[b'NAXIS'] = 2
+            base_header[b'NAXIS2'] = int(self.fil_file.n_ints_in_file)
         return base_header
 
     def close(self):

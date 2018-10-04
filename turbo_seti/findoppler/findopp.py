@@ -96,9 +96,13 @@ class FinDoppler:
         '''
         '''
 
-        logger.info("Start searching for coarse channel: %s"%data_obj.header[u'coarse_chan'])
-        self.logwriter.info("Start searching for %s ; coarse channel: %i "%(data_obj.filename,data_obj.header[u'coarse_chan']))
-        spectra, drift_indexes = data_obj.load_data()
+        try:
+            logger.info("Start searching for coarse channel: %s"%data_obj.header[u'coarse_chan'])
+            self.logwriter.info("Start searching for %s ; coarse channel: %i "%(data_obj.filename,data_obj.header[u'coarse_chan']))
+        except:
+            logger.info("Start searching for coarse channel: %s"%data_obj.header[b'coarse_chan'])
+            self.logwriter.info("Start searching for %s ; coarse channel: %i "%(data_obj.filename,data_obj.header[b'coarse_chan'])) 
+        spectra, drift_indices = data_obj.load_data()
         tsteps = data_obj.tsteps
         tsteps_valid = data_obj.tsteps_valid
         tdwidth = data_obj.tdwidth
@@ -198,20 +202,26 @@ class FinDoppler:
 
                 #/* populate neg doppler array */
                 np.copyto(tree_findoppler_flip, tree_findoppler_original)
-
+                print(tree_findoppler_flip.shape)
                 #/* Flip matrix across X dimension to search negative doppler drift rates */
                 FlipX(tree_findoppler_flip, tdwidth, tsteps)
-
+                print(tree_findoppler_flip.shape)
                 logger.info("Doppler correcting reverse...")
                 tt.taylor_flt(tree_findoppler_flip, tsteps * tdwidth, tsteps)
                 logger.debug( "done...")
-
+                
                 complete_drift_range = data_obj.drift_rate_resolution*np.array(range(-1*tsteps_valid*(np.abs(drift_block)+1)+1,-1*tsteps_valid*(np.abs(drift_block))+1))
-
+                print(tree_findoppler_flip.shape, complete_drift_range.shape)
                 for k,drift_rate in enumerate(complete_drift_range[(complete_drift_range<self.min_drift) & (complete_drift_range>=-1*self.max_drift)]):
-                    indx  = ibrev[drift_indexes[::-1][(complete_drift_range<self.min_drift) & (complete_drift_range>=-1*self.max_drift)][k]] * tdwidth
+                    # indx  = ibrev[drift_indices[::-1][k]] * tdwidth
+                    indx  = ibrev[drift_indices[::-1][(complete_drift_range<self.min_drift) & (complete_drift_range>=-1*self.max_drift)][k]] * tdwidth
 
                     #/* SEARCH NEGATIVE DRIFT RATES */
+                    print(indx, tdwidth)
+                    print(indx + tdwidth)
+                    print(type(indx), type(tdwidth), type(indx[0]))
+                    print(indx.shape, (indx+tdwidth).shape, tree_findoppler_flip.shape, ibrev.shape)
+                    
                     spectrum = tree_findoppler_flip[indx: indx + tdwidth]
 
                     #/* normalize */
@@ -258,7 +268,7 @@ class FinDoppler:
 
                 for k,drift_rate in enumerate(complete_drift_range[(complete_drift_range>=self.min_drift) & (complete_drift_range<=self.max_drift)]):
 
-                    indx  = (ibrev[drift_indexes[k]] * tdwidth)
+                    indx  = ibrev[drift_indices[k]] * tdwidth
                     #/* SEARCH POSITIVE DRIFT RATES */
                     spectrum = tree_findoppler[indx: indx+tdwidth]
 
@@ -309,7 +319,7 @@ def populate_tree(spectra,tree_findoppler,nframes,tdwidth,tsteps,fftlen,shoulder
 ##EE Wondering if here should have a data cube instead...maybe not, i guess this is related to the bit-reversal.
 
     for i in range(0, nframes):
-        sind = tdwidth*i + tsteps*shoulder_size/2
+        sind = tdwidth*i + tsteps*int(shoulder_size/2)
         cplen = fftlen
 
         ##EE copy spectra into tree_findoppler, leaving two regions in each side blanck (each region of tsteps*(shoulder_size/2) in size).
@@ -322,7 +332,7 @@ def populate_tree(spectra,tree_findoppler,nframes,tdwidth,tsteps,fftlen,shoulder
 #         ##EE loads the end part of the current spectrum into the left hand side black region in tree_findoppler (comment below says "next spectra" but for that need i+1...bug?)
          #//load end of current spectra into left hand side of next spectra
         sind = i * tdwidth
-        np.copyto(tree_findoppler[sind: sind + tsteps*shoulder_size/2], spectra[i, fftlen-(tsteps*shoulder_size/2):fftlen])
+        np.copyto(tree_findoppler[sind: sind + tsteps*int(shoulder_size/2)], spectra[i, fftlen-(tsteps*int(shoulder_size/2)):fftlen])
 
     return tree_findoppler
 
@@ -341,8 +351,8 @@ def bitrev(inval, nbits):
         k = inval
         ibitr = (1 & k) * ifact
         for i in range(2, nbits+1):
-            k /= 2
-            ifact /= 2
+            k = int(k / 2)
+            ifact = int(ifact / 2)
             ibitr += (1 & k) * ifact
     return ibitr
 

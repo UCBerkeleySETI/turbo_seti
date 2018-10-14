@@ -47,18 +47,11 @@ At the moment it expects a single .h5 file produced with `blimpy.Waterfall` .
 
 ### Command Line
 
-> **`$ python seti_event.py <FULL_PATH_TO_INPUT_FIL_FILE> [OPTIONS]`**
+> **`$turboSETI <FULL_PATH_TO_INPUT_FIL_FILE> [OPTIONS]`**
 >
-> Use `$ python seti_event.py -h` to view usage details.
+> Use `$turboSETI -h` to view usage details.
 >
 > &nbsp;
-
-
-**Known bugs:**
-
-1) Once is done creating the H5 files, sometimes the memory allocation goes crazy.
-Just rerun the same command and this time it will understant the H5 files are there and continue with the rest of the analysis.
-A bugfix is in progress.
 
 
 #### Example:

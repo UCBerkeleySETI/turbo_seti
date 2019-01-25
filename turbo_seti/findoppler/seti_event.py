@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import hdf5plugin # It is not necessary to specify an HDF5_PLUGIN_PATH
+
 from .findopp import FinDoppler
 
 import sys

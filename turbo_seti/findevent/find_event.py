@@ -21,9 +21,9 @@ from blimpy.utils import db, lin, rebin, closest
 from optparse import OptionParser
 
 try:
-    from . import plot_candidates
+    from . import plot_event
 except:
-    import plot_candidates
+    import plot_event
 
 import sys
 import socket
@@ -401,7 +401,7 @@ def main():
                     Freq_Start = candidates['FreqStart'][ii]
                     Freq_End = candidates['FreqEnd'][ii]
 
-                plot_candidates.make_waterfall_plots(filenames[n_files*i:n_files*(i+1)],candidates['Source'].unique()[0],Freq_Start,Freq_End,save_pdf_plot=saving,saving_fig=saving,local_host=local_host)
+                plot_event.make_waterfall_plots(filenames[n_files*i:n_files*(i+1)],candidates['Source'].unique()[0],Freq_Start,Freq_End,save_pdf_plot=saving,saving_fig=saving,local_host=local_host)
 
 
 

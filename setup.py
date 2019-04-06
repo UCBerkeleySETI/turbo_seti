@@ -17,8 +17,8 @@ install_requires = [
 entry_points = {
     'console_scripts' :
         ['turboSETI = turbo_seti.findoppler.seti_event:main',
-         'find_candidates = turbo_seti.findoppler.find_candidates:main',
-         'plot_candidates = turbo_seti.findoppler.plot_candidates:main',
+         'find_event = turbo_seti.findevent.find_event:main',
+         'plot_event = turbo_seti.findevent.plot_event:main',
      ]
 }
 

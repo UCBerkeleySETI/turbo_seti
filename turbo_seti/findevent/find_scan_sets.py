@@ -13,6 +13,11 @@ def find_scan_sets(filename,band):
     '''Finding scan sets, needs filename of csv file and band.
     '''
 
+    if '.csv' in filename:
+        spider_danny = True
+    else:
+        spider_danny = False
+
     #---------------------------
     # Read in the full "A list" of stars
     # This comes from the BL database.

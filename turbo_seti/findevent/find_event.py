@@ -5,9 +5,9 @@ Script to find candidates in a group of ABACAD observations.
     2) any signal found only in the ON is checked to be found in all the 3 ONs following the frequency drift of the signal.
 
 Usage (beta):
-    import find_candidates_test as fact
+    import find_events_test as fact
     TEST_LIST = ['dir/filename_A1.dat','dir/filename_B1.dat','dir/filename_A2.dat','dir/filename_B2.dat','dir/filename_A3.dat','dir/filename_B3.dat']
-    fact.find_candidates(TEST_LIST)
+    fact.find_events(TEST_LIST)
 
     ..author: Emilio Enriquez (jeenriquez@gmail.com)
 '''
@@ -222,7 +222,7 @@ def search_hits(A_table,B_table, SNR_cut = 15, check_zero_drift=False):
 
     return AAA_table, 3
 
-def find_candidates(dat_file_list,SNR_cut=10,check_zero_drift=False,filter_threshold=3):
+def find_events(dat_file_list,SNR_cut=10,check_zero_drift=False,filter_threshold=3):
     ''' Reads a list of flat turboSETI files, the list should be in the ABACAD configuration.
         It calls other functions to find candidates within this group of files.
         Filter_threshold allows the return of a table of candidates with hits at different levels of filtering.
@@ -329,10 +329,10 @@ def find_candidates(dat_file_list,SNR_cut=10,check_zero_drift=False,filter_thres
 
 
 def main():
-    """ Main funtion for find_candidate scripts. """
+    """ Main funtion for find_event scripts. """
 
     p = OptionParser()
-    p.set_usage('python find_candidates.py [options]')
+    p.set_usage('python find_events.py [options]')
 #    p.add_option('-o', '--out_dir', dest='out_dir', type='str', default='', help='Location for output files. Default: local dir. ')
     p.add_option('-n', '--number_files', dest='n_files', type='int', default=6, help='Number of files to check for candidates, standard is 6, for an ABACAD config.')
     p.add_option('-l', '--list_dats', dest='dat_file_list', type='str', default='out_dats.lst', help='List of .dat files to run (without the path).')
@@ -376,7 +376,7 @@ def main():
 
         file_sublist = dat_file_list[n_files*i:n_files*(i+1)]
 
-        candidates = find_candidates(file_sublist,SNR_cut=SNR_cut,check_zero_drift=check_zero_drift,filter_threshold=filter_threshold)
+        candidates = find_events(file_sublist,SNR_cut=SNR_cut,check_zero_drift=check_zero_drift,filter_threshold=filter_threshold)
 
         #Saving csv
         if not candidates.empty and saving:

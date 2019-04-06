@@ -1,2 +1,2 @@
-from .findoppler import seti_event, find_candidates, plot_candidates
-
+from .findoppler import seti_event
+from .findevent import *

@@ -13,16 +13,6 @@ def find_scan_sets(filename,band):
     '''Finding scan sets, needs filename of csv file and band.
     '''
 
-    #Available bands
-    ok_bands = 'L'
-
-    if args.band not in ok_bands:
-        raise ValueError('Please probide one of the available bands:' + ok_bands)
-    else:
-        band = args.band
-
-    filename = args.filename
-
     #---------------------------
     # Read in the full "A list" of stars
     # This comes from the BL database.
@@ -228,6 +218,16 @@ def main():
     parser.add_argument('filename', type=str, help='Full path and filename to read (csv).')
     parser.add_argument('band', type=str,default='L', help='Which band to use? (L,S)')
     args = parser.parse_args()
+
+    #Available bands
+    ok_bands = 'L'
+
+    if args.band not in ok_bands:
+        raise ValueError('Please probide one of the available bands:' + ok_bands)
+    else:
+        band = args.band
+
+    filename = args.filename
 
     find_scan_sets(filename,band)
 

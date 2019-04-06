@@ -198,8 +198,9 @@ if __name__ == "__main__":
     ''' Make it happen moment.
     '''
 
-    raise Error('This is deprecated. Sorry ...')
-#
+    raise Error('This is deprecated for now...')
+
+
 #     #---------------------------
 #     # Read in the full "A list" of stars
 #     # This comes from the BL database.

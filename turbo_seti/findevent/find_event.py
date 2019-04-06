@@ -153,36 +153,43 @@ def follow_candidate(hit,A_table,get_count=True):
         return new_A_table
 
 def search_hits(A_table,B_table, SNR_cut = 15, check_zero_drift=False):
-    '''Rejects hits based on some logic.
+    '''Rejects hits based on some logic statements.
     '''
 
-    #Removing non-drift signals
+    #---------
+    #Removing non-drift signals (optional)
     if check_zero_drift:
         And0_table = A_table
     else:
         And0_table = A_table[A_table['DriftRate'] != 0.0]
 
+    #---------
     #Make the SNR_cut
     Asc_table = And0_table[And0_table['SNR']> SNR_cut]
+
     if not (len(Asc_table) > 0):
         print('NOTE: Found no hits above the SNR cut.')
         return And0_table, 0
     else:
         print('NOTE: Found hits above the SNR cut.')
 
-    # Finding RFI within a freq range by comparing ON to OFF obs.
+    #---------
+    #Finding RFI within a freq range by comparing ON to OFF obs.
     Asc_table['RFI_in_range'] = Asc_table.apply(lambda hit: len(B_table[((B_table['Freq'] > calc_freq_range(hit)[0]) & (B_table['Freq'] < calc_freq_range(hit)[1]))]),axis=1)
     AnB_table = Asc_table[Asc_table['RFI_in_range'] == 0]
+
     if not (len(AnB_table) > 1):
         print('NOTE: Found no hits present only on the A observations.')
         return Asc_table, 1
     else:
         print('NOTE: Found hits present only on the A observations.')
 
+    #---------
     #Find the ones that are present in all the 3 ON obs, and follow the drifted signal.
     A1nB_table = AnB_table[AnB_table['status'] == 'A1_table']
     A2nB_table = AnB_table[AnB_table['status'] == 'A2_table']
     A3nB_table = AnB_table[AnB_table['status'] == 'A3_table']
+
     if len(A1nB_table) > 0  and len(A2nB_table) > 0 and len(A3nB_table) > 0:
         A1nB_table['ON_in_range'] = A1nB_table.apply(lambda hit: follow_candidate(hit,A2nB_table) + follow_candidate(hit,A3nB_table) ,axis=1)
         AA_table = A1nB_table[A1nB_table['ON_in_range'] == 2]
@@ -196,10 +203,9 @@ def search_hits(A_table,B_table, SNR_cut = 15, check_zero_drift=False):
         print('NOTE: Found no candidates. :(')
         return AA_table, 2
 
+    #---------
     #Create list of candidates.
     AAA_table_list = []
-
-#    A1i_table = AA_table
 
     for hit_index, hit in AA_table.iterrows():
 #        A1i_table['Hit_ID'][hit_index] = hit['Source']+'_'+str(hit_index)

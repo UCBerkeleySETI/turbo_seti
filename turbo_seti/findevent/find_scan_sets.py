@@ -13,7 +13,7 @@ import socket
 
 pd.options.mode.chained_assignment = None  # To remove pandas warnings: default='warn'
 
-def find_scan_sets(filename,band):
+def find_scan_sets(filename,band,ok_bands = ['L','S']):
     '''Finding scan sets, needs filename of csv file and band.
     '''
 
@@ -130,7 +130,7 @@ def find_scan_sets(filename,band):
         #concat
         df3 = pd.concat([df_good_mid_FreqA,df_good_mid_FreqA2,df_good_mid_FreqB,df_good_mid_FreqB2])
 
-    if band == 'S':
+    elif band == 'S':
         # Ok mid Freqs around 2300.3906, 2269.6289, 2307.75
         df3 = df3[((df3['mid_Freq'] > 2269.) & (df3['mid_Freq'] < 2310.))]
         #bad mid freqs 2276.23
@@ -256,7 +256,7 @@ def main():
 
     filename = args.filename
 
-    find_scan_sets(filename,band)
+    find_scan_sets(filename,band,ok_band=ok_bands)
 
 if __name__ == "__main__":
     main()

@@ -1,5 +1,9 @@
 #!/usr/bin/env python
-''' ..author: Emilio Enriquez
+'''
+
+This module is very BL-GBT oriented. Will transfer to different repo.
+
+ ..author: Emilio Enriquez
 '''
 
 import pandas as pd
@@ -24,6 +28,7 @@ def find_scan_sets(filename,band):
     #---------------------------
     local_host = socket.gethostname()
 
+    #To Do:
     if 'bl' in local_host:
         master_file = open('/home/obs/logs/target_list_5-50pc.lst')
     else:
@@ -52,6 +57,9 @@ def find_scan_sets(filename,band):
         nints = 'nints'
         tstart = 'tstart'
 
+        #Selection of high resolution data
+        df3 = df2[df2[file].str.contains("gpuspec.0000.h5",na=False)]
+
     else:
         try:
             df = pd.read_csv(filename, sep=",|=", header=None,engine='python')    # Old style spider files.
@@ -70,9 +78,8 @@ def find_scan_sets(filename,band):
         nints = 'Number of samples'
         tstart = 'Time stamp of first sample (MJD)'
 
-
-    #Selection of high resolution data
-    df3 = df2[df2[file].str.contains("gpuspec.0000.fil",na=False)]
+        #Selection of high resolution data
+        df3 = df2[df2[file].str.contains("gpuspec.0000.fil",na=False)]
 
     #Selection of observations from given band (soft)
     if band == 'S':
@@ -86,17 +93,18 @@ def find_scan_sets(filename,band):
     # Adding some extra columns for later look at the good set of data.
 
     df3['bands_used'] = [df3[file][ii].split('/')[-1].split('_')[1].replace('blc','') for ii in df3.index]
-    df3['mid_Freq'] = df3[freq_chan1]-2.835503418452676e-06*df3[nchans]/2.
-    df3['mid_Freq2'] = df3[freq_chan1]-2.7939677238464355e-06*df3[nchans]/2.
+    df3['mid_Freq'] = df3[freq_chan1]-2.7939677238464355e-06*df3[nchans]/2.
+    if band == 'L':
+        df3['mid_Freq2'] = df3[freq_chan1]-2.835503418452676e-06*df3[nchans]/2.
 
     df3[source_name] = df3[source_name].str.upper()
 
     #---------------------------
-    #Check the data that has the 4 good bands (02030405).
+    #Check the data that has the good bands.
     if band == 'S':
-        df3 = df3[df3['bands_used'].str.contains('0001020304050607')]
+        df3 = df3[df3['bands_used'].str.contains('.1.2.3.4.5.6')]  # The dots are use as while cards (*)
     elif band == 'L':
-        df3 = df3[df3['bands_used'].str.contains('02030405')]
+        df3 = df3[df3['bands_used'].str.contains('.2.3.4.5')]
     else:
         raise ValueError('Please probide one of the available bands:' + ok_bands)
 
@@ -109,12 +117,26 @@ def find_scan_sets(filename,band):
     # The two main frequency resolutions used are -2.7939677238464355e-06 and -2.835503418452676e-06  .
 
     if band == 'L':
-        df_good_mid_Freq = df3[((df3['mid_Freq'] > 1501.4) & (df3['mid_Freq'] < 1501.5))]
-        df_good_mid_Freq2 = df3[((df3['mid_Freq2'] > 1501.4) & (df3['mid_Freq2'] < 1501.5))]
+        # Ok mid Freqs around 1501.4648, or 1475.0976
+
+        df_good_mid_FreqA = df3[((df3['mid_Freq'] > 1501.4) & (df3['mid_Freq'] < 1501.5))]
+        df_good_mid_FreqB = df3[((df3['mid_Freq2'] > 1501.4) & (df3['mid_Freq2'] < 1501.5))]
+
+        df_good_mid_FreqA2 = df3[((df3['mid_Freq'] > 1475.0) & (df3['mid_Freq'] < 1475.1))]
+        df_good_mid_FreqB2 = df3[((df3['mid_Freq2'] > 1475.0) & (df3['mid_Freq2'] < 1475.1))]
+
+        #bad mid freqs?
+
+        #concat
+        df3 = pd.concat([df_good_mid_FreqA,df_good_mid_FreqA2,df_good_mid_FreqB,df_good_mid_FreqB2])
+
+    if band == 'S':
+        # Ok mid Freqs around 2300.3906, 2269.6289, 2307.75
+        df3 = df3[((df3['mid_Freq'] > 2269.) & (df3['mid_Freq'] < 2310.))]
+        #bad mid freqs 2276.23
+        df3 = df3[((df3['mid_Freq'] > 2276.3) & (df3['mid_Freq'] < 2276.2))]
     else:
         raise ValueError('Please probide one of the available bands:' + ok_bands)
-
-    df3 = pd.concat([df_good_mid_Freq,df_good_mid_Freq2])
 
     #---------------------------
     # Apply format change in
@@ -190,12 +212,12 @@ def find_scan_sets(filename,band):
             b_name = df_tmp[file][ii]
 
             if a_name == b_name:
-                print 'WARNING: Skiping (a=b). ',node, a_name
+                print 'WARNING: Skiping (a=b). ', a_name
                 continue
 
             #Find if data pairs are not in the same node (thus 'non-co-living').
             if a_name.split('/')[1] != b_name.split('/')[1]:
-                print 'WARNING: skiping since A and B not in same location.',node, a_name
+                print 'WARNING: skiping since A and B not in same location.', a_name
                 continue
             else:
                 #a_star_file_name, b_star_file_name
@@ -225,7 +247,7 @@ def main():
     args = parser.parse_args()
 
     #Available bands
-    ok_bands = 'L'
+    ok_bands = ['L','S']
 
     if args.band not in ok_bands:
         raise ValueError('Please probide one of the available bands:' + ok_bands)

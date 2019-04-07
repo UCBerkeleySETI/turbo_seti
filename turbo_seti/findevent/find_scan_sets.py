@@ -134,7 +134,7 @@ def find_scan_sets(filename,band,ok_bands = ['L','S']):
         # Ok mid Freqs around 2300.3906, 2269.6289, 2307.75
         df3 = df3[((df3['mid_Freq'] > 2269.) & (df3['mid_Freq'] < 2310.))]
         #bad mid freqs 2276.23
-        df3 = df3[((df3['mid_Freq'] > 2276.3) & (df3['mid_Freq'] < 2276.2))]
+        df3 = df3[~((df3['mid_Freq'] > 2276.2) & (df3['mid_Freq'] < 2276.3))]
     else:
         raise ValueError('Please probide one of the available bands:' + ok_bands)
 

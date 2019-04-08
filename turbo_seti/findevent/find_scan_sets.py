@@ -10,6 +10,7 @@ import pandas as pd
 from argparse import ArgumentParser
 import matplotlib.pylab as plt
 import socket
+import numpy as np
 
 pd.options.mode.chained_assignment = None  # To remove pandas warnings: default='warn'
 
@@ -183,7 +184,6 @@ def find_scan_sets(filename,band,ok_bands = ['L','S']):
     #Creating list of targets
 
     list_targets =''
-#    list_A_stars=''
     list_A_stars=[]
 
     i = 0
@@ -203,15 +203,14 @@ def find_scan_sets(filename,band,ok_bands = ['L','S']):
 
         list_a_star_times = df_a_star[tstart].unique()
 
-
         for a_time in list_a_star_times:
 
             #Calculating delta t
-            df_a_star['delta_t'] = df_a_star[tstart].apply(lambda x: float(x) - float(a_time))
+            df_a_star['delta_t'] = df_a_star[tstart].apply(lambda x: np.abs(float(x) - float(a_time)))
 
             #Taking observations only with 3 nearby
-            if  len(df_a_star[df_a_star['delta_t'] < 0.05][tstart])!=3:
-                print 'WARNING: Skiping this A observation:', a_star,a_time
+            if  len(df_a_star[df_a_star['delta_t'] < 0.1][tstart])!=3:
+                print 'WARNING: Skiping this A observation:', a_star,a_time, 'Length is :', len(df_a_star[df_a_star['delta_t'] < 0.1][tstart])
                 continue
 
             #Making tmp DF for ONs and OFFs
@@ -248,7 +247,6 @@ def find_scan_sets(filename,band,ok_bands = ['L','S']):
             list_targets += ''.join(tmp_string)+'\n'
             i+=1
 
-        list_A_stars+=a_star+'\n'
         list_A_stars.append(a_star+'\n')
 
     print 'Actual number of stars at least one complete set: %i'%(len(list_A_stars))

@@ -46,7 +46,7 @@ def make_table(filename,init=False):
 
     else:
 
-        file_dat = open(filename)
+        file_dat = open(filename.strip())
         hits = file_dat.readlines()
 
         #Info from header
@@ -135,7 +135,7 @@ def calc_freq_range(hit,delta_t=0,max_dr=True,follow=False):
     return [low_bound,high_bound]
 
 def follow_candidate(hit,A_table,get_count=True):
-    ''' Follows hit to another obs, and finds if antithing there.
+    ''' Follows hit to another obs, and finds if anything is there.
     '''
 
     freq_range = calc_freq_range(hit,delta_t=A_table['delta_t'].values[0],max_dr=False,follow=True)

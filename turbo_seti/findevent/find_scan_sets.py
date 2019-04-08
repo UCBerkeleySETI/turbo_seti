@@ -139,9 +139,10 @@ def find_scan_sets(filename,band,ok_bands = ['L','S']):
         raise ValueError('Please probide one of the available bands:' + ok_bands)
 
     #---------------------------
-    # Apply format change in
+    # Apply format change in tstart and sort by it.
 
     df3[tstart] = df3[tstart].apply(pd.to_numeric)
+    df3 = df3.sort_values(by=[tstart])
 
     #---------------------------
     # Selecting only the targets in the A-list
@@ -165,7 +166,7 @@ def find_scan_sets(filename,band,ok_bands = ['L','S']):
     print 'Observed and spliced is      : %i'%(len(a_unique))
 
     #---------------------------
-    #Group the df_targets and look for the ones observed 3 times or more
+    # Group the df_targets and look for the ones observed 3 times or more
     # Grouping without date constrains.
     df_targets = df_targets_alist.groupby(source_name).count()[file] > 2
     df_bool_list = df_targets.tolist()
@@ -189,6 +190,15 @@ def find_scan_sets(filename,band,ok_bands = ['L','S']):
 
         df_a_star = df_targets_alist[df_targets_alist[source_name] == a_star]
         list_a_star_times = df_a_star[tstart].unique()
+
+        if len(df_a_star[tstart]) > 5:
+            print 'WARNING: Too many observations of target: ', a_star
+
+        mid_time = df_a_star[tstart].median()
+        df_a_star['delta_t'] = df_a_star[tstart].apply(lambda x: float(x) - float(mid_time))
+
+        #Taking observations only from the same day.
+        df_a_star = df_a_star[df_a_star['delta_t'] < 1.]
 
         for a_time in list_a_star_times:
 
@@ -217,13 +227,13 @@ def find_scan_sets(filename,band,ok_bands = ['L','S']):
 
             #Find if data pairs are not in the same node (thus 'non-co-living').
             if a_name.split('/')[1] != b_name.split('/')[1]:
-                print 'WARNING: skiping since A and B not in same location.', a_name
-                continue
-            else:
-                #a_star_file_name, b_star_file_name
-                tmp_string = ['/mnt_'+local_host+a_name,'\n','/mnt_'+local_host+b_name]
-                list_targets += ''.join(tmp_string)+'\n'
-                i+=1
+                print 'WARNING: A and B not in same location.', a_name
+#                 continue
+#             else:
+            #a_star_file_name, b_star_file_name
+            tmp_string = ['/mnt_'+local_host+a_name,'\n','/mnt_'+local_host+b_name]
+            list_targets += ''.join(tmp_string)+'\n'
+            i+=1
 
         list_A_stars+=a_star+'\n'
 

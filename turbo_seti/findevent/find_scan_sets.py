@@ -183,25 +183,38 @@ def find_scan_sets(filename,band,ok_bands = ['L','S']):
     #Creating list of targets
 
     list_targets =''
-    list_A_stars=''
+#    list_A_stars=''
+    list_A_stars=[]
+
     i = 0
 
     for a_star in alist_completed_unique:
 
         df_a_star = df_targets_alist[df_targets_alist[source_name] == a_star]
+
+#         if len(df_a_star[tstart]) > 5:
+#             print 'WARNING: Too many observations of target: ', a_star
+#
+#         mid_time = df_a_star[tstart].median()
+#         df_a_star['delta_t'] = df_a_star[tstart].apply(lambda x: float(x) - float(mid_time))
+#
+#         #Taking observations only from the same day.
+#         df_a_star = df_a_star[df_a_star['delta_t'] < 1.]
+
         list_a_star_times = df_a_star[tstart].unique()
 
-        if len(df_a_star[tstart]) > 5:
-            print 'WARNING: Too many observations of target: ', a_star
-
-        mid_time = df_a_star[tstart].median()
-        df_a_star['delta_t'] = df_a_star[tstart].apply(lambda x: float(x) - float(mid_time))
-
-        #Taking observations only from the same day.
-        df_a_star = df_a_star[df_a_star['delta_t'] < 1.]
 
         for a_time in list_a_star_times:
 
+            #Calculating delta t
+            df_a_star['delta_t'] = df_a_star[tstart].apply(lambda x: float(x) - float(a_time))
+
+            #Taking observations only with 3 nearby
+            if  len(df_a_star[df_a_star['delta_t'] < 0.05][tstart])!=3:
+                print 'WARNING: Skiping this A observation:', a_star,a_time
+                continue
+
+            #Making tmp DF for ONs and OFFs
             df_tmp = df3[ (df3[tstart] > float(a_time)-0.1) & (df3[tstart] < float(a_time)+0.1)]
             df_tmp['delta_t'] = df_tmp[tstart].apply(lambda x: float(x) - float(a_time))
 
@@ -236,6 +249,9 @@ def find_scan_sets(filename,band,ok_bands = ['L','S']):
             i+=1
 
         list_A_stars+=a_star+'\n'
+        list_A_stars.append(a_star+'\n')
+
+    print 'Actual number of stars at least one complete set: %i'%(len(list_A_stars))
 
     #---------------------------
     #Save lists
@@ -246,7 +262,7 @@ def find_scan_sets(filename,band,ok_bands = ['L','S']):
 
     with open('%s_band_A_stars.lst'%band,'w') as file_list:
     #with open('/datax/users/eenriquez/L-band_analysis/'+'%s_band_A_stars.lst'%band,'w') as file_list:
-        file_list.write(list_A_stars)
+        file_list.write(''.join(list_A_stars))
 
 def main():
     """ Main funtion for find_event scripts. """

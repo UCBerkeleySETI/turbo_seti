@@ -185,8 +185,11 @@ def find_scan_sets(filename,band,ok_bands = ['L','S']):
 
     list_targets =''
     list_A_stars=[]
+    list_A_times=[]
 
-    i = 0
+    counting = 0
+
+
 
     for a_star in alist_completed_unique:
 
@@ -211,8 +214,10 @@ def find_scan_sets(filename,band,ok_bands = ['L','S']):
             time_list = df_a_star[df_a_star['delta_t'] < 0.1][tstart]
 
             if  len(time_list)>3:
-                print 'WARNING: Skiping this A observation:', a_star,a_time, 'Length is :', len(time_list)
-                continue
+
+                if np.isin(time_list,list_A_times).sum() > 3:
+                    print 'WARNING: Skiping this A observation:', a_star,a_time, 'Length is :', len(time_list)
+                    continue
 
             #Taking observations only with 3 nearby.
 #             This fails when having both many observations of one target, but some
@@ -230,6 +235,7 @@ def find_scan_sets(filename,band,ok_bands = ['L','S']):
 # #                     print 'WARNING: Skiping this A observation:', a_star,a_time, 'Length is :', len(time_list)
 # #                     continue
 
+
             elif  len(time_list)<3:
                 continue
 
@@ -239,33 +245,38 @@ def find_scan_sets(filename,band,ok_bands = ['L','S']):
 
             try:
                 ii = df_tmp[df_tmp['delta_t']>0.001]['delta_t'].idxmin()   #Find B star index  #.001 = 1.44 min
-                jj = df_tmp[df_tmp['delta_t']>=0]['delta_t'].idxmin()   #Find A star index
+                #jj = df_tmp[df_tmp['delta_t']>=0]['delta_t'].idxmin()   #Find A star index
+
+                #full path
+                a_name = list(df_a_star[df_a_star[tstart] == a_time][file])[0]
+                b_name = df_tmp[file][ii]
+
             except:
-                continue
+                print 'WARNING: Could not find ON-OFF pair: ', a_star, a_name
 
-    #             a_name = '/datax'+list(df_a_star[df_a_star[tstart] == a_time][file])[0].split('datax')[-1].replace('0000.fil','0002.fil')
-    #             b_name = '/datax'+df_tmp[file][ii].split('datax')[-1].replace('0000.fil','0002.fil')
-            #Only name
-    #             a_name = 'spliced'+list(df_a_star[df_a_star[tstart] == a_time][file])[0].split('spliced')[-1]
-    #             b_name = 'spliced'+df_tmp[file][ii].split('spliced')[-1]
+                #full path
+                a_name = list(df_a_star[df_a_star[tstart] == a_time][file])[0]
+                b_name = 'Place_holder_to_delete.'   # Creates a place holder in the list of obs for manual deletion.
 
-            #full path
-            a_name = list(df_a_star[df_a_star[tstart] == a_time][file])[0]
-            b_name = df_tmp[file][ii]
+#                continue
 
             if a_name == b_name:
                 print 'WARNING: Skiping (a=b). ', a_name
-                continue
+#                continue
 
             #Find if data pairs are not in the same node (thus 'non-co-living').
-            if a_name.split('/')[1] != b_name.split('/')[1]:
-                print 'WARNING: A and B not in same location.', a_name
+#            if a_name.split('/')[1] != b_name.split('/')[1]:
+#                print 'WARNING: A and B not in same location.', a_name
 #                 continue
 #             else:
             #a_star_file_name, b_star_file_name
             tmp_string = ['/mnt_'+local_host+a_name,'\n','/mnt_'+local_host+b_name]
             list_targets += ''.join(tmp_string)+'\n'
-            i+=1
+            counting+=1
+
+            list_A_times.append(a_time)
+
+
 
         list_A_stars.append(a_star+'\n')
 

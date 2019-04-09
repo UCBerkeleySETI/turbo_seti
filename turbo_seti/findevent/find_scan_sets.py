@@ -202,15 +202,35 @@ def find_scan_sets(filename,band,ok_bands = ['L','S']):
 #         df_a_star = df_a_star[df_a_star['delta_t'] < 1.]
 
         list_a_star_times = df_a_star[tstart].unique()
+#        scan_count = 0
 
         for a_time in list_a_star_times:
 
             #Calculating delta t
             df_a_star['delta_t'] = df_a_star[tstart].apply(lambda x: np.abs(float(x) - float(a_time)))
+            time_list = df_a_star[df_a_star['delta_t'] < 0.1][tstart]
 
-            #Taking observations only with 3 nearby
-            if  len(df_a_star[df_a_star['delta_t'] < 0.1][tstart])!=3:
-                print 'WARNING: Skiping this A observation:', a_star,a_time, 'Length is :', len(df_a_star[df_a_star['delta_t'] < 0.1][tstart])
+            if  len(time_list)>3:
+                print 'WARNING: Skiping this A observation:', a_star,a_time, 'Length is :', len(time_list)
+                continue
+
+            #Taking observations only with 3 nearby.
+#             This fails when having both many observations of one target, but some
+#             if len(time_list)>3:
+#                 scan_count+=1
+#                 if scan_count > 3:
+#                     scan_count = 0
+#                     print 'WARNING: Skiping this A observation:', a_star,a_time, 'Length is :', len(time_list)
+#                     continue
+#
+# #                 mid_time = time_list.median()
+# #                 time_diffs = np.abs((time_list- mid_time).unique())
+# #
+# #                 if np.abs(a_time - mid_time) > time_diffs[2]+.0001:
+# #                     print 'WARNING: Skiping this A observation:', a_star,a_time, 'Length is :', len(time_list)
+# #                     continue
+
+            elif  len(time_list)<3:
                 continue
 
             #Making tmp DF for ONs and OFFs

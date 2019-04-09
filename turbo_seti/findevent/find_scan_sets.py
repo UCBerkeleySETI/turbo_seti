@@ -215,7 +215,7 @@ def find_scan_sets(filename,band,ok_bands = ['L','S']):
 
             if  len(time_list)>3:
 
-                if np.isin(time_list,list_A_times).sum() > 3:
+                if np.isin(time_list,list_A_times).sum() > 2:
                     print 'WARNING: Skiping this A observation:', a_star,a_time, 'Length is :', len(time_list)
                     continue
 

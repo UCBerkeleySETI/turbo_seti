@@ -182,6 +182,10 @@ class DATAH5:
         spec = np.squeeze(self.fil_file.data)
         spectra = np.array(spec, dtype=np.float64)
 
+        #Arrange data in ascending order in freq if not already in that format.
+        if self.header[u'DELTAF'] < 0.0:
+            spectra = spectra[::-1]
+
         #This check will add rows of zeros if the obs is too short (and thus not a power of two rows).
         while spectra.shape[0] != self.tsteps:
                 spectra = np.append(spectra,np.zeros((1,self.fftlen)),axis=0)

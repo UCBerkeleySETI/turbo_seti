@@ -4,7 +4,7 @@ from Cython.Distutils import build_ext
 import numpy
 from setuptools.extension import Extension
 
-__version__ = "0.8.0"
+__version__ = "0.8.1"
 
 install_requires = [
     'astropy',

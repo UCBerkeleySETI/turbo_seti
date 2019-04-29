@@ -127,7 +127,6 @@ class FinDoppler:
         else:
             median_flag = np.array([0])
 
-
         # allocate array for findopplering
         # init findopplering array to zero
         tree_findoppler = np.zeros(tsteps * tdwidth,dtype=np.float64) + median_flag

@@ -12,11 +12,11 @@ import gc   #Garbage collector.
 try:
     from .data_handler import DATAHandle
     from .file_writers import FileWriter, LogWriter
-    from .helper_functions import chan_freq
+    from .helper_functions import *
 except:
     from data_handler import DATAHandle
     from file_writers import FileWriter, LogWriter
-    from helper_functions import chan_freq
+    from helper_functions import *
 
 #For importing cython code
 import pyximport
@@ -27,8 +27,10 @@ try:
 except:
     import taylor_tree as tt
 
-#For debugging
+#EE-benshmark
 #import cProfile
+
+#For debugging
 #import pdb;# pdb.set_trace()
 
 class max_vals:
@@ -325,94 +327,6 @@ def populate_tree(spectra,tree_findoppler,nframes,tdwidth,tsteps,fftlen,shoulder
         np.copyto(tree_findoppler[sind: sind + tsteps*shoulder_size/2], spectra[i, fftlen-(tsteps*shoulder_size/2):fftlen])
 
     return tree_findoppler
-
-#  ======================================================================  #
-#  This function bit-reverses the given value "inval" with the number of   #
-#  bits, "nbits".    ----  R. Ramachandran, 10-Nov-97, nfra.               #
-#  python version ----  H. Chen   Modified 2014                            #
-#  ======================================================================  #
-def bitrev(inval, nbits):
-    if nbits <= 1:
-        ibitr = inval
-    else:
-        ifact = 1
-        for i in range(1, nbits):
-           ifact *= 2
-        k = inval
-        ibitr = (1 & k) * ifact
-        for i in range(2, nbits+1):
-            k /= 2
-            ifact /= 2
-            ibitr += (1 & k) * ifact
-    return ibitr
-
-#  ======================================================================  #
-#  This function bit-reverses the given value "inval" with the number of   #
-#  bits, "nbits".                                                          #
-#  python version ----  H. Chen   Modified 2014                            #
-#  reference: stackoverflow.com/questions/12681945                         #
-#  ======================================================================  #
-def bitrev2(inval, nbits, width=32):
-    b = '{:0{width}b}'.format(inval, width=width)
-    ibitr = int(b[-1:(width-1-nbits):-1], 2)
-    return ibitr
-
-#  ======================================================================  #
-#  This function bit-reverses the given value "inval" with 32bits    #
-#  python version ----  E.Enriquez   Modified 2016                            #
-#  reference: stackoverflow.com/questions/12681945                         #
-#  ======================================================================  #
-def bitrev3(x):
-    raise DeprecationWarning("WARNING: This needs testing.")
-
-    x = ((x & 0x55555555) << 1) | ((x & 0xAAAAAAAA) >> 1)
-    x = ((x & 0x33333333) << 2) | ((x & 0xCCCCCCCC) >> 2)
-    x = ((x & 0x0F0F0F0F) << 4) | ((x & 0xF0F0F0F0) >> 4)
-    x = ((x & 0x00FF00FF) << 8) | ((x & 0xFF00FF00) >> 8)
-    x = ((x & 0x0000FFFF) << 16) | ((x & 0xFFFF0000) >> 16)
-    return x
-
-def AxisSwap(inbuf, outbuf, nchans, NTSampInRead):
-    #long int    j1, j2, indx, jndx;
-    for j1 in range(0, NTSampInRead):
-        indx  = j1 * nchans
-        for j2 in range(nchans-1, -1, -1):
-            jndx = j2 * NTSampInRead + j1
-            outbuf[jndx]  = inbuf[indx+j2]
-
-def FlipBand(outbuf, nchans, NTSampInRead):
-    temp = np.zeros(nchans*NTSampInRead, dtype=np.float64)
-
-    indx  = (nchans - 1);
-    for i in range(0, nchans):
-        jndx = (indx - i) * NTSampInRead
-        kndx = i * NTSampInRead
-        np.copyto(temp[jndx: jndx+NTSampInRead], outbuf[kndx + NTSampInRead])
-    #memcpy(outbuf, temp, (sizeof(float)*NTSampInRead * nchans));
-    outbuf = temp
-    return
-
-def FlipX(outbuf, xdim, ydim):
-    temp = np.empty_like(outbuf[0:xdim])
-    logger.debug("FlipX: temp array dimension: %s"%str(temp.shape))
-
-    for j in range(0, ydim):
-        indx = j * xdim
-        np.copyto(temp, outbuf[indx:indx+xdim])
-        np.copyto(outbuf[indx: indx+xdim], temp[::-1])
-    return
-
-def comp_stats(arrey):
-    #Compute mean and stddev of floating point vector array in a fast way, without using the outliers.
-
-    new_vec = np.sort(arrey,axis=None)
-
-    #Removing the lowest 5% and highest 5% of data, this takes care of outliers.
-    new_vec = new_vec[int(len(new_vec)*.05):int(len(new_vec)*.95)]
-    the_median = np.median(new_vec)
-    the_stddev = new_vec.std()
-
-    return the_median, the_stddev
 
 def candsearch(spectrum, specstart, specend, candthresh, drift_rate, header, fftlen, tdwidth, max_val, reverse):
     ''' Searches for candidates: each channel if > candthresh.

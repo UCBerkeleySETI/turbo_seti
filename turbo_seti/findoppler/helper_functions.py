@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 import numpy as np
+import logging
+logger_hf = logging.getLogger(__name__)
 
 
 def chan_freq(header, fine_channel, tdwidth, ref_frame):
@@ -84,7 +86,7 @@ def FlipBand(outbuf, nchans, NTSampInRead):
 
 def FlipX(outbuf, xdim, ydim):
     temp = np.empty_like(outbuf[0:xdim])
-    logger.debug("FlipX: temp array dimension: %s"%str(temp.shape))
+    logger_hf.debug("FlipX: temp array dimension: %s"%str(temp.shape))
 
     for j in range(0, ydim):
         indx = j * xdim

@@ -211,7 +211,7 @@ def find_scan_sets(filename,band,ok_bands = ['L','S']):
 
             #Calculating delta t
             df_a_star['delta_t'] = df_a_star[tstart].apply(lambda x: np.abs(float(x) - float(a_time)))
-            time_list = df_a_star[df_a_star['delta_t'] < 0.1][tstart]
+            time_list = df_a_star[df_a_star['delta_t'] < 0.05][tstart]
 
             if  len(time_list)>3:
 

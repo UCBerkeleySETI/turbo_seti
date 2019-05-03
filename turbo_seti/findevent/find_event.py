@@ -36,6 +36,20 @@ MAX_DRIFT_RATE = 2.0    # NOTE: these two values needs to be updated.
 OBS_LENGHT = 300.
 #------
 
+
+def make_big_table(filename_list):
+    ''' This creates a pandas dataframe from a list of turboSETI flat files.
+    '''
+    table_list = []
+
+    for filename in filename_list:
+        new_table = make_table(filename)
+        table_list.append(new_table)
+
+    final_table = pd.concat(table_list)
+    return final_table
+
+
 def make_table(filename,init=False):
     ''' This creates a pandas dataframe from a turboSETI flat file.
     '''
@@ -123,14 +137,14 @@ def calc_freq_range(hit,delta_t=0,max_dr=True,follow=False):
         drift_rate = float(hit['DELTAF'])/float(hit['DELTAT'])
 
     if follow:
-        freq = hit['Freq'] + drift_rate*(delta_t)/1000.
+        freq = hit['Freq'] + drift_rate*(delta_t)/1e6
         delta_t = 2*OBS_LENGHT  # NOTE: I'm doing twice the amount. To widen the range a bit. Still it is dependend on hit['DriftRate']
     else:
         freq = hit['Freq']
         delta_t = delta_t+OBS_LENGHT  #adding to the end of the obs.
 
-    low_bound  = freq - abs(drift_rate)*delta_t/1000.
-    high_bound = freq + abs(drift_rate)*delta_t/1000.
+    low_bound  = freq - abs(drift_rate)*delta_t/1e6
+    high_bound = freq + abs(drift_rate)*delta_t/1e6
 
     return [low_bound,high_bound]
 

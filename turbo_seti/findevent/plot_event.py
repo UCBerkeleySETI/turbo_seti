@@ -4,12 +4,14 @@ import pandas as pd
 import socket
 import pdb;# pdb.set_trace()
 import time
-import os
+import os, sys
 import matplotlib
 import matplotlib.pylab as plt
 from blimpy import Waterfall
 import numpy as np
 from blimpy.utils import db, lin, rebin, closest
+from optparse import OptionParser
+
 
 pd.options.mode.chained_assignment = None  # To remove pandas warnings: default='warn'
 
@@ -210,12 +212,12 @@ def main():
     p.set_usage('python plot_events.py [options]')
 #    p.add_option('-o', '--out_dir', dest='out_dir', type='str', default='', help='Location for output files. Default: local dir. ')
     p.add_option('-n', '--number_files', dest='n_files', type='int', default=6, help='Number of files to check for candidates, standard is 6, for an ABACAD config.')
-    p.add_option('-L', '--list_fils', dest='fil_file_list', type='str', default='../processed_targets.lst', help='List of .fil files to run (with the path).')
+    p.add_option('-L', '--list_fils', dest='fil_file_list', type='str', default=None, help='List of .fil files to run (with the path).')
     p.add_option('-p', '--plotting', dest='plotting', action='store_true', default=False, help='Boolean for plotting. Default False, use for True.')
-    p.add_option('-s', '--saving', dest='saving', action='store_true', default=False, help='Boolean for saving plot and csv data. Default False, use for True.')
-
+    p.add_option('-s', '--saving', dest='saving', action='store_false', default=True, help='Boolean for saving plot in png and pdf. Default True, use for False.')
     p.add_option('-r', '--plot_range', dest='plot_range', action='store_false', default=True, help='Boolean for ploting vmin vmax with respect to first ON. Default True, use for False.')
-
+    p.add_option('-b', '--f_start', dest='f_start', type='float', default=None, help='Start frequency (begin), in MHz')
+    p.add_option('-e', '--f_stop', dest='f_stop', type='float', default=None, help='Stop frequency (end), in MHz')
 
     opts, args = p.parse_args(sys.argv[1:])
 
@@ -225,6 +227,14 @@ def main():
     plotting = opts.plotting
     saving = opts.saving
     plot_range = opts.plot_range
+    f_start = opts.f_start
+    f_stop =  opts.f_stop
+
+    if not fil_file_list:
+        raise ValueError('Need to provide filename of list of .fil files.')
+
+    if not f_start or not f_stop:
+        raise ValueError('Need to provide f_start and f_stop')
 
     #---------------------
 
@@ -242,7 +252,7 @@ def main():
     #---------------------
     #plottign event.
 
-    make_waterfall_plots(fil_file_list,f_start,f_stop,plot_range = plot_range, ion = plotting, local_host = local_host, save_pdf_plot = True, saving_fig = True)
+    make_waterfall_plots(fil_file_list,f_start,f_stop,plot_range = plot_range, ion = plotting, local_host = local_host, save_pdf_plot = saving, saving_fig = saving)
 
 
 if __name__ == "__main__":

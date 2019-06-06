@@ -160,11 +160,11 @@ def find_scan_sets(filename,band,ok_bands = ['L','S']):
     #---------------------------
     #Showing some info
 
-    print '------      o      --------'
+    print('------      o      --------')
     a_unique = df_targets_alist[source_name].unique()
-    print 'This list was created for the %s band data'%band
-    print 'The total number of targets from the A-list that:'
-    print 'Observed and spliced is      : %i'%(len(a_unique))
+    print('This list was created for the %s band data'%band)
+    print('The total number of targets from the A-list that:')
+    print('Observed and spliced is      : %i'%(len(a_unique)))
 
     #---------------------------
     # Group the df_targets and look for the ones observed 3 times or more
@@ -178,7 +178,7 @@ def find_scan_sets(filename,band,ok_bands = ['L','S']):
     df_targets_alist = df_targets_alist[df_targets_alist[source_name].isin(list_completed)]
     alist_completed_unique = df_targets_alist[source_name].unique()
 
-    print 'Have at least 3 observations : %i'%(len(alist_completed_unique))
+    print('Have at least 3 observations : %i'%(len(alist_completed_unique)))
 
     #---------------------------
     #Creating list of targets
@@ -216,7 +216,7 @@ def find_scan_sets(filename,band,ok_bands = ['L','S']):
             if  len(time_list)>3:
 
                 if np.isin(time_list,list_A_times).sum() > 2:
-                    print 'WARNING: Skiping this A observation:', a_star,a_time, 'Length is :', len(time_list)
+                    print('WARNING: Skiping this A observation:', a_star,a_time, 'Length is :', len(time_list))
                     continue
 
             #Taking observations only with 3 nearby.
@@ -252,7 +252,7 @@ def find_scan_sets(filename,band,ok_bands = ['L','S']):
                 b_name = df_tmp[file][ii]
 
             except:
-                print 'WARNING: Could not find ON-OFF pair: ', a_star, a_name
+                print('WARNING: Could not find ON-OFF pair: ', a_star, a_name)
 
                 #full path
                 a_name = list(df_a_star[df_a_star[tstart] == a_time][file])[0]
@@ -261,7 +261,7 @@ def find_scan_sets(filename,band,ok_bands = ['L','S']):
 #                continue
 
             if a_name == b_name:
-                print 'WARNING: Skiping (a=b). ', a_name
+                print('WARNING: Skipping (a=b). ', a_name)
 #                continue
 
             #Find if data pairs are not in the same node (thus 'non-co-living').
@@ -280,7 +280,7 @@ def find_scan_sets(filename,band,ok_bands = ['L','S']):
 
         list_A_stars.append(a_star+'\n')
 
-    print 'Actual number of stars at least one complete set: %i'%(len(list_A_stars))
+    print('Actual number of stars at least one complete set: %i'%(len(list_A_stars)))
 
     #---------------------------
     #Save lists

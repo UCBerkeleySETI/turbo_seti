@@ -291,7 +291,7 @@ def find_events(dat_file_list,SNR_cut=10,check_zero_drift=False,filter_threshold
     A_table = pd.concat(A_table_list,ignore_index=True)
     B_table = pd.concat(B_table_list,ignore_index=True)
 
-    #Use this lines if ran turboSETI before version 0.8.1, and blimpy version 1.1.7
+    #Use this lines if ran turboSETI before version 0.8.2, and blimpy version 1.1.7
 #     A_table['DriftRate'] = A_table['DriftRate'] * -1
 #     B_table['DriftRate'] = B_table['DriftRate'] * -1
 

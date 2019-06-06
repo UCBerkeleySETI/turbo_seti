@@ -19,7 +19,7 @@ entry_points = {
         ['turboSETI = turbo_seti.findoppler.seti_event:main',
          'find_event = turbo_seti.findevent.find_event:main',
          'find_scan_sets = turbo_seti.findevent.find_scan_sets:main',
-         'find_event = turbo_seti.findevent.plot_event:main',
+         'plot_event = turbo_seti.findevent.plot_event:main',
      ]
 }
 

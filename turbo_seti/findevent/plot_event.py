@@ -7,7 +7,6 @@ import time
 import os
 import matplotlib
 import matplotlib.pylab as plt
-from blimpy import Filterbank
 from blimpy import Waterfall
 import numpy as np
 from blimpy.utils import db, lin, rebin, closest
@@ -82,8 +81,11 @@ def plot_waterfall(fil, f_start=None, f_stop=None, if_id=0, logged=True,cb=False
 
     return this_plot
 
-def make_waterfall_plots(filenames_list,target,f_start,f_stop,ion = False,epoch=None,local_host='',plot_name='',save_pdf_plot=False,saving_fig=False,**kwargs):
+def make_waterfall_plots(filenames_list,f_start,f_stop,plot_range=True,target='',ion = False,epoch=None,local_host='',plot_name='',save_pdf_plot=False,saving_fig=False,**kwargs):
     ''' Makes waterfall plots per group of ON-OFF pairs (up to 6 plots.)
+
+        plot_range:  selecting vmin vmax from first On observation, or not.
+
     '''
 
     matplotlib.rc('font', **font)
@@ -101,7 +103,7 @@ def make_waterfall_plots(filenames_list,target,f_start,f_stop,ion = False,epoch=
     fig = plt.subplots(n_plots, sharex=True, sharey=True,figsize=(10, 2*n_plots))
 
     #finding plotting values range
-    fil = Filterbank(filenames_list[0], f_start=f_start, f_stop=f_stop)
+    fil = Waterfall(filenames_list[0], f_start=f_start, f_stop=f_stop)
     plot_f, plot_data = fil.grab_data(f_start, f_stop, 0)
     dec_fac_x, dec_fac_y = 1, 1
     if plot_data.shape[0] > MAX_IMSHOW_POINTS[0]:
@@ -120,15 +122,18 @@ def make_waterfall_plots(filenames_list,target,f_start,f_stop,ion = False,epoch=
     labeling = ['A','B','A','C','A','D']
 
 #    delta_f = ('%f0.6'%np.abs(f_start-f_stop))
-    delta_f = np.abs(f_start-f_stop)
+    delta_f = f_start-f_stop
     mid_f = np.abs(f_start+f_stop)/2.
 
     for i,filename in enumerate(filenames_list):
         print(filename)
         plt.subplot(n_plots,1,i+1)
 
-        fil = Filterbank(filename, f_start=f_start, f_stop=f_stop)
-        this_plot = plot_waterfall(fil,f_start=f_start, f_stop=f_stop,vmin=A1_avg-A1_std*min_val,vmax=A1_avg+max_val*A1_std,**kwargs)
+        fil = Waterfall(filename, f_start=f_start, f_stop=f_stop)
+        if plot_range:
+            this_plot = plot_waterfall(fil,f_start=f_start, f_stop=f_stop,vmin=A1_avg-A1_std*min_val,vmax=A1_avg+max_val*A1_std,**kwargs)
+        else:
+            this_plot = plot_waterfall(fil,f_start=f_start, f_stop=f_stop,**kwargs)
 
         if i == 0:
             plt.title(target.replace('HIP','HIP '))

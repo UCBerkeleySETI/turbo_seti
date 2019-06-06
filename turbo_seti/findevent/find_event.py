@@ -291,6 +291,14 @@ def find_events(dat_file_list,SNR_cut=10,check_zero_drift=False,filter_threshold
     A_table = pd.concat(A_table_list,ignore_index=True)
     B_table = pd.concat(B_table_list,ignore_index=True)
 
+    #Use this lines if ran turboSETI before version 0.8.1, and blimpy version 1.1.7
+#     A_table['DriftRate'] = A_table['DriftRate'] * -1
+#     B_table['DriftRate'] = B_table['DriftRate'] * -1
+
+    #Check all in A_table is the same source
+    if A_table['Source'].unique().shape[0] > 1:
+        raise ValueError('There are multiple sources in A table, please fix.')
+
     #Calculating delta_t, to follow the signal.
     ref_time = float(A_table[A_table['status'] == 'A1_table']['MJD'].unique()[0])
     A_table['delta_t'] = A_table['MJD'].apply(lambda x: (float(x) - ref_time)*3600*24)

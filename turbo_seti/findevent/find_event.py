@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 '''
-Script to find candidates in a group of ABACAD observations.
+Script to find events in a group of ABACAD observations.
     1) It compares ON vs OFF observations
     2) any signal found only in the ON is checked to be found in all the 3 ONs following the frequency drift of the signal.
 
@@ -19,6 +19,7 @@ from blimpy import Filterbank
 import numpy as np
 from blimpy.utils import db, lin, rebin, closest
 from optparse import OptionParser
+import logging
 
 try:
     from . import plot_event
@@ -148,7 +149,7 @@ def calc_freq_range(hit,delta_t=0,max_dr=True,follow=False):
 
     return [low_bound,high_bound]
 
-def follow_candidate(hit,A_table,get_count=True):
+def follow_event(hit,A_table,get_count=True):
     ''' Follows hit to another obs, and finds if anything is there.
     '''
 
@@ -205,29 +206,29 @@ def search_hits(A_table,B_table, SNR_cut = 15, check_zero_drift=False):
     A3nB_table = AnB_table[AnB_table['status'] == 'A3_table']
 
     if len(A1nB_table) > 0  and len(A2nB_table) > 0 and len(A3nB_table) > 0:
-        A1nB_table['ON_in_range'] = A1nB_table.apply(lambda hit: follow_candidate(hit,A2nB_table) + follow_candidate(hit,A3nB_table) ,axis=1)
+        A1nB_table['ON_in_range'] = A1nB_table.apply(lambda hit: follow_event(hit,A2nB_table) + follow_event(hit,A3nB_table) ,axis=1)
         AA_table = A1nB_table[A1nB_table['ON_in_range'] == 2]
     else:
         print('NOTE: Found no hits present in all three A observations.')
         return AnB_table, 2
 
     if len(AA_table) > 0:
-        print('NOTE: Found some candidates! :)')
+        print('NOTE: Found some events! :)')
     else:
-        print('NOTE: Found no candidates. :(')
+        print('NOTE: Found no events. :(')
         return AA_table, 2
 
     #---------
-    #Create list of candidates.
+    #Create list of events.
     AAA_table_list = []
 
     for hit_index, hit in AA_table.iterrows():
 #        A1i_table['Hit_ID'][hit_index] = hit['Source']+'_'+str(hit_index)
-        A1i_table = follow_candidate(hit,A1nB_table,get_count=False)
+        A1i_table = follow_event(hit,A1nB_table,get_count=False)
         A1i_table['Hit_ID'] = hit['Source']+'_'+str(hit_index)
-        A2i_table = follow_candidate(hit,A2nB_table,get_count=False)
+        A2i_table = follow_event(hit,A2nB_table,get_count=False)
         A2i_table['Hit_ID'] = hit['Source']+'_'+str(hit_index)
-        A3i_table = follow_candidate(hit,A3nB_table,get_count=False)
+        A3i_table = follow_event(hit,A3nB_table,get_count=False)
         A3i_table['Hit_ID'] = hit['Source']+'_'+str(hit_index)
 
         AAA_table_list += [A1i_table, A2i_table, A3i_table]
@@ -238,8 +239,8 @@ def search_hits(A_table,B_table, SNR_cut = 15, check_zero_drift=False):
 
 def find_events(dat_file_list,SNR_cut=10,check_zero_drift=False,filter_threshold=3):
     ''' Reads a list of flat turboSETI files, the list should be in the ABACAD configuration.
-        It calls other functions to find candidates within this group of files.
-        Filter_threshold allows the return of a table of candidates with hits at different levels of filtering.
+        It calls other functions to find events within this group of files.
+        Filter_threshold allows the return of a table of events with hits at different levels of filtering.
         Filter_threshold = [1,2,3] means [ hits above an SNR cut witout AB check, only in some As, only in all As]
     '''
     #---------------------------
@@ -304,11 +305,11 @@ def find_events(dat_file_list,SNR_cut=10,check_zero_drift=False,filter_threshold
     A_table['delta_t'] = A_table['MJD'].apply(lambda x: (float(x) - ref_time)*3600*24)
 
     #To save all the hits. Uncomment these 3 lines.
-#             all_candidates_list.append(A_table)  This blows up the mem. Caution.
-#             all_candidates_list.append(B_table)
+#             all_events_list.append(A_table)  This blows up the mem. Caution.
+#             all_events_list.append(B_table)
 #            continue
 
-    print('Finding all candidates for this A-B set.')
+    print('Finding all events for this A-B set.')
     AAA_table,filter_level = search_hits(A_table,B_table,SNR_cut=SNR_cut,check_zero_drift=check_zero_drift)
 
     if len(AAA_table) > 0:
@@ -327,24 +328,24 @@ def find_events(dat_file_list,SNR_cut=10,check_zero_drift=False,filter_threshold
 #     Some snippets for possible upgrades of the code.
 #     stop
 #
-#     #Concatenating all the candidates.
-#     AAA_candidates = pd.concat(AAA_candidates_list,ignore_index=True)
-#     AAA_candidates_list = 0.
+#     #Concatenating all the events.
+#     AAA_events = pd.concat(AAA_events_list,ignore_index=True)
+#     AAA_events_list = 0.
 #
 #     #Save hits.
-#     AAA_candidates.to_csv('AAA_candidates.v4_%.0f.csv'%time.time())
+#     AAA_events.to_csv('AAA_events.v4_%.0f.csv'%time.time())
 #
 #     #Looking at some stats.
 #     plt.ion()
 #     plt.figure()
-#     AAA_candidates['Freq'].plot.hist(bins=100,logy=True)#
+#     AAA_events['Freq'].plot.hist(bins=100,logy=True)#
 #     plt.savefig('Frequency_hist.png')
 #
 #     plt.figure()
-#     AAA_candidates['DriftRate'].plot.hist(bins=25,logy=True)
+#     AAA_events['DriftRate'].plot.hist(bins=25,logy=True)
 #
 #     #Removing a bunch of RFI regions (GPS and so on).
-#     AAA_candidates = remomve_RFI_regions(AAA_candidates)
+#     AAA_events = remomve_RFI_regions(AAA_events)
 
 
 
@@ -356,14 +357,15 @@ def main():
     p = OptionParser()
     p.set_usage('python find_events.py [options]')
 #    p.add_option('-o', '--out_dir', dest='out_dir', type='str', default='', help='Location for output files. Default: local dir. ')
-    p.add_option('-n', '--number_files', dest='n_files', type='int', default=6, help='Number of files to check for candidates, standard is 6, for an ABACAD config.')
+    p.add_option('-n', '--number_files', dest='n_files', type='int', default=6, help='Number of files to check for events, standard is 6, for an ABACAD config.')
     p.add_option('-l', '--list_dats', dest='dat_file_list', type='str', default='out_dats.lst', help='List of .dat files to run (without the path).')
     p.add_option('-L', '--list_fils', dest='fil_file_list', type='str', default='../processed_targets.lst', help='List of .fil files to run (with the path).')
     p.add_option('-p', '--plotting', dest='plotting', action='store_true', default=False, help='Boolean for plotting. Default False, use for True.')
     p.add_option('-s', '--saving', dest='saving', action='store_true', default=False, help='Boolean for saving plot and csv data. Default False, use for True.')
     p.add_option('-r', '--SNR_cut', dest='SNR_cut', type='int', default=10, help='SNR cut, default SNR=10.')
     p.add_option('-z', '--check_zero_drift', dest='check_zero_drift', action='store_true', default=False, help='Boolean for not ignoring zero drift hits, if True it will search them if only present in the ON. Default False, use for True.')
-    p.add_option('-f', '--filter_threshold', dest='filter_threshold', type='int', default=3, help='Filter_threshold allows the return of a table of candidates with hits at different levels of filtering.')
+    p.add_option('-f', '--filter_threshold', dest='filter_threshold', type='int', default=3, help='Filter_threshold allows the return of a table of events with hits at different levels of filtering.')
+    p.add_option('-v', '--verbose', dest='verbose', action='store_true', default=False, help='Boolean for printing information on events. Default False, use for True.')
 
     opts, args = p.parse_args(sys.argv[1:])
 
@@ -379,6 +381,27 @@ def main():
 
     #---------------------
 
+    #Setting log level
+#     if opts.loglevel == 'info':
+#         level_log = logging.INFO
+#     elif opts.loglevel == 'debug':
+#         level_log = logging.DEBUG
+#     else:
+#         raise ValueError('Need valid loglevel value (info,debug).')
+#
+#
+#     if level_log == logging.INFO:
+#         stream = sys.stdout
+#         format = '%(name)-15s %(levelname)-8s %(message)s'
+#     else:
+#         stream =  sys.stderr
+#         format = '%%(relativeCreated)5d (name)-15s %(levelname)-8s %(message)s'
+#
+#
+#     logging.basicConfig(format=format,stream=stream,level = level_log)
+
+    #---------------------
+
     local_host = socket.gethostname()
 
     #Opening list of files
@@ -391,39 +414,45 @@ def main():
         n_files = len(dat_file_list)
 
     #---------------------
-    #Finding candidates.
+    #Finding events.
 
     #Looping over n_files chunks.
     for i in range(len(dat_file_list)/n_files):
 
         file_sublist = dat_file_list[n_files*i:n_files*(i+1)]
 
-        candidates = find_events(file_sublist,SNR_cut=SNR_cut,check_zero_drift=check_zero_drift,filter_threshold=filter_threshold)
+        events = find_events(file_sublist,SNR_cut=SNR_cut,check_zero_drift=check_zero_drift,filter_threshold=filter_threshold)
 
         #Saving csv
-        if not candidates.empty and saving:
-            candidates.to_csv('Candidates_%s.t%.0f.csv'%(candidates['Source'].unique()[0],float(candidates['MJD'].unique()[0])))
+        if not events.empty and saving:
+            events.to_csv('Events_%s.t%.0f.csv'%(events['Source'].unique()[0],float(events['MJD'].unique()[0])))
 
-        #Plotting individual candidates
-        if not candidates.empty and plotting:
+        #Info on individual events
+        if not events.empty and verbose:
+            print 'Events found:'
+            print events
+
+        #Plotting individual events
+        if not events.empty and plotting:
+
             filenames = open(fil_file_list)
             filenames = filenames.readlines()
             filenames = [files.replace('\n','') for files in filenames]
 
-            #Choosing only a few candidates when having too many.
-            A1_candidates = candidates[candidates['status'] == 'A1_table'].sort_values(by='SNR')
-            candidate_index = A1_candidates['FreqEnd'].index.unique()[-5:]
+            #Choosing only a few events when having too many.
+            A1_events = events[events['status'] == 'A1_table'].sort_values(by='SNR')
+            event_index = A1_events['FreqEnd'].index.unique()[-5:]
 
-            for ii in candidate_index:
+            for ii in event_index:
 
                 try:
-                    Freq_Start = candidates['FreqStart'][ii].unique()[0]
-                    Freq_End = candidates['FreqEnd'][ii].unique()[0]
+                    Freq_Start = events['FreqStart'][ii].unique()[0]
+                    Freq_End = events['FreqEnd'][ii].unique()[0]
                 except:
-                    Freq_Start = candidates['FreqStart'][ii]
-                    Freq_End = candidates['FreqEnd'][ii]
+                    Freq_Start = events['FreqStart'][ii]
+                    Freq_End = events['FreqEnd'][ii]
 
-                plot_event.make_waterfall_plots(filenames[n_files*i:n_files*(i+1)],candidates['Source'].unique()[0],Freq_Start,Freq_End,save_pdf_plot=saving,saving_fig=saving,local_host=local_host)
+                plot_event.make_waterfall_plots(filenames[n_files*i:n_files*(i+1)],events['Source'].unique()[0],Freq_Start,Freq_End,save_pdf_plot=saving,saving_fig=saving,local_host=local_host)
 
 
 

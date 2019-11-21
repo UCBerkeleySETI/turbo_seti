@@ -5,7 +5,7 @@ import numpy as np
 import math
 from pkg_resources import resource_filename
 from blimpy import Waterfall
-from blimpy import sigproc
+from blimpy.io import sigproc
 import h5py
 
 import logging

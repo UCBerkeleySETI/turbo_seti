@@ -430,8 +430,8 @@ def main():
 
         #Info on individual events
         if not events.empty and verbose:
-            print 'Events found:'
-            print events
+            print('Events found:')
+            print(events)
 
         #Plotting individual events
         if not events.empty and plotting:

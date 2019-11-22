@@ -19,7 +19,7 @@ def make_list(option, opt_str, value, parser):
 def main():
 
     p = OptionParser()
-    p.set_usage('python seti_event.py <FULL_PATH_TO_FIL_FILE> [options]')
+    p.set_usage('turboSETI <FULL_PATH_TO_FIL_FILE> [options]')
 
 #    p.add_option('-m', '--min_drift', dest='min_drift', type='float', default=0.0, help='Set the minimum drift rate to search. Unit: Hz/sec. Default:0.0')
     p.add_option('-M', '--max_drift', dest='max_drift', type='float', default=10.0, help='Set the drift rate to search. Unit: Hz/sec. Default: 10.0')
@@ -32,7 +32,7 @@ def main():
     opts, args = p.parse_args(sys.argv[1:])
 
     if len(args)!=1:
-        print('Please specify a file name \nExiting.'
+        print('Please specify a file name \nExiting.')
         sys.exit()
     else:
         filename = args[0]

@@ -4,7 +4,7 @@ from Cython.Distutils import build_ext
 import numpy
 from setuptools.extension import Extension
 
-__version__ = "0.7.2"
+__version__ = "0.8.2"
 
 install_requires = [
     'astropy',
@@ -17,8 +17,9 @@ install_requires = [
 entry_points = {
     'console_scripts' :
         ['turboSETI = turbo_seti.findoppler.seti_event:main',
-         'find_candidates = turbo_seti.findoppler.find_candidates:main',
-         'plot_candidates = turbo_seti.findoppler.plot_candidates:main',
+         'find_event = turbo_seti.findevent.find_event:main',
+         'find_scan_sets = turbo_seti.findevent.find_scan_sets:main',
+         'plot_event = turbo_seti.findevent.plot_event:main',
      ]
 }
 

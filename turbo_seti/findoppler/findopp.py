@@ -8,17 +8,29 @@ import logging
 logger = logging.getLogger(__name__)
 import gc   #Garbage collector.
 
-from .data_handler import DATAHandle
-from .file_writers import FileWriter, LogWriter
-from .helper_functions import chan_freq
+
+try:
+    from .data_handler import DATAHandle
+    from .file_writers import FileWriter, LogWriter
+    from .helper_functions import *
+except:
+    from data_handler import DATAHandle
+    from file_writers import FileWriter, LogWriter
+    from helper_functions import *
 
 #For importing cython code
 import pyximport
 pyximport.install(setup_args={"include_dirs":np.get_include()}, reload_support=True)
-from . import taylor_tree as tt
+
+try:
+    from . import taylor_tree as tt
+except:
+    import taylor_tree as tt
+
+#EE-benshmark
+#import cProfile
 
 #For debugging
-#import cProfile
 #import pdb;# pdb.set_trace()
 
 class max_vals:
@@ -27,7 +39,7 @@ class max_vals:
         self.maxdrift = None
         self.maxsmooth = None
         self.maxid = None
-        self.total_n_candi = None
+        self.total_n_hits = None
 
 class hist_vals:
     ''' Temporary class that saved the normalized spectrum for all drift rates.'''
@@ -87,8 +99,8 @@ class FinDoppler:
         '''
         '''
 
-        logger.info("Start searching for coarse channel: %s"%data_obj.header['coarse_chan'])
-        self.logwriter.info("Start searching for %s ; coarse channel: %i "%(data_obj.filename,data_obj.header['coarse_chan']))
+        logger.info("Start searching for coarse channel: %s"%data_obj.header[u'coarse_chan'])
+        self.logwriter.info("Start searching for %s ; coarse channel: %i "%(data_obj.filename,data_obj.header[u'coarse_chan']))
         spectra, drift_indexes = data_obj.load_data()
         tsteps = data_obj.tsteps
         tsteps_valid = data_obj.tsteps_valid
@@ -117,7 +129,6 @@ class FinDoppler:
         else:
             median_flag = np.array([0])
 
-
         # allocate array for findopplering
         # init findopplering array to zero
         tree_findoppler = np.zeros(tsteps * tdwidth,dtype=np.float64) + median_flag
@@ -145,8 +156,8 @@ class FinDoppler:
             max_val.maxsmooth = np.zeros(tdwidth, dtype='uint8')
         if max_val.maxid == None:
             max_val.maxid = np.zeros(tdwidth, dtype='uint32')
-        if max_val.total_n_candi == None:
-            max_val.total_n_candi = 0
+        if max_val.total_n_hits == None:
+            max_val.total_n_hits = 0
 
 ##EE-debuging
 #         hist_val = hist_vals()
@@ -212,10 +223,10 @@ class FinDoppler:
                     #Reverse spectrum back
                     spectrum = spectrum[::-1]
 
-##EE old wrong use of reverse            n_candi, max_val = candsearch(spectrum, specstart, specend, self.snr, drift_rate, data_obj.header, fftlen, tdwidth, channel, max_val, 1)
-                    n_candi, max_val = candsearch(spectrum, specstart, specend, self.snr, drift_rate, data_obj.header, fftlen, tdwidth, max_val, 0)
-                    info_str = "Found %d candidates at drift rate %15.15f\n"%(n_candi, drift_rate)
-                    max_val.total_n_candi += n_candi
+##EE old wrong use of reverse            n_hits, max_val = hitsearch(spectrum, specstart, specend, self.snr, drift_rate, data_obj.header, fftlen, tdwidth, channel, max_val, 1)
+                    n_hits, max_val = hitsearch(spectrum, specstart, specend, self.snr, drift_rate, data_obj.header, fftlen, tdwidth, max_val, 0)
+                    info_str = "Found %d hits at drift rate %15.15f\n"%(n_hits, drift_rate)
+                    max_val.total_n_hits += n_hits
                     logger.debug(info_str)
                     self.logwriter.info(info_str)
 
@@ -257,9 +268,9 @@ class FinDoppler:
                     spectrum -= self.the_mean_val
                     spectrum /= self.the_stddev
 
-                    n_candi, max_val = candsearch(spectrum, specstart, specend, self.snr, drift_rate, data_obj.header, fftlen, tdwidth, max_val, 0)
-                    info_str = "Found %d candidates at drift rate %15.15f\n"%(n_candi, drift_rate)
-                    max_val.total_n_candi += n_candi
+                    n_hits, max_val = hitsearch(spectrum, specstart, specend, self.snr, drift_rate, data_obj.header, fftlen, tdwidth, max_val, 0)
+                    info_str = "Found %d hits at drift rate %15.15f\n"%(n_hits, drift_rate)
+                    max_val.total_n_hits += n_hits
                     logger.debug(info_str)
                     self.logwriter.info(info_str)
 
@@ -277,9 +288,9 @@ class FinDoppler:
         #----------------------------------------
         # Writing the top hits to file.
 
-#         self.filewriter.report_coarse_channel(data_obj.header,max_val.total_n_candi)
+#         self.filewriter.report_coarse_channel(data_obj.header,max_val.total_n_hits)
         self.filewriter = tophitsearch(tree_findoppler_original, max_val, tsteps, nframes, data_obj.header, tdwidth, fftlen, self.max_drift,data_obj.obs_length, out_dir = self.out_dir, logwriter=self.logwriter, filewriter=self.filewriter, obs_info = self.obs_info)
-        logger.info("Total number of candidates for coarse channel "+ str(data_obj.header['coarse_chan']) +" is: %i"%max_val.total_n_candi)
+        logger.info("Total number of hits for coarse channel "+ str(data_obj.header[u'coarse_chan']) +" is: %i"%max_val.total_n_hits)
 
 
 #  ======================================================================  #
@@ -317,103 +328,15 @@ def populate_tree(spectra,tree_findoppler,nframes,tdwidth,tsteps,fftlen,shoulder
 
     return tree_findoppler
 
-#  ======================================================================  #
-#  This function bit-reverses the given value "inval" with the number of   #
-#  bits, "nbits".    ----  R. Ramachandran, 10-Nov-97, nfra.               #
-#  python version ----  H. Chen   Modified 2014                            #
-#  ======================================================================  #
-def bitrev(inval, nbits):
-    if nbits <= 1:
-        ibitr = inval
-    else:
-        ifact = 1
-        for i in range(1, nbits):
-           ifact *= 2
-        k = inval
-        ibitr = (1 & k) * ifact
-        for i in range(2, nbits+1):
-            k /= 2
-            ifact /= 2
-            ibitr += (1 & k) * ifact
-    return ibitr
-
-#  ======================================================================  #
-#  This function bit-reverses the given value "inval" with the number of   #
-#  bits, "nbits".                                                          #
-#  python version ----  H. Chen   Modified 2014                            #
-#  reference: stackoverflow.com/questions/12681945                         #
-#  ======================================================================  #
-def bitrev2(inval, nbits, width=32):
-    b = '{:0{width}b}'.format(inval, width=width)
-    ibitr = int(b[-1:(width-1-nbits):-1], 2)
-    return ibitr
-
-#  ======================================================================  #
-#  This function bit-reverses the given value "inval" with 32bits    #
-#  python version ----  E.Enriquez   Modified 2016                            #
-#  reference: stackoverflow.com/questions/12681945                         #
-#  ======================================================================  #
-def bitrev3(x):
-    raise DeprecationWarning("WARNING: This needs testing.")
-
-    x = ((x & 0x55555555) << 1) | ((x & 0xAAAAAAAA) >> 1)
-    x = ((x & 0x33333333) << 2) | ((x & 0xCCCCCCCC) >> 2)
-    x = ((x & 0x0F0F0F0F) << 4) | ((x & 0xF0F0F0F0) >> 4)
-    x = ((x & 0x00FF00FF) << 8) | ((x & 0xFF00FF00) >> 8)
-    x = ((x & 0x0000FFFF) << 16) | ((x & 0xFFFF0000) >> 16)
-    return x
-
-def AxisSwap(inbuf, outbuf, nchans, NTSampInRead):
-    #long int    j1, j2, indx, jndx;
-    for j1 in range(0, NTSampInRead):
-        indx  = j1 * nchans
-        for j2 in range(nchans-1, -1, -1):
-            jndx = j2 * NTSampInRead + j1
-            outbuf[jndx]  = inbuf[indx+j2]
-
-def FlipBand(outbuf, nchans, NTSampInRead):
-    temp = np.zeros(nchans*NTSampInRead, dtype=np.float64)
-
-    indx  = (nchans - 1);
-    for i in range(0, nchans):
-        jndx = (indx - i) * NTSampInRead
-        kndx = i * NTSampInRead
-        np.copyto(temp[jndx: jndx+NTSampInRead], outbuf[kndx + NTSampInRead])
-    #memcpy(outbuf, temp, (sizeof(float)*NTSampInRead * nchans));
-    outbuf = temp
-    return
-
-def FlipX(outbuf, xdim, ydim):
-    temp = np.empty_like(outbuf[0:xdim])
-    logger.debug("FlipX: temp array dimension: %s"%str(temp.shape))
-
-    for j in range(0, ydim):
-        indx = j * xdim
-        np.copyto(temp, outbuf[indx:indx+xdim])
-        np.copyto(outbuf[indx: indx+xdim], temp[::-1])
-    return
-
-def comp_stats(arrey):
-    #Compute mean and stddev of floating point vector array in a fast way, without using the outliers.
-
-    new_vec = np.sort(arrey,axis=None)
-
-    #Removing the lowest 5% and highest 5% of data, this takes care of outliers.
-    new_vec = new_vec[int(len(new_vec)*.05):int(len(new_vec)*.95)]
-    the_median = np.median(new_vec)
-    the_stddev = new_vec.std()
-
-    return the_median, the_stddev
-
-def candsearch(spectrum, specstart, specend, candthresh, drift_rate, header, fftlen, tdwidth, max_val, reverse):
-    ''' Searches for candidates: each channel if > candthresh.
+def hitsearch(spectrum, specstart, specend, hitthresh, drift_rate, header, fftlen, tdwidth, max_val, reverse):
+    ''' Searches for hits: each channel if > hitthresh.
     '''
 
-    logger.debug('Start searching for drift rate: %f'%drift_rate)
+    logger.debug('Start searching for hits at drift rate: %f'%drift_rate)
     j = 0
-    for i in (spectrum[specstart:specend] > candthresh).nonzero()[0] + specstart:
+    for i in (spectrum[specstart:specend] > hitthresh).nonzero()[0] + specstart:
         k =  (tdwidth - 1 - i) if reverse else i
-        info_str = 'Candidate found at SNR %f! %s\t'%(spectrum[i], '(reverse)' if reverse else '')
+        info_str = 'Hit found at SNR %f! %s\t'%(spectrum[i], '(reverse)' if reverse else '')
         info_str += 'Spectrum index: %d, Drift rate: %f\t'%(i, drift_rate)
         info_str += 'Uncorrected frequency: %f\t'%chan_freq(header,  k, tdwidth, 0)
         info_str += 'Corrected frequency: %f'%chan_freq(header, k, tdwidth, 1)
@@ -428,7 +351,7 @@ def candsearch(spectrum, specstart, specend, candthresh, drift_rate, header, fft
     return j, max_val
 
 def tophitsearch(tree_findoppler_original, max_val, tsteps, nframes, header, tdwidth, fftlen,max_drift,obs_length, out_dir='', logwriter=None, filewriter=None,obs_info=None):
-    '''This finds the candidate with largest SNR within 2*tsteps frequency channels.
+    '''This finds the hits with largest SNR within 2*tsteps frequency channels.
     '''
 
     maxsnr = max_val.maxsnr
@@ -455,7 +378,7 @@ def tophitsearch(tree_findoppler_original, max_val, tsteps, nframes, header, tdw
                 #logwriter.report_tophit(max_val, i, header)
 #EE            logger.debug("slice of spectrum...size: %s"%str(tree_orig[0:nframes, lbound:ubound].shape))
             if filewriter:
-                filewriter = filewriter.report_tophit(max_val, i, (lbound, ubound), tdwidth, fftlen, header,max_val.total_n_candi,obs_info=obs_info)
+                filewriter = filewriter.report_tophit(max_val, i, (lbound, ubound), tdwidth, fftlen, header,max_val.total_n_hits,obs_info=obs_info)
 #EE: not passing array cut, since not saving in .dat file                filewriter = filewriter.report_tophit(max_val, i, (lbound, ubound), tree_orig[0:nframes, lbound:ubound], header)
 
 ##EE : Uncomment if want to save each blob              np.save(out_dir + '/spec_drift_%.4f_id_%d.npy'%(max_val.maxdrift[i],i), tree_orig[0:nframes, lbound:ubound])

@@ -5,7 +5,7 @@ import numpy as np
 import math
 from pkg_resources import resource_filename
 from blimpy import Waterfall
-from blimpy import sigproc
+from blimpy.io import sigproc
 import h5py
 
 import logging
@@ -21,7 +21,7 @@ class DATAHandle:
     """
     """
     def __init__(self, filename=None, size_limit = SIZE_LIM,out_dir='./'):
-
+        self.filename = filename
         if filename and os.path.isfile(filename):
             self.filename = filename
             self.out_dir = out_dir

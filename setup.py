@@ -4,7 +4,10 @@ from Cython.Distutils import build_ext
 import numpy
 from setuptools.extension import Extension
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
+
+with open("README.md", "r") as fh:
+    long_description = fh.read()
 
 install_requires = [
     'astropy',
@@ -44,16 +47,20 @@ setup(
     version=__version__,
     packages=find_packages(),
     package_data=package_data,
+    include_package_data=True,
     cmdclass=cmdclass,
-    ext_modules = cythonize(extensions),
+    ext_modules=cythonize(extensions),
     install_requires=install_requires,
     entry_points=entry_points,
     author="Emilio Enriquez",
     author_email="e.enriquez@berkeley.edu",
     description="Analysis tool for the search of narrow band drifting signals in filterbank data",
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     license="MIT License",
     keywords="astronomy",
     url="https://github.com/UCBerkeleySETI/turbo_seti",
+    zip_safe=False,
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Science/Research",

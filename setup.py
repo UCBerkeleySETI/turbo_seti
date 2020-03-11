@@ -1,10 +1,18 @@
+# To increment version
+# Check you have ~/.pypirc filled in
+# git tag x.y.z
+# git push && git push --tags
+# rm -rf dist; python setup.py sdist bdist_wheel
+# TEST: twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+# twine upload dist/*
+
 from setuptools import setup, find_packages
 from Cython.Build import cythonize
 from Cython.Distutils import build_ext
 import numpy
 from setuptools.extension import Extension
 
-__version__ = "1.0.1"
+__version__ = "1.0.2"
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -61,6 +69,7 @@ setup(
     keywords="astronomy",
     url="https://github.com/UCBerkeleySETI/turbo_seti",
     zip_safe=False,
+    options={"bdist_wheel": {"universal": "1"}},
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Science/Research",

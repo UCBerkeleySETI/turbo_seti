@@ -2,3 +2,4 @@ include LICENSE
 include MANIFEST.in
 include *.md
 recursive-include turbo_seti/drift_indexes *.txt
+recursive-include turbo_seti/findoppler *.pyx

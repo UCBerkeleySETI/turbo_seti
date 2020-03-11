@@ -21,7 +21,7 @@ class DATAHandle:
     """
     """
     def __init__(self, filename=None, size_limit = SIZE_LIM,out_dir='./'):
-
+        self.filename = filename
         if filename and os.path.isfile(filename):
             self.filename = filename
             self.out_dir = out_dir

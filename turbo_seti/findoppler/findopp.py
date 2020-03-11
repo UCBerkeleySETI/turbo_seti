@@ -8,7 +8,6 @@ import logging
 logger = logging.getLogger(__name__)
 import gc   #Garbage collector.
 
-
 try:
     from .data_handler import DATAHandle
     from .file_writers import FileWriter, LogWriter
@@ -99,9 +98,13 @@ class FinDoppler:
         '''
         '''
 
-        logger.info("Start searching for coarse channel: %s"%data_obj.header[u'coarse_chan'])
-        self.logwriter.info("Start searching for %s ; coarse channel: %i "%(data_obj.filename,data_obj.header[u'coarse_chan']))
-        spectra, drift_indexes = data_obj.load_data()
+        try:
+            logger.info("Start searching for coarse channel: %s"%data_obj.header[u'coarse_chan'])
+            self.logwriter.info("Start searching for %s ; coarse channel: %i "%(data_obj.filename,data_obj.header[u'coarse_chan']))
+        except:
+            logger.info("Start searching for coarse channel: %s"%data_obj.header[b'coarse_chan'])
+            self.logwriter.info("Start searching for %s ; coarse channel: %i "%(data_obj.filename,data_obj.header[b'coarse_chan'])) 
+        spectra, drift_indices = data_obj.load_data()
         tsteps = data_obj.tsteps
         tsteps_valid = data_obj.tsteps_valid
         tdwidth = data_obj.tdwidth
@@ -170,7 +173,7 @@ class FinDoppler:
 #             hist_val.histid = np.zeros(tdwidth, dtype='uint32')
 
         #EE: Making "shoulders" to avoid "edge effects". Could do further testing.
-        specstart = (tsteps*shoulder_size/2)
+        specstart = int(tsteps*shoulder_size/2)
         specend = tdwidth - (tsteps * shoulder_size)
 
         #--------------------------------
@@ -200,18 +203,17 @@ class FinDoppler:
 
                 #/* populate neg doppler array */
                 np.copyto(tree_findoppler_flip, tree_findoppler_original)
-
+                
                 #/* Flip matrix across X dimension to search negative doppler drift rates */
                 FlipX(tree_findoppler_flip, tdwidth, tsteps)
-
                 logger.info("Doppler correcting reverse...")
                 tt.taylor_flt(tree_findoppler_flip, tsteps * tdwidth, tsteps)
                 logger.debug( "done...")
-
+                
                 complete_drift_range = data_obj.drift_rate_resolution*np.array(range(-1*tsteps_valid*(np.abs(drift_block)+1)+1,-1*tsteps_valid*(np.abs(drift_block))+1))
-
                 for k,drift_rate in enumerate(complete_drift_range[(complete_drift_range<self.min_drift) & (complete_drift_range>=-1*self.max_drift)]):
-                    indx  = ibrev[drift_indexes[::-1][(complete_drift_range<self.min_drift) & (complete_drift_range>=-1*self.max_drift)][k]] * tdwidth
+                    # indx  = ibrev[drift_indices[::-1][k]] * tdwidth
+                    indx  = ibrev[drift_indices[::-1][(complete_drift_range<self.min_drift) & (complete_drift_range>=-1*self.max_drift)][k]] * tdwidth
 
                     #/* SEARCH NEGATIVE DRIFT RATES */
                     spectrum = tree_findoppler_flip[indx: indx + tdwidth]
@@ -260,7 +262,7 @@ class FinDoppler:
 
                 for k,drift_rate in enumerate(complete_drift_range[(complete_drift_range>=self.min_drift) & (complete_drift_range<=self.max_drift)]):
 
-                    indx  = (ibrev[drift_indexes[k]] * tdwidth)
+                    indx  = ibrev[drift_indices[k]] * tdwidth
                     #/* SEARCH POSITIVE DRIFT RATES */
                     spectrum = tree_findoppler[indx: indx+tdwidth]
 
@@ -290,8 +292,10 @@ class FinDoppler:
 
 #         self.filewriter.report_coarse_channel(data_obj.header,max_val.total_n_hits)
         self.filewriter = tophitsearch(tree_findoppler_original, max_val, tsteps, nframes, data_obj.header, tdwidth, fftlen, self.max_drift,data_obj.obs_length, out_dir = self.out_dir, logwriter=self.logwriter, filewriter=self.filewriter, obs_info = self.obs_info)
-        logger.info("Total number of hits for coarse channel "+ str(data_obj.header[u'coarse_chan']) +" is: %i"%max_val.total_n_hits)
-
+        try:
+            logger.info("Total number of candidates for coarse channel "+ str(data_obj.header[u'coarse_chan']) +" is: %i"%max_val.total_n_candi)
+        except:
+            logger.info("Total number of candidates for coarse channel "+ str(data_obj.header[b'coarse_chan']) +" is: %i"%max_val.total_n_candi)
 
 #  ======================================================================  #
 
@@ -311,7 +315,7 @@ def populate_tree(spectra,tree_findoppler,nframes,tdwidth,tsteps,fftlen,shoulder
 ##EE Wondering if here should have a data cube instead...maybe not, i guess this is related to the bit-reversal.
 
     for i in range(0, nframes):
-        sind = tdwidth*i + tsteps*shoulder_size/2
+        sind = tdwidth*i + tsteps*int(shoulder_size/2)
         cplen = fftlen
 
         ##EE copy spectra into tree_findoppler, leaving two regions in each side blanck (each region of tsteps*(shoulder_size/2) in size).
@@ -324,9 +328,55 @@ def populate_tree(spectra,tree_findoppler,nframes,tdwidth,tsteps,fftlen,shoulder
 #         ##EE loads the end part of the current spectrum into the left hand side black region in tree_findoppler (comment below says "next spectra" but for that need i+1...bug?)
          #//load end of current spectra into left hand side of next spectra
         sind = i * tdwidth
-        np.copyto(tree_findoppler[sind: sind + tsteps*shoulder_size/2], spectra[i, fftlen-(tsteps*shoulder_size/2):fftlen])
+        np.copyto(tree_findoppler[sind: sind + tsteps*int(shoulder_size/2)], spectra[i, fftlen-(tsteps*int(shoulder_size/2)):fftlen])
 
     return tree_findoppler
+
+#  ======================================================================  #
+#  This function bit-reverses the given value "inval" with the number of   #
+#  bits, "nbits".    ----  R. Ramachandran, 10-Nov-97, nfra.               #
+#  python version ----  H. Chen   Modified 2014                            #
+#  ======================================================================  #
+def bitrev(inval, nbits):
+    if nbits <= 1:
+        ibitr = inval
+    else:
+        ifact = 1
+        for i in range(1, nbits):
+           ifact *= 2
+        k = inval
+        ibitr = (1 & k) * ifact
+        for i in range(2, nbits+1):
+            k = int(k / 2)
+            ifact = int(ifact / 2)
+            ibitr += (1 & k) * ifact
+    return ibitr
+
+#  ======================================================================  #
+#  This function bit-reverses the given value "inval" with the number of   #
+#  bits, "nbits".                                                          #
+#  python version ----  H. Chen   Modified 2014                            #
+#  reference: stackoverflow.com/questions/12681945                         #
+#  ======================================================================  #
+def bitrev2(inval, nbits, width=32):
+    b = '{:0{width}b}'.format(inval, width=width)
+    ibitr = int(b[-1:(width-1-nbits):-1], 2)
+    return ibitr
+
+#  ======================================================================  #
+#  This function bit-reverses the given value "inval" with 32bits    #
+#  python version ----  E.Enriquez   Modified 2016                            #
+#  reference: stackoverflow.com/questions/12681945                         #
+#  ======================================================================  #
+def bitrev3(x):
+    raise DeprecationWarning("WARNING: This needs testing.")
+
+    x = ((x & 0x55555555) << 1) | ((x & 0xAAAAAAAA) >> 1)
+    x = ((x & 0x33333333) << 2) | ((x & 0xCCCCCCCC) >> 2)
+    x = ((x & 0x0F0F0F0F) << 4) | ((x & 0xF0F0F0F0) >> 4)
+    x = ((x & 0x00FF00FF) << 8) | ((x & 0xFF00FF00) >> 8)
+    x = ((x & 0x0000FFFF) << 16) | ((x & 0xFFFF0000) >> 16)
+    return x
 
 def hitsearch(spectrum, specstart, specend, hitthresh, drift_rate, header, fftlen, tdwidth, max_val, reverse):
     ''' Searches for hits: each channel if > hitthresh.

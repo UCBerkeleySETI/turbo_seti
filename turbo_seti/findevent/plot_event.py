@@ -118,10 +118,10 @@ def make_waterfall_plots(filenames_list,f_start,f_stop,plot_range=True,target=''
     A1_std = np.std(plot_data)
 
     if not epoch:
-        epoch = fil.header[u'tstart']
+        epoch = fil.header[b'tstart']
 
     if not target:
-        target = fil.header[u'source_name']
+        target = fil.header[b'source_name']
 
     labeling = ['A','B','A','C','A','D']
 

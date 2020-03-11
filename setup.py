@@ -4,7 +4,7 @@ from Cython.Distutils import build_ext
 import numpy
 from setuptools.extension import Extension
 
-__version__ = "0.8.2"
+__version__ = "1.0.0"
 
 install_requires = [
     'astropy',
@@ -57,7 +57,7 @@ setup(
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Science/Research",
-        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3",
         "Topic :: Scientific/Engineering",
         ]
 )

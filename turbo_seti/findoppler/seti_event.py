@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 
-try:
-    from .findopp import FinDoppler
-except:
-    from findopp import FinDoppler
+from .findopp import FinDoppler
 
 import sys
 import os

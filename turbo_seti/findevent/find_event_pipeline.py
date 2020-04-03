@@ -11,7 +11,7 @@
 #    all of the candidates, with filename
 
 #required packages and programs
-import updated_find_event
+import find_event
 import pandas as pd
 
 #required for updated_find_event
@@ -66,7 +66,7 @@ def find_event_pipeline(filter_level, SNR, dat_file_list_string, on_off_first='O
         if on_off_first == 'OFF':
             name=file_sublist[1].split('_')[5]   
         print(name)
-        cand = updated_find_event.find_events(file_sublist, SNR_cut=SNR, check_zero_drift=zero_drift_parameter, filter_threshold=filter_level, on_off_first=on_off_first, number_in_sequence=number_in_sequence)
+        cand = find_event.find_events(file_sublist, SNR_cut=SNR, check_zero_drift=zero_drift_parameter, filter_threshold=filter_level, on_off_first=on_off_first, number_in_sequence=number_in_sequence)
 
         
         if len(cand) > 0:

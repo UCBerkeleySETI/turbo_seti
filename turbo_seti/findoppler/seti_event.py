@@ -14,7 +14,9 @@ from optparse import OptionParser
 #import pdb;# pdb.set_trace()
 
 def make_list(option, opt_str, value, parser):
-    setattr(parser.values, option.dest, value.replace('[','').replace(']','').split(','))
+    v = value.replace('[','').replace(']','').split(',')
+    v = list(map(int, v))
+    setattr(parser.values, option.dest, v)
 
 def main():
 
@@ -28,7 +30,10 @@ def main():
     p.add_option('-o', '--out_dir', dest='out_dir', type='str', default='./', help='Location for output files. Default: local dir. ')
 #    p.add_option('-w', '--width', dest='slice_width', type='int', default=512, help='')
     p.add_option('-l', '--loglevel', dest='loglevel', type='str', default='info', help='Specify log level (info, debug)')
-    p.add_option('-c', '--coarse_chans', dest='coarse_chans', type='str', action='callback', default='',callback=make_list, help='Coma separated list of coarse channels to analyze.(ie. "5,8" to do from 5th to 8th coarse channels)')
+    p.add_option('-c', '--coarse_chans', dest='coarse_chans', type='str', action='callback', default='', callback=make_list,
+                 help='Comma separated list of coarse channels to analyze.(ie. "5,8" to do from 5th to 8th coarse channels)')
+    p.add_option('-n', '--n_coarse_chan', dest='n_coarse_chan', type=int, default=None,
+                 help='Number of coarse channels in file.')
     opts, args = p.parse_args(sys.argv[1:])
 
     if len(args)!=1:
@@ -72,7 +77,8 @@ def main():
 
         logging.basicConfig(format=format,stream=stream,level = level_log)
 
-        find_seti_event = FinDoppler(filename, max_drift = opts.max_drift, snr = opts.snr, out_dir = opts.out_dir,coarse_chans = opts.coarse_chans, obs_info=obs_info)
+        find_seti_event = FinDoppler(filename, max_drift=opts.max_drift, snr=opts.snr, out_dir=opts.out_dir,
+                                     coarse_chans=opts.coarse_chans, obs_info=obs_info, n_coarse_chan=opts.n_coarse_chan)
         find_seti_event.search()
 ##EE-benshmark    cProfile.runctx('find_seti_event.search()',globals(),locals(),filename='profile_search_M%2.1f_S%2.1f_t%i'%(opts.max_drift,opts.snr,int(os.times()[-1])))
 

@@ -21,11 +21,13 @@ SIZE_LIM = 256.0   # File size limit in MB. If larger then make a split mapping.
 class DATAHandle:
     """
     """
-    def __init__(self, filename=None, size_limit = SIZE_LIM,out_dir='./'):
+    def __init__(self, filename=None, size_limit=SIZE_LIM, out_dir='./', n_coarse_chan=None, coarse_chans=None):
         self.filename = filename
         if filename and os.path.isfile(filename):
             self.filename = filename
             self.out_dir = out_dir
+            self.n_coarse_chan = n_coarse_chan
+            self.coarse_chans = coarse_chans
 
             if not h5py.is_hdf5(filename):
                 if not sigproc.is_filterbank(filename):
@@ -79,6 +81,7 @@ class DATAHandle:
 
         data_list = []
 
+
         #Instancing file.
         try:
             fil_file = Waterfall(self.filename)
@@ -91,11 +94,21 @@ class DATAHandle:
         f0 = fil_file.header[b'fch1']
 
         #Looping over the number of coarse channels.
-        n_coarse_chan = int(fil_file.calc_n_coarse_chan())
-        if n_coarse_chan != fil_file.calc_n_coarse_chan():
-            logger.warning('The file/selection is not an integer number of coarse channels. This could have unexpected consequences. Let op!')
+        if self.n_coarse_chan is not None:
+            n_coarse_chan = self.n_coarse_chan
+        elif fil_file.header.get(b'n_coarse_chan', None) is not None:
+            n_coarse_chan = fil_file.header[b'n_coarse_chan']
+        else:
+            n_coarse_chan = int(fil_file.calc_n_coarse_chan())
 
-        for chan in range(n_coarse_chan):
+        print('ncoarsechan', n_coarse_chan)
+
+        # Only load coarse chans of interest -- or do all if not specified
+        if self.coarse_chans in (None, ''):
+            self.coarse_chans = range(n_coarse_chan)
+
+        print('coarse_cahns', self.coarse_chans, type(self.coarse_chans))
+        for chan in self.coarse_chans:
 
             #Calculate freq range for given course channel.
             f_start = f0 + chan*(f_delt)*fil_file.n_channels_in_file/n_coarse_chan
@@ -137,7 +150,7 @@ class DATAH5:
         #Getting header
         try:
             if self.tn_coarse_chan:
-                header = self.__make_data_header(self.fil_file.header,coarse=True)
+                header = self.__make_data_header(self.fil_file.header, coarse=True)
             else:
                 header = self.__make_data_header(self.fil_file.header)
         except:
@@ -147,7 +160,7 @@ class DATAH5:
         self.header = header
 
         self.fftlen = header[b'NAXIS1']
- 
+
         #EE To check if swapping tsteps_valid and tsteps is more appropriate.
         self.tsteps_valid = header[b'NAXIS2']
         self.tsteps = int(math.pow(2, math.ceil(np.log2(math.floor(self.tsteps_valid)))))

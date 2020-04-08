@@ -44,20 +44,16 @@ class hist_vals:
 
 class FinDoppler:
     """ """
-    def __init__(self, datafile, max_drift, min_drift = 0, snr = 25.0, out_dir = './', coarse_chans = None, obs_info = None, flagging = None):
+    def __init__(self, datafile, max_drift, min_drift=0, snr=25.0, out_dir='./', coarse_chans=None, obs_info=None, flagging=None, n_coarse_chan=None):
         self.min_drift = min_drift
         self.max_drift = max_drift
         self.snr = snr
         self.out_dir = out_dir
-        self.data_handle = DATAHandle(datafile,out_dir=out_dir)
+
+        self.data_handle = DATAHandle(datafile, out_dir=out_dir, n_coarse_chan=n_coarse_chan, coarse_chans=coarse_chans)
         if (self.data_handle is None) or (self.data_handle.status is False):
             raise IOError("File error, aborting...")
-        if coarse_chans:
-            if int(coarse_chans[-1]) > len(self.data_handle.data_list) or int(coarse_chans[0]) > len(self.data_handle.data_list):
-                raise ValueError('The coarse channel(s) given (%i,%i) is outside the possible range (0,%i) '%(int(coarse_chans[0]),int(coarse_chans[-1]),len(self.data_handle.data_list)))
-            if int(coarse_chans[-1]) < 0 or int(coarse_chans[0]) < 0:
-                raise ValueError('The coarse channel(s) given (%i,%i) is outside the possible range (0,%i) '%(int(coarse_chans[0]),int(coarse_chans[-1]),len(self.data_handle.data_list)))
-            self.data_handle.data_list = self.data_handle.data_list[int(coarse_chans[0]):int(coarse_chans[-1])]
+
         logger.info(self.data_handle.get_info())
         logger.info("A new FinDoppler instance created!")
         self.obs_info = obs_info

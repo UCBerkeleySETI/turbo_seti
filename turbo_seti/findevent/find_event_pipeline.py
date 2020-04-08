@@ -18,7 +18,14 @@ import pandas as pd
 import time
 import numpy as np
 
-def find_event_pipeline(filter_level, SNR, dat_file_list_string, on_off_first='ON', number_in_sequence=6, saving=False, zero_drift_parameter=True, user_validation=False): 
+def find_event_pipeline(filter_level, 
+                        SNR, 
+                        dat_file_list_string, 
+                        on_off_first='ON', 
+                        number_in_sequence=6, 
+                        saving=False, 
+                        zero_drift_parameter=True, 
+                        user_validation=False): 
     print("************   BEGINNING FIND_EVENT PIPELINE   **************")
     print("Assuming start with the " + on_off_first + " observation.")
     
@@ -67,22 +74,22 @@ def find_event_pipeline(filter_level, SNR, dat_file_list_string, on_off_first='O
             name=file_sublist[1].split('_')[5]   
         print(name)
         cand = find_event.find_events(file_sublist, SNR_cut=SNR, check_zero_drift=zero_drift_parameter, filter_threshold=filter_level, on_off_first=on_off_first, number_in_sequence=number_in_sequence)
-
         
-        if len(cand) > 0:
+        if len(cand) > 0 or type(cand) != None:
             candidate_list.append(cand)
     if len(candidate_list) > 0:
         find_event_output_dataframe = pd.concat(candidate_list)
     else:
         "Sorry, no potential candidates with your given parameters :("
+        find_event_output_dataframe = []
 
     print("ENDING PIPELINE")
     
     if saving == True:
         if zero_drift_parameter == True:
-            filestring = name + '_f' + str(filter_level) + '_zero' + '.csv'
+            filestring = name + '_f' + str(filter_level) + '_snr' + str(SNR) + '_zero' + '.csv'
         else:
-            filestring = name + '_f' + str(filter_level) + '.csv'
+            filestring = name + '_f' + str(filter_level) + '_snr' + str(SNR) + '.csv'
         
         find_event_output_dataframe.to_csv(filestring)
 

@@ -36,7 +36,12 @@ pd.options.mode.chained_assignment = None
 MAX_DRIFT_RATE = 2.0    # NOTE: these two values needs to be updated.
 OBS_LENGTH = 300.
 #------
-
+def end_search(t0):
+    #Report elapsed search time
+    t1 = time.time()
+    print('Search time: %.2f sec' % ((t1-t0)))
+    print('------   o   -------')
+    return
 
 def make_table(filename,init=False):
     ''' Creates a pandas dataframe from a turboSETI .dat output file.
@@ -76,7 +81,7 @@ def make_table(filename,init=False):
         #not row (individual hit)
         if all_hits:
             import numpy
-            print(numpy.shape(list(zip(*all_hits))))
+            #print(numpy.shape(list(zip(*all_hits))))
             TopHitNum = list(zip(*all_hits))[0]
             DriftRate = [float(df) for df in list(zip(*all_hits))[1]]
             SNR = [float(ss) for ss in list(zip(*all_hits))[2]]
@@ -184,25 +189,10 @@ def find_events(dat_file_list,
             1) Hits above an SNR cut witout AB check
             2) Hits that are only in some As and no Bs
             3) Hits that are only in all As and no Bs
-        Available on-off sequences:
-            3OFF (BAC)
-            3ON (ABA)
-            4OFF (BACA)
-            4ON (ABAC)
-            5OFF (BACAD)
-            5ON (ABACA)
-            6OFF (BACADA)
-            6ON (ABACAD)
     '''
     #Initializing timer
     t0 = time.time()
     
-#---------------------------------------------#
-#            A.....A                          #
-#           B......B                          #
-#           odd number, starts with ON or OFF #
-#---------------------------------------------#   
-    #if number_in_sequence%2 == 1:
     #Preparing to read in the list of files
     A_table_list = []
     off_table_list = []
@@ -244,11 +234,9 @@ def find_events(dat_file_list,
     
     #If there are no hits on the A target, end the program
     if not len(A_table_list) and kk == 1:
-        print('Exiting, since A_table_list is empty.')
-        t1 = time.time()
-        print('Search time: %.2f sec' % ((t1-t0)))
-        print('------   o   -------')
-        return pd.DataFrame({'This is an empty Data Frame' : []})
+        print('There are no hits in this file!')
+        end_search(t0)
+        return
     
     #Concatenating the A and B tables into a giant A table 
     #and a giant B table
@@ -291,9 +279,15 @@ def find_events(dat_file_list,
     #search
     if (len(snr_adjusted_table) == 0):
         print('Found no hits above the SNR cut.')
-        return zero_adjusted_table
+        end_search(t0)
+        return
+    if filter_threshold == 1:
+        print('Found %i hits above the SNR cut!'%len(snr_adjusted_table))
+        print('Filter level is 1 - returning this table...')
+        end_search(t0)
+        return snr_adjusted_table
     else:
-        print('Found hits above the SNR cut!')
+        print('Found %i hits above the SNR cut!'%len(snr_adjusted_table))
     
     #----------------------------------------------------------------------
 
@@ -307,9 +301,15 @@ def find_events(dat_file_list,
 
     if (len(not_in_off_table) == 0):
         print('Found no hits present in only the A observations.')
-        return snr_adjusted_table
+        end_search(t0)
+        return
+    if filter_threshold == 2:    
+        print('Found %i hits only in the A observations!'%len(not_in_off_table))
+        print('Filter level is 2 - returning this table...')
+        end_search(t0)
+        return not_in_off_table
     else:
-        print('Found hits present in only the A observations!')
+        print('Found %i hits present only in the A observations!'%len(not_in_off_table))
         
     #----------------------------------------------------------------------
     
@@ -334,42 +334,31 @@ def find_events(dat_file_list,
         
         first_A['in_n_ons'] = first_A.apply(hit_func, axis=1)
         in_all_As_table = first_A[first_A['in_n_ons'] == number_of_As - 1]
+        
+        #Create list of events.
+        filter_3_event_list = []
+
+        for hit_index, hit in in_all_As_table.iterrows():
+            for table in A_but_not_off_table_list:
+                temp_table = follow_event(hit,table,get_count=False)
+                temp_table['Hit_ID'] = hit['Source']+'_'+str(hit_index)
+                filter_3_event_list += [temp_table]
 
     else:
-        print('NOTE: Found no hits present in all A observations.')
+        print('NOTE: At least one of the ON tables is empty.')
+        end_search(t0)
+        return
 
     if len(in_all_As_table) > 0:
-        print('NOTE: Found some events! :)')
+        AAA_table = pd.concat(filter_3_event_list)
+        print('Found: %i events at Filter Level 3!'%(int(len(AAA_table)/3)))
+        end_search(t0)
+        return AAA_table
+    
     else:
         print('NOTE: Found no events. :(')
-        return pd.concat(A_but_not_off_table_list)
+        end_search(t0)
+        return
     
     #----------------------------------------------------------------------
 
-
-    #Create list of events.
-    filter_3_event_list = []
-
-    for hit_index, hit in in_all_As_table.iterrows():
-        for table in A_but_not_off_table_list:
-            temp_table = follow_event(hit,table,get_count=False)
-            temp_table['Hit_ID'] = hit['Source']+'_'+str(hit_index)
-            filter_3_event_list += [temp_table]
-
-    AAA_table = pd.concat(filter_3_event_list)
-    
-    #######################################################################
-    #######################################################################
-    
-    #If there are any Filter Level 3 candidates, report them!
-    if len(AAA_table) > 0:
-        print('Found: %2.2f events at Filter Level 3!'%(int(len(AAA_table)/3)))
-    
-    #Report elapsed search time
-    t1 = time.time()
-    print('Search time: %.2f sec' % ((t1-t0)))
-    print('------   o   -------')
-    
-    #SZS: This is where returning happens, 
-    #figure out a better way to do this
-    return(AAA_table)

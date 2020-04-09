@@ -1,14 +1,94 @@
 #!/usr/bin/env python
 
-#All star names must be entered in order, all A stars
-#then all B-stars. In the future, I may automate this.
-#node string = ex. 'blc00'
-#filter_level = 1, 2, or 3
-#SNR = the SNR cut for the analysis ex. 10
-#dat_file_list_string = path to list of .dat files for
-#    all of the candidates, with filename
-#fil_file_list_string = path to list of .fil files for
-#    all of the candidates, with filename
+'''
+Front-facing script to find drifting, narrowband events in a set of generalized 
+cadences of ON-OFF radio SETI observations.
+
+In this code, the following terminology is used:
+Hit = single strong narrowband signal in an observation
+Event = a strong narrowband signal that is associated with multiple hits
+        across ON observations
+    
+The main function contained in this file is *find_event_pipeline*
+    Find_event_pipeline calls find_events from find_events.py to read a list 
+    of turboSETI .dat files. It then finds events within this group of files. 
+                      
+Usage (beta):
+    import find_event_pipeline;
+    find_event_pipeline.find_event_pipeline(dat_file_list_str, 
+                                            SNR_cut=10,
+                                            check_zero_drift=False,
+                                            filter_level=3, 
+                                            on_off_first='ON', 
+                                            number_in_cadence=6, 
+                                            saving=True,  
+                                            user_validation=False)
+    
+    dat_file_list_str   The string name of a plaintext file ending in .lst 
+                        that contains the filenames of .dat files, each on a 
+                        new line, that were created with seti_event.py. The 
+                        .lst should contain a set of cadences (ON observations 
+                        alternating with OFF observations). The cadence can be 
+                        of any length, given that the ON source is every other 
+                        file. This includes Breakthrough Listen standard ABACAD
+                        as well as OFF first cadences like BACADA. Minimum 
+                        cadence length is 2, maximum cadence length is 
+                        unspecified (currently tested up to 6).
+                                   
+                        Example: ABACAD|ABACAD|ABACAD
+                   
+    SNR_cut             The threshold SNR below which hits in the ON source 
+                        will be disregarded. For the least strict thresholding, 
+                        set this parameter equal to the minimum-searched SNR 
+                        that you used to create the .dat files from 
+                        seti_event.py. Recommendation (and default) is 10.
+                   
+    check_zero_drift    A True/False flag that tells the program whether to
+                        include hits that have a drift rate of 0 Hz/s. Earth-
+                        based RFI tends to have no drift rate, while signals
+                        from the sky are expected to have non-zero drift rates.
+                        Default is False.
+                        
+    filter_threshold    Specification for how strict the hit filtering will be.
+                        There are 3 different levels of filtering, specified by
+                        the integers 1, 2, and 3. Filter_threshold = 1 
+                        returns hits above an SNR cut, taking into account the
+                        check_zero_drift parameter, but without an ON-OFF check.
+                        Filter_threshold = 2 returns hits that passed level 1
+                        AND that are in at least one ON but no OFFs. 
+                        Filter_threshold = 3 returns events that passed level 2
+                        AND that are present in *ALL* ONs. Default is 3.
+                        
+    on_off_first        Tells the code whether the .dat sequence starts with
+                        the ON or the OFF observation. Valid entries are 'ON'
+                        and 'OFF' only. Default is 'ON'.
+    
+    number_in_cadence   The number of files in a single ON-OFF cadence.
+                        Default is 6 for ABACAD.
+                        
+    saving              A True/False flag that tells the program whether to 
+                        save the output array as a .csv
+                        
+    user_validation     A True/False flag that, when set to True, asks if the
+                        user wishes to continue with their input parameters
+                        (and requires a 'y' or 'n' typed as confirmation)
+                        before beginning to run the program. Recommended when
+                        first learning the program, not recommended for 
+                        automated scripts.
+                    
+author: 
+    Version 2.0 - Sofia Sheikh (ssheikhmsa@gmail.com), 
+    Version 1.0 - Emilio Enriquez (jeenriquez@gmail.com)
+
+***
+NOTE: This code works for .dat files that were produced by seti_event.py
+after turboSETI version 0.8.2, and blimpy version 1.1.7 (~mid 2019). The 
+drift rates *before* that version were recorded with the incorrect sign
+and thus the drift rate sign would need to be flipped in the make_table 
+function.
+***
+
+'''
 
 #required packages and programs
 import find_event
@@ -18,37 +98,39 @@ import pandas as pd
 import time
 import numpy as np
 
-def find_event_pipeline(filter_level, 
-                        SNR, 
-                        dat_file_list_string, 
+def find_event_pipeline(dat_file_list_str,
+                        SNR_cut=10, 
+                        check_zero_drift=False, 
+                        filter_threshold=3, 
                         on_off_first='ON', 
-                        number_in_sequence=6, 
-                        saving=False, 
-                        zero_drift_parameter=True, 
+                        number_in_cadence=6, 
+                        saving=True, 
                         user_validation=False): 
+    print()
     print("************   BEGINNING FIND_EVENT PIPELINE   **************")
-    print("Assuming start with the " + on_off_first + " observation.")
+    print()
+    print("Assuming the first observation is an " + on_off_first)
     
     #Opening list of files
-    dat_file_list = open(dat_file_list_string).readlines()
+    dat_file_list = open(dat_file_list_str).readlines()
     dat_file_list = [files.replace('\n','') for files in dat_file_list]
     dat_file_list = [files.replace(',','') for files in dat_file_list]
     n_files = len(dat_file_list)
     
-    print("There are " + str(len(dat_file_list)) + " total files in your filelist, " + dat_file_list_string)
-    print("Therefore, looking for events in " + str(int(n_files/number_in_sequence)) + " on-off sets")
-    print("with a minimum SNR of " + str(SNR))
+    print("There are " + str(len(dat_file_list)) + " total files in the filelist " + dat_file_list_str)
+    print("therefore, looking for events in " + str(int(n_files/number_in_cadence)) + " on-off set(s)")
+    print("with a minimum SNR of " + str(SNR_cut))
     
-    if filter_level == 1:
-        print("present in the A source with no RFI rejection from the off-sources")
-    if filter_level == 2:
+    if filter_threshold == 1:
+        print("Present in an A source only, above SNR_cut")
+    if filter_threshold == 2:
         print("Present in at least one A source with RFI rejection from the off-sources")
-    if filter_level == 3:
+    if filter_threshold == 3:
         print("Present in all A sources with RFI rejection from the off-sources")
     
-    if zero_drift_parameter == False:
+    if check_zero_drift == False:
         print("not including signals with zero drift")
-    if zero_drift_parameter == True:
+    if check_zero_drift == True:
         print("including signals with zero drift")
     if saving == False:
         print("not saving the output files")
@@ -59,23 +141,33 @@ def find_event_pipeline(filter_level,
         question = "Do you wish to proceed with these settings?"
         while "the answer is invalid":
             reply = str(input(question+' (y/n): ')).lower().strip()
+            if reply == '':
+                return
             if reply[0] == 'y':
                 break
             if reply[0] == 'n':
                 return
     
-    #Looping over n_files chunks.
+    #Looping over number_in_cadence chunks.
     candidate_list = []
-    for i in range(int(len(dat_file_list)/n_files)):
-        file_sublist = dat_file_list[n_files*i:n_files*(i+1)]
+    for i in range((int(n_files/number_in_cadence))):
+        file_sublist = dat_file_list[number_in_cadence*i:((i*number_in_cadence)+(number_in_cadence))]
         if on_off_first == 'ON':
             name=file_sublist[0].split('_')[5]  
         if on_off_first == 'OFF':
-            name=file_sublist[1].split('_')[5]   
-        print(name)
-        cand = find_event.find_events(file_sublist, SNR_cut=SNR, check_zero_drift=zero_drift_parameter, filter_threshold=filter_level, on_off_first=on_off_first, number_in_sequence=number_in_sequence)
-        
-        if len(cand) > 0 or type(cand) != None:
+            name=file_sublist[1].split('_')[5] 
+        print()
+        print("***       " + name + "       ***")
+        print()
+        cand = find_event.find_events(file_sublist, 
+                                      SNR_cut=SNR_cut, 
+                                      check_zero_drift=check_zero_drift, 
+                                      filter_threshold=filter_threshold, 
+                                      on_off_first=on_off_first)
+        cand_len = 1
+        if cand is None:
+            cand_len = 0
+        if cand_len != 0:
             candidate_list.append(cand)
     if len(candidate_list) > 0:
         find_event_output_dataframe = pd.concat(candidate_list)
@@ -83,13 +175,13 @@ def find_event_pipeline(filter_level,
         "Sorry, no potential candidates with your given parameters :("
         find_event_output_dataframe = []
 
-    print("ENDING PIPELINE")
+    print("************  ENDING FIND_EVENT PIPELINE   **************")
     
     if saving == True:
-        if zero_drift_parameter == True:
-            filestring = name + '_f' + str(filter_level) + '_snr' + str(SNR) + '_zero' + '.csv'
+        if check_zero_drift == True:
+            filestring = name + '_f' + str(filter_threshold) + '_snr' + str(SNR_cut) + '_zero' + '.csv'
         else:
-            filestring = name + '_f' + str(filter_level) + '_snr' + str(SNR) + '.csv'
+            filestring = name + '_f' + str(filter_threshold) + '_snr' + str(SNR_cut) + '.csv'
         
         find_event_output_dataframe.to_csv(filestring)
 

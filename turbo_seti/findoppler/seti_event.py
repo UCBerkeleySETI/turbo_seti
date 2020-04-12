@@ -14,21 +14,32 @@ from optparse import OptionParser
 #import pdb;# pdb.set_trace()
 
 def make_list(option, opt_str, value, parser):
+    """
+    This function is used when certain commandline options are used when running turboSETI (-c). It is used to convert
+    the inputted option, which should be a comma separated string, into a list. Stores this in the inputted OptionParser
+    object's values field, under the inputted option. This is only called for the coarse_chans option currently,
+    essentially to parse the inputted coarse channels into a usable format.
+    :param option:      Option,         whose value should be set to the new list
+    :param opt_str:     string,         (unused) command line option inputted when main was run
+    :param value:       string,         in comma separated format which must be converted to list format
+    :param parser:      OptionParser,   instance whose option we are setting to the new list
+    :return: void
+    """
     v = value.replace('[','').replace(']','').split(',')
     v = list(map(int, v))
     setattr(parser.values, option.dest, v)
 
 def main():
-
+    """
+    This is the entry-point to turboSETI.
+    """
+    # Create an option parser to get command-line input/arguments
     p = OptionParser()
     p.set_usage('turboSETI <FULL_PATH_TO_FIL_FILE> [options]')
 
-#    p.add_option('-m', '--min_drift', dest='min_drift', type='float', default=0.0, help='Set the minimum drift rate to search. Unit: Hz/sec. Default:0.0')
     p.add_option('-M', '--max_drift', dest='max_drift', type='float', default=10.0, help='Set the drift rate to search. Unit: Hz/sec. Default: 10.0')
     p.add_option('-s', '--snr', dest='snr', type='float', default=25.0, help='SNR threshold. Default: 25.0')
-#    p.add_option('-b', '--bw', dest='bw', type='float', default=1, help='Specify the amount of \'compression\' to be done in frequency domain to search for more \'spread out\' signals. Unit:?. Default: ?')
     p.add_option('-o', '--out_dir', dest='out_dir', type='str', default='./', help='Location for output files. Default: local dir. ')
-#    p.add_option('-w', '--width', dest='slice_width', type='int', default=512, help='')
     p.add_option('-l', '--loglevel', dest='loglevel', type='str', default='info', help='Specify log level (info, debug)')
     p.add_option('-c', '--coarse_chans', dest='coarse_chans', type='str', action='callback', default='', callback=make_list,
                  help='Comma separated list of coarse channels to analyze.(ie. "5,8" to do from 5th to 8th coarse channels)')
@@ -36,7 +47,8 @@ def main():
                  help='Number of coarse channels in file.')
     opts, args = p.parse_args(sys.argv[1:])
 
-    if len(args)!=1:
+    # Makes sure exactly one file is given as an arg
+    if len(args) != 1:
         print('Please specify a file name \nExiting.')
         sys.exit()
     else:
@@ -47,16 +59,16 @@ def main():
     obs_info['pulsar'] = 0  # Bool if pulsar detection.
     obs_info['pulsar_found'] = 0  # Bool if pulsar detection.
     obs_info['pulsar_dm'] = 0.0  # Pulsar expected DM.
-    obs_info['pulsar_snr'] = 0.0 # SNR
+    obs_info['pulsar_snr'] = 0.0  # Signal toNoise Ratio (SNR)
     obs_info['pulsar_stats'] = np.zeros(6)
-    obs_info['RFI_level'] = 0.0
-    obs_info['Mean_SEFD'] = 0.0
+    obs_info['RFI_level'] = 0.0  # Radio Frequency Interference
+    obs_info['Mean_SEFD'] = 0.0  # Mean System Equivalent Flux Density
     obs_info['psrflux_Sens'] = 0.0
-    obs_info['SEFDs_val'] = [0.0]
-    obs_info['SEFDs_freq'] = [0.0]
+    obs_info['SEFDs_val'] = [0.0]  # System Equivalent Flux Density values
+    obs_info['SEFDs_freq'] = [0.0]  # System Equivalent Flux Density frequency
     obs_info['SEFDs_freq_up'] = [0.0]
 
-    #Setting log level
+    # Setting log level
     if opts.loglevel == 'info':
         level_log = logging.INFO
     elif opts.loglevel == 'debug':

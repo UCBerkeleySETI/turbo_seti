@@ -20,8 +20,15 @@ SIZE_LIM = 256.0   # File size limit in MB. If larger then make a split mapping.
 
 class DATAHandle:
     """
+    Class to setup input file for further processing of data. Handles conversion to h5 (from fil), extraction of
+    coarse channel info, waterfall info, and file size checking.
     """
     def __init__(self, filename=None, size_limit=SIZE_LIM, out_dir='./', n_coarse_chan=None, coarse_chans=None):
+        """
+        :param filename:        string,      name of file (.h5 or .fil)
+        :param size_limit:      float,       maximum size in MB that the file is allowed to be
+        :param out_dir:         string,      directory where output files should be saved
+        """
         self.filename = filename
         if filename and os.path.isfile(filename):
             self.filename = filename
@@ -42,7 +49,7 @@ class DATAHandle:
             self.filestat = os.stat(filename)
             self.filesize = self.filestat.st_size/(1024.0**2)
 
-
+            # Make sure file is not larger than limit. If it is, we must split the file
             if self.filesize > size_limit:
                 logger.info("The file is of size %f MB, exceeding our size limit %f MB. Split needed..."%(self.filesize, size_limit))
                 self.data_list = self.__split_h5()
@@ -60,15 +67,19 @@ class DATAHandle:
             raise IOError("File %s doesn\'t exists, please check!"%self.filename)
 
     def get_info(self):
-        ''' Returning header.
-        '''
+        """
+        :return:    dict,    header of the blimpy file
+        """
 
         fil_file = Waterfall(self.filename,load_data=False)
         return fil_file.header
 
     def __make_h5_file(self,):
-        ''' Converts file to h5 format. Saves output in current dir.
-        '''
+        """
+        Converts file to h5 format. Saves output in current dir. Sets the filename attribute of the calling DATAHandle
+        to the (new) filename.
+        :return: void
+        """
 
         fil_file = Waterfall(self.filename)
         new_filename = self.out_dir+self.filename.replace('.fil','.h5').split('/')[-1]
@@ -76,8 +87,12 @@ class DATAHandle:
         self.filename = new_filename
 
     def __split_h5(self, size_limit=SIZE_LIM):
-        '''Creates a plan to select data from single coarse channels.
-        '''
+        """
+        Creates a plan to select data from single coarse channels.
+        :param size_limit:      float,              maximum size in MB that the file is allowed to be
+        :return:                list[DATAH5],       the list contains a DATAH5 object for each of the coarse channels in
+                                                    the file
+        """
 
         data_list = []
 
@@ -127,11 +142,23 @@ class DATAHandle:
         return data_list
 
 class DATAH5:
-    ''' This class is where the waterfall data is loaded, as well as the header info.
-        It creates other atributes related to the dedoppler search (load_drift_indexes).
-    '''
+    """
+    This class is where the waterfall data is loaded, as well as the header info.
+    It creates other attributes related to the dedoppler search (load_drift_indexes).
+    """
 
     def __init__(self, filename, size_limit = SIZE_LIM,f_start=None, f_stop=None,t_start=None, t_stop=None,coarse_chan=1,tn_coarse_chan=None):
+        """
+        :param filename:        string      name of file
+        :param size_limit:      float       maximum size in MB that the file is allowed to be
+        :param f_start:         float       start frequency in MHz
+        :param f_stop:          float       stop frequency in MHz
+        :param t_start:         int         start integration ID
+        :param t_stop:          int         stop integration ID
+        :param coarse_chan:     int
+        :param tn_coarse_chan:  int
+        """
+
         self.filename = filename
         self.closed = False
         self.f_start = f_start
@@ -178,8 +205,10 @@ class DATAH5:
         self.tdwidth = self.fftlen + self.shoulder_size*self.tsteps
 
     def load_data(self,):
-        ''' Read the data from file.
-        '''
+        """
+        Read the spectra and drift indices from file.
+        :return:    ndarray, ndarray        spectra, drift indices
+        """
         self.fil_file.read_data(f_start=self.f_start, f_stop=self.f_stop)
 
         #Blanking DC bin.
@@ -196,8 +225,8 @@ class DATAH5:
             spectra = spectra[:,::-1]
 
         #This check will add rows of zeros if the obs is too short (and thus not a power of two rows).
-        while spectra.shape[0] != self.tsteps:
-                spectra = np.append(spectra,np.zeros((1,self.fftlen)),axis=0)
+        if spectra.shape[0] != self.tsteps:
+            spectra = np.append(spectra, np.zeros((self.tsteps-spectra.shape[0], self.fftlen)), axis=0)
         self.tsteps_valid = self.tsteps
         self.obs_length = self.tsteps * self.header[b'DELTAT']
 
@@ -210,8 +239,10 @@ class DATAH5:
         return spectra, drift_indexes
 
     def load_drift_indexes(self):
-        ''' The drift indexes are read from an stored file so that no need to recalculate. This speed things up.
-        '''
+        """
+        The drift indices are read from a stored file so that there is no need to recalculate. This speed things up.
+        :return:    ndarray     drift indices
+        """
         n = int(np.log2(self.tsteps))
         di_array = np.genfromtxt(resource_filename('turbo_seti', 'drift_indexes/drift_indexes_array_%d.txt'%n), delimiter=' ', dtype=int)
 
@@ -220,7 +251,12 @@ class DATAH5:
         return drift_indexes
 
     def __make_data_header(self,header,coarse=False):
-        '''Takes header into fits header format '''
+        """
+        Takes header into fits header format
+        :param header:      dict        blimpy waterfall header
+        :param coarse:      Boolean     whether or not there are coarse channels to analyze
+        :return:            dict
+        """
 
         base_header = {}
 

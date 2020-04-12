@@ -56,7 +56,23 @@ class FinDoppler:
 
         logger.info(self.data_handle.get_info())
         logger.info("A new FinDoppler instance created!")
+
+        if obs_info is None:
+            obs_info = {}
+            obs_info['pulsar']        = 0  # Bool if pulsar detection.
+            obs_info['pulsar_found']  = 0  # Bool if pulsar detection.
+            obs_info['pulsar_dm']     = 0.0  # Pulsar expected DM.
+            obs_info['pulsar_snr']    = 0.0  # Signal toNoise Ratio (SNR)
+            obs_info['pulsar_stats']  = np.zeros(6)
+            obs_info['RFI_level']     = 0.0  # Radio Frequency Interference
+            obs_info['Mean_SEFD']     = 0.0  # Mean System Equivalent Flux Density
+            obs_info['psrflux_Sens']  = 0.0
+            obs_info['SEFDs_val']     = [0.0]  # System Equivalent Flux Density values
+            obs_info['SEFDs_freq']    = [0.0]  # System Equivalent Flux Density frequency
+            obs_info['SEFDs_freq_up'] = [0.0]
+
         self.obs_info = obs_info
+
         self.status = True
         self.flagging = flagging
 

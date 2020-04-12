@@ -30,7 +30,7 @@ It was originally based on `dedoppler` [dedoppler](http://github.com/cs150bf/gbt
 ### Dependencies
 
 - astropy
-- pyximport
+- cython
 - numpy
 - blimpy (Breakthrough Listen I/O Methods for Python :  https://github.com/UCBerkeleySETI/blimpy)
 

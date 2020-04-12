@@ -96,7 +96,6 @@ class DATAHandle:
 
         data_list = []
 
-
         #Instancing file.
         try:
             fil_file = Waterfall(self.filename)
@@ -116,13 +115,10 @@ class DATAHandle:
         else:
             n_coarse_chan = int(fil_file.calc_n_coarse_chan())
 
-        print('ncoarsechan', n_coarse_chan)
-
         # Only load coarse chans of interest -- or do all if not specified
         if self.coarse_chans in (None, ''):
             self.coarse_chans = range(n_coarse_chan)
 
-        print('coarse_cahns', self.coarse_chans, type(self.coarse_chans))
         for chan in self.coarse_chans:
 
             #Calculate freq range for given course channel.
@@ -177,7 +173,7 @@ class DATAH5:
         #Getting header
         try:
             if self.tn_coarse_chan:
-                header = self.__make_data_header(self.fil_file.header, coarse=True)
+                header = self.__make_data_header(self.fil_file.header,coarse=True)
             else:
                 header = self.__make_data_header(self.fil_file.header)
         except:
@@ -187,7 +183,7 @@ class DATAH5:
         self.header = header
 
         self.fftlen = header[b'NAXIS1']
-
+ 
         #EE To check if swapping tsteps_valid and tsteps is more appropriate.
         self.tsteps_valid = header[b'NAXIS2']
         self.tsteps = int(math.pow(2, math.ceil(np.log2(math.floor(self.tsteps_valid)))))

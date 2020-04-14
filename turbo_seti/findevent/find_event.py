@@ -1,70 +1,134 @@
 #!/usr/bin/env python
 '''
-Script to find events in a group of ABACAD observations.
-    1) It compares ON vs OFF observations
-    2) any signal found only in the ON is checked to be found in all the 3 ONs following the frequency drift of the signal.
+Backend script to find drifting, narrowband events in a generalized cadence of 
+ON-OFF radio SETI observations.
 
+In this code, the following terminology is used:
+Hit = single strong narrowband signal in an observation
+Event = a strong narrowband signal that is associated with multiple hits
+        across ON observations
+    
+The main function contained in this file is *find_events*
+    Find_events uses the other helper functions in this file (described below)
+    to read a list of turboSETI .dat files. It then finds events within this 
+    group of files. 
+    
+The following helper functions are contained in this file:
+    end_search      - prints the runtime and ends the program
+    make_table      - generates a pandas dataframe from a turboSETI
+                      output .dat file created by seti_event.py
+    calc_freq_range - Calculates a range of frequencies where RFI in an OFF 
+                      could be related to a hit in an ON given a freq and 
+                      drift_rate
+    follow_event    - Follows a given hit to the next observation of the ON
+                      target and looks for hits which could be part of the 
+                      same event
+                      
 Usage (beta):
-    import find_events_test as fact
-    TEST_LIST = ['dir/filename_A1.dat','dir/filename_B1.dat','dir/filename_A2.dat','dir/filename_B2.dat','dir/filename_A3.dat','dir/filename_B3.dat']
-    fact.find_events(TEST_LIST)
+    It is highly recommended that users interact with this program via the
+    front-facing find_event_pipeline.py script. See the usage of that file in
+    its own documentation. 
+    
+    If you would like to run find_events without calling
+    find_event_pipeline.py, the usage is as follows:
+    
+    find_event.find_events(file_sublist, 
+                           SNR_cut=10, 
+                           check_zero_drift=False, 
+                           filter_threshold=3, 
+                           on_off_first='ON')
+    
+    file_sublist        A Python list of .dat files with ON observations of a
+                        single target alternating with OFF observations. This 
+                        cadence can be of any length, given that the ON source 
+                        is every other file. This includes Breakthrough Listen 
+                        standard ABACAD as well as OFF first cadences like 
+                        BACADA. Minimum cadence length is 2, maximum cadence 
+                        length is unspecified (currently tested up to 6).
+                   
+    SNR_cut             The threshold SNR below which hits in the ON source 
+                        will be disregarded. For the least strict thresholding, 
+                        set this parameter equal to the minimum-searched SNR 
+                        that you used to create the .dat files from 
+                        seti_event.py. Recommendation (and default) is 10.
+                   
+    check_zero_drift    A True/False flag that tells the program whether to
+                        include hits that have a drift rate of 0 Hz/s. Earth-
+                        based RFI tends to have no drift rate, while signals
+                        from the sky are expected to have non-zero drift rates.
+                        Default is False.
+                        
+    filter_threshold    Specification for how strict the hit filtering will be.
+                        There are 3 different levels of filtering, specified by
+                        the integers 1, 2, and 3. Filter_threshold = 1 
+                        returns hits above an SNR cut, taking into account the
+                        check_zero_drift parameter, but without an ON-OFF check.
+                        Filter_threshold = 2 returns hits that passed level 1
+                        AND that are in at least one ON but no OFFs. 
+                        Filter_threshold = 3 returns events that passed level 2
+                        AND that are present in *ALL* ONs. Default is 3.
+                        
+    on_off_first        Tells the code whether the .dat sequence starts with
+                        the ON or the OFF observation. Valid entries are 'ON'
+                        and 'OFF' only. Default is 'ON'.
+                    
+author: 
+    Version 2.0 - Sofia Sheikh (ssheikhmsa@gmail.com)
+    Version 1.0 - Emilio Enriquez (jeenriquez@gmail.com)
+    
+Last updated: 04/08/2020
 
-    ..author: Emilio Enriquez (jeenriquez@gmail.com)
+***
+NOTE: This code works for .dat files that were produced by seti_event.py
+after turboSETI version 0.8.2, and blimpy version 1.1.7 (~mid 2019). The 
+drift rates *before* that version were recorded with the incorrect sign
+and thus the drift rate sign would need to be flipped in the make_table 
+function.
+***
+
 '''
 
 import pandas as pd
-import pdb;# pdb.set_trace()
-import time
-from blimpy import Filterbank
 import numpy as np
-from blimpy.utils import db, lin, rebin, closest
-from optparse import OptionParser
-import logging
+import time
 
-try:
-    from . import plot_event
-except:
-    import plot_event
-
-import sys
-import socket
-
-pd.options.mode.chained_assignment = None  # To remove pandas warnings: default='warn'
+pd.options.mode.chained_assignment = None  
+#^To remove pandas warnings: default='warn'
 
 #------
-#Hardcoded values
-MAX_DRIFT_RATE = 2.0    # NOTE: these two values needs to be updated.
-OBS_LENGHT = 300.
+#Hardcoded values - SZS NOTE: Make these NOT Hardcoded
+MAX_DRIFT_RATE = 2.0    # NOTE: these two values need to be updated.
+OBS_LENGTH = 300.
 #------
-
-
-def make_big_table(filename_list):
-    ''' This creates a pandas dataframe from a list of turboSETI flat files.
+def end_search(t0):
+    '''ends the search when there are no candidates left, or when the filter
+    level matches the user-specified level
     '''
-    table_list = []
-
-    for filename in filename_list:
-        new_table = make_table(filename)
-        table_list.append(new_table)
-
-    final_table = pd.concat(table_list)
-    return final_table
-
+    #Report elapsed search time
+    t1 = time.time()
+    print('Search time: %.2f sec' % ((t1-t0)))
+    print('------   o   -------')
+    return
 
 def make_table(filename,init=False):
-    ''' This creates a pandas dataframe from a turboSETI flat file.
+    ''' Creates a pandas dataframe with column names standard for turboSETI .dat
+    output files, either directly (if) or by reading the file line-by line and
+    then reorganizing the output (else)
     '''
-
+    
     if init:
-        columns = ['FileID','Source','MJD','RA','DEC', 'DELTAT','DELTAF','TopHitNum','DriftRate', 'SNR', 'Freq', 'ChanIndx', 'FreqStart', 'FreqEnd', 'CoarseChanNum', 'FullNumHitsInRange','status','Hit_ID','ON_in_range','RFI_in_range']
+        columns = ['FileID','Source','MJD','RA','DEC', 'DELTAT','DELTAF',
+                   'TopHitNum','DriftRate', 'SNR', 'Freq', 'ChanIndx', 
+                   'FreqStart', 'FreqEnd', 'CoarseChanNum', 
+                   'FullNumHitsInRange','status','Hit_ID','in_n_ons',
+                   'RFI_in_range']
         df_data = pd.DataFrame(columns=columns)
 
     else:
-
         file_dat = open(filename.strip())
         hits = file_dat.readlines()
 
-        #Info from header
+        #Get info from the .dat file header
         FileID = hits[1].strip().split(':')[-1].strip()
         Source = hits[3].strip().split(':')[-1].strip()
 
@@ -75,20 +139,21 @@ def make_table(filename,init=False):
         DELTAT = hits[5].strip().split('\t')[0].split(':')[-1].strip()   # s
         DELTAF = hits[5].strip().split('\t')[1].split(':')[-1].strip()   # Hz
 
-        #Info from individual Hits
+        #Get info from individual hits (the body of the .dat file)
         all_hits = [hit.strip().split('\t') for hit in hits[9:]]
-
+        
+        #Now reorganize that info to be grouped by column (parameter) 
+        #not row (individual hit)
         if all_hits:
-
-            TopHitNum = zip(*all_hits)[0]
-            DriftRate = [float(df) for df in zip(*all_hits)[1]]
-            SNR = [float(ss) for ss in zip(*all_hits)[2]]
-            Freq = [float(ff) for ff in zip(*all_hits)[3]]
-            ChanIndx = zip(*all_hits)[5]
-            FreqStart = zip(*all_hits)[6]
-            FreqEnd = zip(*all_hits)[7]
-            CoarseChanNum = zip(*all_hits)[10]
-            FullNumHitsInRange = zip(*all_hits)[11]
+            TopHitNum = list(zip(*all_hits))[0]
+            DriftRate = [float(df) for df in list(zip(*all_hits))[1]]
+            SNR = [float(ss) for ss in list(zip(*all_hits))[2]]
+            Freq = [float(ff) for ff in list(zip(*all_hits))[3]]
+            ChanIndx = list(zip(*all_hits))[5]
+            FreqStart = list(zip(*all_hits))[6]
+            FreqEnd = list(zip(*all_hits))[7]
+            CoarseChanNum = list(zip(*all_hits))[10]
+            FullNumHitsInRange = list(zip(*all_hits))[11]
 
             data = {'TopHitNum':TopHitNum,
                     'DriftRate':DriftRate,
@@ -101,14 +166,14 @@ def make_table(filename,init=False):
                     'FullNumHitsInRange':FullNumHitsInRange
                     }
 
-            #Creating dataframe from data
+            #Creating pandas dataframe from data we just read in
             df_data = pd.DataFrame(data)
             df_data = df_data.apply(pd.to_numeric)
 
         else:
             df_data = pd.DataFrame()
 
-        #Adding header information.
+        #Matching column information from before to the .dat data we read in
         df_data['FileID'] = FileID
         df_data['Source'] = Source.upper()
         df_data['MJD'] = MJD
@@ -117,47 +182,54 @@ def make_table(filename,init=False):
         df_data['DELTAT'] = DELTAT
         df_data['DELTAF'] = DELTAF
 
-        #Adding extra columns.
+        #Adding extra columns that will be filled out by this program
         df_data['Hit_ID'] = ''
         df_data['status'] = ''
-        df_data['ON_in_range'] = ''
+        df_data['in_n_ons'] = ''
         df_data['RFI_in_range'] = ''
 
     return df_data
 
 def calc_freq_range(hit,delta_t=0,max_dr=True,follow=False):
-    '''Calculates the range of frequencies given a freq and drift_rate.
+    '''Calculates a range of frequencies where RFI in an off-source could
+        be related to a hit in an on-source given a freq and drift_rate.
     '''
-
     if max_dr:
         drift_rate = MAX_DRIFT_RATE
     else:
         drift_rate = hit['DriftRate']
-
+        
     if drift_rate == 0.0:
         drift_rate = float(hit['DELTAF'])/float(hit['DELTAT'])
-
     if follow:
         freq = hit['Freq'] + drift_rate*(delta_t)/1e6
-        delta_t = 2*OBS_LENGHT  # NOTE: I'm doing twice the amount. To widen the range a bit. Still it is dependend on hit['DriftRate']
+        delta_t = 2*OBS_LENGTH  # NOTE: I'm doing twice the amount. To widen the range a bit. 
+                                # Still it is dependent on hit['DriftRate']
     else:
         freq = hit['Freq']
-        delta_t = delta_t+OBS_LENGHT  #adding to the end of the obs.
-
+        delta_t = delta_t+OBS_LENGTH  #adding to the end of the obs.
+    
     low_bound  = freq - abs(drift_rate)*delta_t/1e6
     high_bound = freq + abs(drift_rate)*delta_t/1e6
 
     return [low_bound,high_bound]
 
-def follow_event(hit,A_table,get_count=True):
-    ''' Follows hit to another obs, and finds if anything is there.
+def follow_event(hit,on_table,get_count=True):
+    ''' Follows a given hit to the next observation of the same target and 
+    looks for hits which could be part of the same event.
     '''
 
-    freq_range = calc_freq_range(hit,delta_t=A_table['delta_t'].values[0],max_dr=False,follow=True)
-    new_A_table = A_table[(A_table['Freq']>freq_range[0]) & (A_table['Freq']<freq_range[1])]
+    #uses calc_freq_range to see how much the hit *should* have drifted by
+    freq_range = calc_freq_range(hit,delta_t=on_table['delta_t'].values[0],max_dr=False,follow=True)
+    
+    #looks at the on (next given observation) to see if there are any
+    #hits that could plausibly be related to the first one
+    new_on_table = on_table[(on_table['Freq']>freq_range[0]) & (on_table['Freq']<freq_range[1])]
 
+    #we only care if there were or were not plausible hits, so turn output into
+    #a binary variable with get_count=True
     if get_count:
-        n_hits_in_range = len(new_A_table)
+        n_hits_in_range = len(new_on_table)
 
         #Avoiding cases where multiple hits in one obs, and none in the other.
         if n_hits_in_range:
@@ -165,297 +237,193 @@ def follow_event(hit,A_table,get_count=True):
         else:
             return 0
     else:
-        return new_A_table
+        return new_on_table
 
-def search_hits(A_table,B_table, SNR_cut = 15, check_zero_drift=False):
-    '''Rejects hits based on some logic statements.
-    '''
-
-    #---------
-    #Removing non-drift signals (optional)
-    if check_zero_drift:
-        And0_table = A_table
-    else:
-        And0_table = A_table[A_table['DriftRate'] != 0.0]
-
-    #---------
-    #Make the SNR_cut
-    Asc_table = And0_table[And0_table['SNR']> SNR_cut]
-
-    if not (len(Asc_table) > 0):
-        print('NOTE: Found no hits above the SNR cut.')
-        return And0_table, 0
-    else:
-        print('NOTE: Found hits above the SNR cut.')
-
-    #---------
-    #Finding RFI within a freq range by comparing ON to OFF obs.
-    Asc_table['RFI_in_range'] = Asc_table.apply(lambda hit: len(B_table[((B_table['Freq'] > calc_freq_range(hit)[0]) & (B_table['Freq'] < calc_freq_range(hit)[1]))]),axis=1)
-    AnB_table = Asc_table[Asc_table['RFI_in_range'] == 0]
-
-    if not (len(AnB_table) > 1):
-        print('NOTE: Found no hits present only on the A observations.')
-        return Asc_table, 1
-    else:
-        print('NOTE: Found hits present only on the A observations.')
-
-    #---------
-    #Find the ones that are present in all the 3 ON obs, and follow the drifted signal.
-    A1nB_table = AnB_table[AnB_table['status'] == 'A1_table']
-    A2nB_table = AnB_table[AnB_table['status'] == 'A2_table']
-    A3nB_table = AnB_table[AnB_table['status'] == 'A3_table']
-
-    if len(A1nB_table) > 0  and len(A2nB_table) > 0 and len(A3nB_table) > 0:
-        A1nB_table['ON_in_range'] = A1nB_table.apply(lambda hit: follow_event(hit,A2nB_table) + follow_event(hit,A3nB_table) ,axis=1)
-        AA_table = A1nB_table[A1nB_table['ON_in_range'] == 2]
-    else:
-        print('NOTE: Found no hits present in all three A observations.')
-        return AnB_table, 2
-
-    if len(AA_table) > 0:
-        print('NOTE: Found some events! :)')
-    else:
-        print('NOTE: Found no events. :(')
-        return AA_table, 2
-
-    #---------
-    #Create list of events.
-    AAA_table_list = []
-
-    for hit_index, hit in AA_table.iterrows():
-#        A1i_table['Hit_ID'][hit_index] = hit['Source']+'_'+str(hit_index)
-        A1i_table = follow_event(hit,A1nB_table,get_count=False)
-        A1i_table['Hit_ID'] = hit['Source']+'_'+str(hit_index)
-        A2i_table = follow_event(hit,A2nB_table,get_count=False)
-        A2i_table['Hit_ID'] = hit['Source']+'_'+str(hit_index)
-        A3i_table = follow_event(hit,A3nB_table,get_count=False)
-        A3i_table['Hit_ID'] = hit['Source']+'_'+str(hit_index)
-
-        AAA_table_list += [A1i_table, A2i_table, A3i_table]
-
-    AAA_table = pd.concat(AAA_table_list)
-
-    return AAA_table, 3
-
-def find_events(dat_file_list,SNR_cut=10,check_zero_drift=False,filter_threshold=3):
-    ''' Reads a list of flat turboSETI files, the list should be in the ABACAD configuration.
+def find_events(dat_file_list,
+                SNR_cut=10,
+                check_zero_drift=False,
+                filter_threshold=3,
+                on_off_first='ON'):
+    ''' Reads a list of turboSETI .dat files.
         It calls other functions to find events within this group of files.
-        Filter_threshold allows the return of a table of events with hits at different levels of filtering.
-        Filter_threshold = [1,2,3] means [ hits above an SNR cut witout AB check, only in some As, only in all As]
+        Filter_threshold allows the return of a table of events with hits at 
+        different levels of filtering.
+        Filter_threshold = [1,2,3] means:
+            1) Hits above an SNR cut witout AB check
+            2) Hits that are only in some As and no Bs
+            3) Hits that are only in all As and no Bs
     '''
-    #---------------------------
-    #Setting things up.
-
+    #Initializing timer
     t0 = time.time()
-
-    #---------------------------
-    #Looping over list
-
-    A_table_list = []
-    B_table_list = []
-
-    kk = 1   # counter for table name.
-    ll = 1   # counter for table name.
-
-    for i,flat_file in enumerate(dat_file_list):
-        #---------------------------
-        # Reading hits data
-        print('Reading hits data for %s.'%flat_file)
-
-        # Checking if on A or B observation.
-        if i%2:
-            Bi_table=make_table(flat_file)
-            Bi_table['status'] = 'B%i_table'%ll
-            print('There are %i hits on this file.'%len(Bi_table))
-            #---------------------------
-            #Grouping all hits per obs set.
-            B_table_list.append(Bi_table)
-            ll+=1
-        else:
-            Ai_table=make_table(flat_file)
-            Ai_table['status'] = 'A%i_table'%kk
-            print('There are %i hits on this file.'%len(Ai_table))
-
-            if not len(Ai_table) and kk == 1:
-                print('Exiting, since A1_table is empty.')
-                t1 = time.time()
-                print('Search time: %.2f sec' % ((t1-t0)))
-                print('------   o   -------')
-                return pd.DataFrame({'This is an empty Data Frame' : []})
-
-            #---------------------------
-            #Grouping all hits per obs set.
-            A_table_list.append(Ai_table)
-            kk+=1
-
-    #Concatenating
-    A_table = pd.concat(A_table_list,ignore_index=True)
-    B_table = pd.concat(B_table_list,ignore_index=True)
-
-    #Use this lines if ran turboSETI before version 0.8.2, and blimpy version 1.1.7
-#     A_table['DriftRate'] = A_table['DriftRate'] * -1
-#     B_table['DriftRate'] = B_table['DriftRate'] * -1
-
-    #Check all in A_table is the same source
-    if A_table['Source'].unique().shape[0] > 1:
-        raise ValueError('There are multiple sources in A table, please fix.')
-
-    #Calculating delta_t, to follow the signal.
-    ref_time = float(A_table[A_table['status'] == 'A1_table']['MJD'].unique()[0])
-    A_table['delta_t'] = A_table['MJD'].apply(lambda x: (float(x) - ref_time)*3600*24)
-
-    #To save all the hits. Uncomment these 3 lines.
-#             all_events_list.append(A_table)  This blows up the mem. Caution.
-#             all_events_list.append(B_table)
-#            continue
-
-    print('Finding all events for this A-B set.')
-    AAA_table,filter_level = search_hits(A_table,B_table,SNR_cut=SNR_cut,check_zero_drift=check_zero_drift)
-
-    if len(AAA_table) > 0:
-        print('Found: %2.2f'%(len(AAA_table)/3.))
-
-    t1 = time.time()
-    print('Search time: %.2f sec' % ((t1-t0)))
+    
     print('------   o   -------')
+    print("Loading data...")
+    
+    #Preparing to read in the list of files
+    on_table_list = []
+    off_table_list = []
+    off_count = 1 
+    on_count = 1  
+    
+    on_off_indicator = 0
+    number_of_ons = int(np.floor(len(dat_file_list) / 2.0))
+    if on_off_first == 'ON':
+        on_off_indicator = 1
+        number_of_ons = int(np.ceil(len(dat_file_list) / 2.0))
+    
+    for i,dat_file in enumerate(dat_file_list):
+        #Checking if the file is an on or off observation, based on index
+        if i%2 == on_off_indicator:
+            #Using make_table function to read the .dat file 
+            #and create the pandas hit table
+            off_table_i=make_table(dat_file)
+            off_table_i['status'] = 'off_table_%i'%off_count
+            print('Loaded %i hits from %s'%(len(off_table_i), dat_file))
 
-    if filter_level < filter_threshold:
-        return pd.DataFrame({'This is an empty Data Frame' : []})
+            #Grouping all of the off hits into one table
+            off_table_list.append(off_table_i)
+            off_count+=1
+            
+        else: 
+            #Using make_table function to read the .dat file 
+            #and create the pandas hit table
+            on_table_i=make_table(dat_file)
+            on_table_i['status'] = 'on_table_%i'%on_count
+            print('Loaded %i hits from %s'%(len(on_table_i), dat_file))
+    
+            #Grouping all of the on hits into one table
+            on_table_list.append(on_table_i)
+            off_count+=1
+    
+    #If there are no hits on any on target, end the program
+    if not len(on_table_list):
+        print('There are no hits in this cadence :(')
+        end_search(t0)
+        return
+    
+    #Concatenating the on and off tables into a giant on table 
+    #and a giant off table
+    on_table = pd.concat(on_table_list,ignore_index=True)
+    off_table = pd.concat(off_table_list,ignore_index=True)        
+    
+    #Check that all targets in the on_table come from the same source
+    if on_table['Source'].unique().shape[0] > 1:
+        raise ValueError('There are multiple sources in the on table.' 
+                         'Please check your input files, ' 
+                         'on_off_first parameter.')
+    
+    #Obtain the start times for each hit in the first on table
+    ref_time = float(on_table[on_table['status'] == 'on_table_1']['MJD'].unique()[0])
+    #Calculating and saving delta_t, in seconds, to follow a given hit from 
+    #the first on table to see if it appears in the following on tables
+    on_table['delta_t'] = on_table['MJD'].apply(lambda x: 
+        (float(x) - ref_time)*3600*24)
+
+    #######################################################################
+    print('All data loaded!')
+    print()
+    print('Finding events in this cadence...')
+    #######################################################################
+    #Using logic statements and pandas capabilities to find events that:
+    # 1) Are above an SNR cut, taking into account the check_zero_drift parameter, 
+    #    but without an ON-OFF check.
+    # 2) Passed level 1 AND that are in at least one ON but no OFFs 
+    # 3) Passed level 2 AND that are present in *ALL* ONs.
+
+    #Optionally remove signals that don't have a drift rate
+    if check_zero_drift:
+        zero_adjusted_table = on_table
     else:
-        return AAA_table
+        zero_adjusted_table = on_table[on_table['DriftRate'] != 0.0]
 
+    #Remove signals below a certain signal-to-noise ratio (SNR_cut)
+    snr_adjusted_table = zero_adjusted_table[zero_adjusted_table['SNR'] > SNR_cut]
+    
+    #If there are no hits left once SNR adjustments are made, 
+    #let the user know, return the zero-drift adjusted table, and end the
+    #search
+    if (len(snr_adjusted_table) == 0):
+        print('Found no hits above the SNR cut :(')
+        end_search(t0)
+        return
+    if filter_threshold == 1:
+        print('Found a total of %i hits above the SNR cut in this cadence!'%len(snr_adjusted_table))
+        print('Filter level is 1 - returning this table...')
+        end_search(t0)
+        return snr_adjusted_table
+    else:
+        print('Found a total of %i hits above the SNR cut in this cadence!'%len(snr_adjusted_table))
+    
+    #----------------------------------------------------------------------
 
-#     Some snippets for possible upgrades of the code.
-#     stop
-#
-#     #Concatenating all the events.
-#     AAA_events = pd.concat(AAA_events_list,ignore_index=True)
-#     AAA_events_list = 0.
-#
-#     #Save hits.
-#     AAA_events.to_csv('AAA_events.v4_%.0f.csv'%time.time())
-#
-#     #Looking at some stats.
-#     plt.ion()
-#     plt.figure()
-#     AAA_events['Freq'].plot.hist(bins=100,logy=True)#
-#     plt.savefig('Frequency_hist.png')
-#
-#     plt.figure()
-#     AAA_events['DriftRate'].plot.hist(bins=25,logy=True)
-#
-#     #Removing a bunch of RFI regions (GPS and so on).
-#     AAA_events = remomve_RFI_regions(AAA_events)
+    #Now find how much RFI is within a frequency range of the hit 
+    #by comparing the ON to the OFF observations. Update RFI_in_range
+    snr_adjusted_table['RFI_in_range'] = snr_adjusted_table.apply(lambda hit: len(off_table[((off_table['Freq'] > calc_freq_range(hit)[0]) & (off_table['Freq'] < calc_freq_range(hit)[1]))]),axis=1)
+        
+    #If there is no RFI in range of the hit, it graduates to the 
+    #not_in_B_table
+    not_in_off_table = snr_adjusted_table[snr_adjusted_table['RFI_in_range'] == 0]
 
+    if (len(not_in_off_table) == 0):
+        print('Found no hits present in only the on observations in this cadence :(')
+        end_search(t0)
+        return
+    if filter_threshold == 2:    
+        print('Found a total of %i hits in only the on observations in this cadence!'%len(not_in_off_table))
+        print('Filter level is 2 - returning this table...')
+        end_search(t0)
+        return not_in_off_table
+    else:
+        print('Found a total of %i hits in only the on observations in this cadence!'%len(not_in_off_table))
+        
+    #----------------------------------------------------------------------
+    
+    on_but_not_off_table_list = []
+    in_all_ons_table = []
+    #Follow the drifting of a hit to find the events that 
+    #are present in ALL on observations
+    
+    for i in range(1, number_of_ons + 1):
+        on_but_not_off_table_list.append(not_in_off_table[not_in_off_table['status'] == 'on_table_%i'%i])
+    empty_counter = 0
+    for hit_list in on_but_not_off_table_list:
+        if hit_list.empty == True:
+            empty_counter += 1
+    if empty_counter == 0:
+        first_on = on_but_not_off_table_list[0]#
+        def hit_func(hit):
+            val = 0
+            for i in range(1, len(on_but_not_off_table_list)):
+                val += follow_event(hit, on_but_not_off_table_list[i])
+            return val
+        
+        first_on['in_n_ons'] = first_on.apply(hit_func, axis=1)
+        in_all_ons_table = first_on[first_on['in_n_ons'] == number_of_ons - 1]
+        
+        #Create list of events.
+        filter_3_event_list = []
 
+        for hit_index, hit in in_all_ons_table.iterrows():
+            for table in on_but_not_off_table_list:
+                temp_table = follow_event(hit,table,get_count=False)
+                temp_table['Hit_ID'] = hit['Source']+'_'+str(hit_index)
+                filter_3_event_list += [temp_table]
 
+    else:
+        print('NOTE: At least one of the on tables is empty - no events across this cadence :(')
+        end_search(t0)
+        return
 
+    if len(in_all_ons_table) > 0:
+        best_events_table = pd.concat(filter_3_event_list)
+        print('Found a total of %i events across this cadence!'%(int(len(best_events_table)/3)))
+        end_search(t0)
+        return best_events_table
+    
+    else:
+        print('NOTE: Found no events across this cadence :(')
+        end_search(t0)
+        return
+    
+    #----------------------------------------------------------------------
 
-def main():
-    """ Main funtion for find_event scripts. """
-
-    p = OptionParser()
-    p.set_usage('python find_events.py [options]')
-#    p.add_option('-o', '--out_dir', dest='out_dir', type='str', default='', help='Location for output files. Default: local dir. ')
-    p.add_option('-n', '--number_files', dest='n_files', type='int', default=6, help='Number of files to check for events, standard is 6, for an ABACAD config.')
-    p.add_option('-l', '--list_dats', dest='dat_file_list', type='str', default='out_dats.lst', help='List of .dat files to run (without the path).')
-    p.add_option('-L', '--list_fils', dest='fil_file_list', type='str', default='../processed_targets.lst', help='List of .fil files to run (with the path).')
-    p.add_option('-p', '--plotting', dest='plotting', action='store_true', default=False, help='Boolean for plotting. Default False, use for True.')
-    p.add_option('-s', '--saving', dest='saving', action='store_true', default=False, help='Boolean for saving plot and csv data. Default False, use for True.')
-    p.add_option('-r', '--SNR_cut', dest='SNR_cut', type='int', default=10, help='SNR cut, default SNR=10.')
-    p.add_option('-z', '--check_zero_drift', dest='check_zero_drift', action='store_true', default=False, help='Boolean for not ignoring zero drift hits, if True it will search them if only present in the ON. Default False, use for True.')
-    p.add_option('-f', '--filter_threshold', dest='filter_threshold', type='int', default=3, help='Filter_threshold allows the return of a table of events with hits at different levels of filtering.')
-    p.add_option('-v', '--verbose', dest='verbose', action='store_true', default=False, help='Boolean for printing information on events. Default False, use for True.')
-
-    opts, args = p.parse_args(sys.argv[1:])
-
-#    out_dir = opts.out_dir
-    n_files = opts.n_files
-    dat_file_list = opts.dat_file_list
-    fil_file_list = opts.fil_file_list
-    plotting = opts.plotting
-    saving = opts.saving
-    SNR_cut = opts.SNR_cut
-    check_zero_drift = opts.check_zero_drift
-    filter_threshold = opts.filter_threshold
-    verbose = opts.verbose
-
-    #---------------------
-
-    #Setting log level
-#     if opts.loglevel == 'info':
-#         level_log = logging.INFO
-#     elif opts.loglevel == 'debug':
-#         level_log = logging.DEBUG
-#     else:
-#         raise ValueError('Need valid loglevel value (info,debug).')
-#
-#
-#     if level_log == logging.INFO:
-#         stream = sys.stdout
-#         format = '%(name)-15s %(levelname)-8s %(message)s'
-#     else:
-#         stream =  sys.stderr
-#         format = '%%(relativeCreated)5d (name)-15s %(levelname)-8s %(message)s'
-#
-#
-#     logging.basicConfig(format=format,stream=stream,level = level_log)
-
-    #---------------------
-
-    local_host = socket.gethostname()
-
-    #Opening list of files
-    dat_file_list = open(dat_file_list).readlines()
-    dat_file_list = [files.replace('\n','') for files in dat_file_list]
-
-    #Check
-    if len(dat_file_list) < n_files:
-        print("It seems len(dat_file_list) < n_files assuming len(dat_file_list) = n_files.")
-        n_files = len(dat_file_list)
-
-    #---------------------
-    #Finding events.
-
-    #Looping over n_files chunks.
-    for i in range(len(dat_file_list)/n_files):
-
-        file_sublist = dat_file_list[n_files*i:n_files*(i+1)]
-
-        events = find_events(file_sublist,SNR_cut=SNR_cut,check_zero_drift=check_zero_drift,filter_threshold=filter_threshold)
-
-        #Saving csv
-        if not events.empty and saving:
-            events.to_csv('Events_%s.t%.0f.csv'%(events['Source'].unique()[0],float(events['MJD'].unique()[0])))
-
-        #Info on individual events
-        if not events.empty and verbose:
-            print('Events found:')
-            print(events)
-
-        #Plotting individual events
-        if not events.empty and plotting:
-
-            filenames = open(fil_file_list)
-            filenames = filenames.readlines()
-            filenames = [files.replace('\n','') for files in filenames]
-
-            #Choosing only a few events when having too many.
-            A1_events = events[events['status'] == 'A1_table'].sort_values(by='SNR')
-            event_index = A1_events['FreqEnd'].index.unique()[-5:]
-
-            for ii in event_index:
-
-                try:
-                    Freq_Start = events['FreqStart'][ii].unique()[0]
-                    Freq_End = events['FreqEnd'][ii].unique()[0]
-                except:
-                    Freq_Start = events['FreqStart'][ii]
-                    Freq_End = events['FreqEnd'][ii]
-
-                plot_event.make_waterfall_plots(filenames[n_files*i:n_files*(i+1)],events['Source'].unique()[0],Freq_Start,Freq_End,save_pdf_plot=saving,saving_fig=saving,local_host=local_host)
-
-
-
-if __name__ == "__main__":
-    main()

@@ -86,7 +86,7 @@ Will add an example file here in the near future.
 
 ```python
 > import turbo_seti
-> from turbo_seti.findoppler.findopp import FinDoppler
+> from turbo_seti.find_doppler.findopp import FinDoppler
 ```
 
 **BL internal**:

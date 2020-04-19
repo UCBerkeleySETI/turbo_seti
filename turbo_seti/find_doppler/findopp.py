@@ -198,7 +198,7 @@ class FinDoppler:
             #----------------------------------------------------------------------
             if drift_block <= 0:
 
-                #Populates the findoppler tree with the spectra
+                #Populates the find_doppler tree with the spectra
                 populate_tree(spectra,tree_findoppler,nframes,tdwidth,tsteps,fftlen,shoulder_size,roll=drift_block,reverse=1)
 
                 #/* populate original array */
@@ -246,7 +246,7 @@ class FinDoppler:
             #----------------------------------------------------------------------
             if drift_block >= 0:
 
-                #Populates the findoppler tree with the spectra
+                #Populates the find_doppler tree with the spectra
                 populate_tree(spectra,tree_findoppler,nframes,tdwidth,tsteps,fftlen,shoulder_size,roll=drift_block,reverse=1)
 
                 #/* populate original array */
@@ -300,7 +300,7 @@ class FinDoppler:
 #  ======================================================================  #
 
 def populate_tree(spectra,tree_findoppler,nframes,tdwidth,tsteps,fftlen,shoulder_size,roll=0,reverse=0):
-    """ This script populates the findoppler tree with the spectra.
+    """ This script populates the find_doppler tree with the spectra.
         It creates two "shoulders" (each region of tsteps*(shoulder_size/2) in size) to avoid "edge" issues.
         It uses np.roll() for drift-rate blocks higher than 1.
     """

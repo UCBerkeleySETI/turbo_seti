@@ -27,16 +27,16 @@ install_requires = [
 
 entry_points = {
     'console_scripts' :
-        ['turboSETI = turbo_seti.findoppler.seti_event:main',
-         'find_event = turbo_seti.findevent.find_event:main',
-         'find_scan_sets = turbo_seti.findevent.find_scan_sets:main',
-         'plot_event = turbo_seti.findevent.plot_event:main',
+        ['turboSETI = turbo_seti.find_doppler.seti_event:main',
+         'find_event = turbo_seti.find_event.find_event:main',
+         'find_scan_sets = turbo_seti.find_event.find_scan_sets:main',
+         'plot_event = turbo_seti.find_event.plot_event:main',
      ]
 }
 
 extensions = [Extension(
-        name="turbo_seti.findoppler.taylor_tree",
-        sources=["turbo_seti/findoppler/taylor_tree.pyx"],
+        name="turbo_seti.find_doppler.taylor_tree",
+        sources=["turbo_seti/find_doppler/taylor_tree.pyx"],
         include_dirs=[numpy.get_include()],
         )
     ]

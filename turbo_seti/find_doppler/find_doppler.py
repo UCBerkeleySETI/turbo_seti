@@ -42,7 +42,7 @@ class hist_vals:
         self.histdrift = None
         self.histid = None
 
-class FinDoppler:
+class FindDoppler:
     """ """
     def __init__(self, datafile, max_drift, min_drift=0, snr=25.0, out_dir='./', coarse_chans=None, obs_info=None, flagging=None, n_coarse_chan=None):
         self.min_drift = min_drift

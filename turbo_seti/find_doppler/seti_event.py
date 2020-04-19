@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from .findopp import FinDoppler
+from .find_doppler import FindDoppler
 
 import sys
 import os
@@ -92,8 +92,8 @@ def main():
 
         logging.basicConfig(format=format,stream=stream,level = level_log)
 
-        find_seti_event = FinDoppler(filename, max_drift=opts.max_drift, snr=opts.snr, out_dir=opts.out_dir,
-                                     coarse_chans=opts.coarse_chans, obs_info=obs_info, n_coarse_chan=opts.n_coarse_chan)
+        find_seti_event = FindDoppler(filename, max_drift=opts.max_drift, snr=opts.snr, out_dir=opts.out_dir,
+                                      coarse_chans=opts.coarse_chans, obs_info=obs_info, n_coarse_chan=opts.n_coarse_chan)
         find_seti_event.search()
 ##EE-benshmark    cProfile.runctx('find_seti_event.search()',globals(),locals(),filename='profile_search_M%2.1f_S%2.1f_t%i'%(opts.max_drift,opts.snr,int(os.times()[-1])))
 

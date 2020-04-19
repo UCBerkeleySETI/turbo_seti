@@ -125,7 +125,7 @@ class FITSHandle:
 
     @staticmethod
     def make_fits_header(header,first=True,LOFAR=False):
-        '''Takes .fil header into fits header format '''
+        """Takes .fil header into fits header format """
 
         base_header = {}
         base_header['SIMPLE'] = True
@@ -171,7 +171,7 @@ class FITSHandle:
         return fits_header
 
     def split_fil2fits(self,filename=None, split_dir='.', size_limit = 128.0):
-        ''' Splits (by subbands) LOFAR .fil data into .fits data readable by dedoppler.'''
+        """ Splits (by subbands) LOFAR .fil data into .fits data readable by dedoppler."""
 
         fits_list = []
         filestat = os.stat(filename)
@@ -345,7 +345,7 @@ class  nonFITS:
 
     @staticmethod
     def make_fits_header(header,LOFAR=False):
-        '''Takes .fil header into fits header format '''
+        """Takes .fil header into fits header format """
 
         base_header = {}
         base_header['SIMPLE'] = True
@@ -387,8 +387,8 @@ class  nonFITS:
         return base_header
 
     def load_data(self, max_search_rate=None, bw_compress_width=None, logwriter=None):
-        ''' Read all the data from file.
-        '''
+        """ Read all the data from file.
+        """
 
 #EE_fil        fil_file = fr2.DataReader(self.filename)
         fil_file = fr.Filterbank(filename)
@@ -404,8 +404,8 @@ class  nonFITS:
         return spectra, drift_indexes
 
     def load_drift_indexes(self):
-        ''' The drift indexes are read from an stored file so that no need to recalculate. This speed things up.
-        '''
+        """ The drift indexes are read from an stored file so that no need to recalculate. This speed things up.
+        """
         n = int(np.log2(self.tsteps))
         if n > 9:
             di_array = np.genfromtxt(resource_filename('dedoppler_bones', '../drift_indexes/drift_indexes_array_%d.txt'%n), delimiter=' ', dtype=int)
@@ -514,8 +514,8 @@ class FITS:
         return compressed_spectra, drift_indexes
 
     def load_drift_indexes(self):
-        ''' The drift indexes are read from an stored file so that no need to recalculate. This speed things up.
-        '''
+        """ The drift indexes are read from an stored file so that no need to recalculate. This speed things up.
+        """
         n = int(np.log2(self.tsteps))
         if n > 9:
             di_array = np.genfromtxt(resource_filename('dedoppler_bones', '../drift_indexes/drift_indexes_array_%d.txt'%n), delimiter=' ', dtype=int)

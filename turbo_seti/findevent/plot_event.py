@@ -29,7 +29,9 @@ font = {'family' : 'DejaVu Sans',
 'size' : fontsize}
 MAX_IMSHOW_POINTS = (10096, 10096)
 
-def make_waterfall_plots(filenames_list, target, drates, fvals, f_start,f_stop, node_string, filter_level, ion=False,epoch=None,bw=250.0, local_host='',plot_name='',save_pdf_plot=False,saving_fig=False,offset=0,dedoppler=False,**kwargs):
+def make_waterfall_plots(filenames_list, target, drates, fvals, f_start,f_stop, node_string, filter_level, ion=False,
+                         epoch=None,bw=250.0, local_host='',plot_name='',save_pdf_plot=False,saving_fig=False,offset=0,
+                         dedoppler=False,**kwargs):
     """ Makes waterfall plots per group of ON-OFF pairs (up to 6 plots.)
     """
     
@@ -373,5 +375,3 @@ def plot_candidate_events_individually(full_candidate_event_dataframe, correct_f
                                         offset=offset, 
                                         **kwargs)
     return 
-
-plot_candidate_events_individually('B04_f2_snr20.csv', 'B01_B04_fil.lst', 'B04', 'blc00', 2, show=True, overwrite=False, offset=0)

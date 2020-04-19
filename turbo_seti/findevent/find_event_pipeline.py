@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-'''
+"""
 Front-facing script to find drifting, narrowband events in a set of generalized 
 cadences of ON-OFF radio SETI observations.
 
@@ -88,7 +88,7 @@ and thus the drift rate sign would need to be flipped in the make_table
 function.
 ***
 
-'''
+"""
 
 #required packages and programs
 import find_event

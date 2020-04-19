@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-'''
+"""
 Backend script to find drifting, narrowband events in a generalized cadence of 
 ON-OFF radio SETI observations.
 
@@ -86,7 +86,7 @@ and thus the drift rate sign would need to be flipped in the make_table
 function.
 ***
 
-'''
+"""
 
 import pandas as pd
 import numpy as np
@@ -101,9 +101,9 @@ MAX_DRIFT_RATE = 2.0    # NOTE: these two values need to be updated.
 OBS_LENGTH = 300.
 #------
 def end_search(t0):
-    '''ends the search when there are no candidates left, or when the filter
+    """ends the search when there are no candidates left, or when the filter
     level matches the user-specified level
-    '''
+    """
     #Report elapsed search time
     t1 = time.time()
     print('Search time: %.2f sec' % ((t1-t0)))
@@ -111,10 +111,10 @@ def end_search(t0):
     return
 
 def make_table(filename,init=False):
-    ''' Creates a pandas dataframe with column names standard for turboSETI .dat
+    """ Creates a pandas dataframe with column names standard for turboSETI .dat
     output files, either directly (if) or by reading the file line-by line and
     then reorganizing the output (else)
-    '''
+    """
     
     if init:
         columns = ['FileID','Source','MJD','RA','DEC', 'DELTAT','DELTAF',
@@ -191,9 +191,9 @@ def make_table(filename,init=False):
     return df_data
 
 def calc_freq_range(hit,delta_t=0,max_dr=True,follow=False):
-    '''Calculates a range of frequencies where RFI in an off-source could
+    """Calculates a range of frequencies where RFI in an off-source could
         be related to a hit in an on-source given a freq and drift_rate.
-    '''
+    """
     if max_dr:
         drift_rate = MAX_DRIFT_RATE
     else:
@@ -215,9 +215,9 @@ def calc_freq_range(hit,delta_t=0,max_dr=True,follow=False):
     return [low_bound,high_bound]
 
 def follow_event(hit,on_table,get_count=True):
-    ''' Follows a given hit to the next observation of the same target and 
+    """ Follows a given hit to the next observation of the same target and 
     looks for hits which could be part of the same event.
-    '''
+    """
 
     #uses calc_freq_range to see how much the hit *should* have drifted by
     freq_range = calc_freq_range(hit,delta_t=on_table['delta_t'].values[0],max_dr=False,follow=True)
@@ -244,7 +244,7 @@ def find_events(dat_file_list,
                 check_zero_drift=False,
                 filter_threshold=3,
                 on_off_first='ON'):
-    ''' Reads a list of turboSETI .dat files.
+    """ Reads a list of turboSETI .dat files.
         It calls other functions to find events within this group of files.
         Filter_threshold allows the return of a table of events with hits at 
         different levels of filtering.
@@ -252,7 +252,7 @@ def find_events(dat_file_list,
             1) Hits above an SNR cut witout AB check
             2) Hits that are only in some As and no Bs
             3) Hits that are only in all As and no Bs
-    '''
+    """
     #Initializing timer
     t0 = time.time()
     

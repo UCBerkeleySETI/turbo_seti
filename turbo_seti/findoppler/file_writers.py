@@ -71,8 +71,8 @@ class FileWriter(GeneralWriter):
         self.tophit_count = 0
 
     def report_coarse_channel(self, header,total_n_candi):
-        ''' Write header information per given obs.
-        '''
+        """ Write header information per given obs.
+        """
 
         return None
         
@@ -81,8 +81,8 @@ class FileWriter(GeneralWriter):
         self.write(info_str)
 
     def report_header(self, header):
-        ''' Write header information per given obs.
-        '''
+        """ Write header information per given obs.
+        """
 
         info_str = '# Source:%s\n# MJD: %18.12f\tRA: %s\tDEC: %s\n# DELTAT: %10.6f\tDELTAF(Hz): %10.6f\n'%(header[b'SOURCE'],header[b'MJD'], header[b'RA'], header[b'DEC'], header[b'DELTAT'], header[b'DELTAF']*1e6)
 
@@ -106,8 +106,8 @@ class FileWriter(GeneralWriter):
 
     def report_tophit(self, max_val, ind, ind_tuple, tdwidth, fftlen, header,total_n_candi,spec_slice=None,obs_info=None):
 
-        '''This function looks into the top hit in a region, basically find the local maximum and saves that.
-        '''
+        """This function looks into the top hit in a region, basically find the local maximum and saves that.
+        """
 
         offset = int((tdwidth - fftlen)/2)
         tdwidth =  len(max_val.maxsnr)

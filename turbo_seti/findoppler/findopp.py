@@ -36,7 +36,7 @@ class max_vals:
         self.total_n_hits = None
 
 class hist_vals:
-    ''' Temporary class that saved the normalized spectrum for all drift rates.'''
+    """ Temporary class that saved the normalized spectrum for all drift rates."""
     def __init__(self):
         self.histsnr = None
         self.histdrift = None
@@ -81,8 +81,8 @@ class FinDoppler:
         return info_str
 
     def search(self):
-        '''Top level search.
-        '''
+        """Top level search.
+        """
         logger.debug("Start searching...")
         logger.debug(self.get_info())
 
@@ -102,8 +102,8 @@ class FinDoppler:
             gc.collect()
 
     def search_data(self, data_obj):
-        '''
-        '''
+        """
+        """
 
         logger.info("Start searching for coarse channel: %s"%data_obj.header[b'coarse_chan'])
         self.logwriter.info("Start searching for %s ; coarse channel: %i "%(data_obj.filename,data_obj.header[b'coarse_chan']))
@@ -379,8 +379,8 @@ def bitrev3(x):
     return x
 
 def hitsearch(spectrum, specstart, specend, hitthresh, drift_rate, header, fftlen, tdwidth, max_val, reverse):
-    ''' Searches for hits: each channel if > hitthresh.
-    '''
+    """ Searches for hits: each channel if > hitthresh.
+    """
 
     logger.debug('Start searching for hits at drift rate: %f'%drift_rate)
     j = 0
@@ -401,8 +401,8 @@ def hitsearch(spectrum, specstart, specend, hitthresh, drift_rate, header, fftle
     return j, max_val
 
 def tophitsearch(tree_findoppler_original, max_val, tsteps, nframes, header, tdwidth, fftlen,max_drift,obs_length, out_dir='', logwriter=None, filewriter=None,obs_info=None):
-    '''This finds the hits with largest SNR within 2*tsteps frequency channels.
-    '''
+    """This finds the hits with largest SNR within 2*tsteps frequency channels.
+    """
 
     maxsnr = max_val.maxsnr
     logger.debug("original matrix size: %d\t(%d, %d)"%(len(tree_findoppler_original), tsteps, tdwidth))

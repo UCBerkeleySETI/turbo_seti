@@ -23,11 +23,36 @@ import blimpy as bl
 import matplotlib
 import matplotlib.pyplot as plt
 
+from .find_event import make_table
+
 #preliminary plot arguments
 fontsize=16
 font = {'family' : 'DejaVu Sans',
 'size' : fontsize}
 MAX_IMSHOW_POINTS = (10096, 10096)
+
+def plot_hit(fil_filename, dat_filename, hit_id, bw=None):
+    """ Plot a candidate from a .dat file
+
+    Args:
+        fil_filename (str): Path to filterbank file to plot
+        dat_filename (str): Path to turbosSETI generated .dat output file of events
+        hit_id (int): ID of hit in the dat file to plot (TopHitNum)
+    """
+    # Load hit details
+    dat = make_table(dat_filename)
+    hit = dat.iloc[hit_id]
+
+    f0 = hit['Freq']
+
+    if bw is None:
+        bw_mhz = np.abs(hit['FreqStart'] - hit['FreqEnd'])
+    else:
+        bw_mhz = bw * 1e-6
+
+    fil = bl.Waterfall(fil_filename, f_start=f0 - bw_mhz / 2, f_stop=f0 + bw_mhz / 2)
+    fil.plot_waterfall()
+
 
 def make_waterfall_plots(filenames_list, target, drates, fvals, f_start,f_stop, node_string, filter_level, ion=False,
                          epoch=None,bw=250.0, local_host='',plot_name='',save_pdf_plot=False,saving_fig=False,offset=0,

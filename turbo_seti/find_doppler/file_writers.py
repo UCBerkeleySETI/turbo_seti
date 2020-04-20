@@ -76,7 +76,7 @@ class FileWriter(GeneralWriter):
 
         return None
         
-        self.write('# Coarse Channel Number: %i \n' % header[b'coarse_chan'])
+        self.write('# Coarse Channel Number: %i \n' % header['coarse_chan'])
         info_str = '# Number of hits: %i \n'%total_n_candi
         self.write(info_str)
 
@@ -84,7 +84,8 @@ class FileWriter(GeneralWriter):
         """ Write header information per given obs.
         """
 
-        info_str = '# Source:%s\n# MJD: %18.12f\tRA: %s\tDEC: %s\n# DELTAT: %10.6f\tDELTAF(Hz): %10.6f\n'%(header[b'SOURCE'],header[b'MJD'], header[b'RA'], header[b'DEC'], header[b'DELTAT'], header[b'DELTAF']*1e6)
+        info_str = '# Source:%s\n# MJD: %18.12f\tRA: %s\tDEC: %s\n# DELTAT: %10.6f\tDELTAF(Hz): %10.6f\n' % \
+                   (header['SOURCE'],header['MJD'], header['RA'], header['DEC'], header['DELTAT'], header['DELTAF']*1e6)
 
         self.write(info_str)
         self.write('# --------------------------\n')
@@ -135,7 +136,7 @@ class FileWriter(GeneralWriter):
         info_str += '%14.6f\t'%freq_end #freq_end:
         info_str += '%s\t'%obs_info['SEFDs_val'][this_one] #SEFD:
         info_str += '%14.6f\t'%obs_info['SEFDs_freq'][this_one] #SEFD_mid_freq:
-        info_str += '%i\t'%header[b'coarse_chan']
+        info_str += '%i\t'%header['coarse_chan']
         info_str += '%i\t'%total_n_candi #
         info_str +='\n'
         self.write(info_str)

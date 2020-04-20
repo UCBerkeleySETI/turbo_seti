@@ -104,14 +104,14 @@ class DATAHandle:
             raise IOError("Error encountered when trying to open file: %s"%self.filename)
 
         #Finding lowest freq in file.
-        f_delt = fil_file.header[b'foff']
-        f0 = fil_file.header[b'fch1']
+        f_delt = fil_file.header['foff']
+        f0 = fil_file.header['fch1']
 
         #Looping over the number of coarse channels.
         if self.n_coarse_chan is not None:
             n_coarse_chan = self.n_coarse_chan
-        elif fil_file.header.get(b'n_coarse_chan', None) is not None:
-            n_coarse_chan = fil_file.header[b'n_coarse_chan']
+        elif fil_file.header.get('n_coarse_chan', None) is not None:
+            n_coarse_chan = fil_file.header['n_coarse_chan']
         else:
             n_coarse_chan = int(fil_file.calc_n_coarse_chan())
 
@@ -182,17 +182,17 @@ class DATAH5:
 
         self.header = header
 
-        self.fftlen = header[b'NAXIS1']
+        self.fftlen = header['NAXIS1']
  
         #EE To check if swapping tsteps_valid and tsteps is more appropriate.
-        self.tsteps_valid = header[b'NAXIS2']
+        self.tsteps_valid = header['NAXIS2']
         self.tsteps = int(math.pow(2, math.ceil(np.log2(math.floor(self.tsteps_valid)))))
  
-        self.obs_length = self.tsteps_valid * header[b'DELTAT']
-        self.drift_rate_resolution = (1e6 * np.abs(header[b'DELTAF'])) / self.obs_length   # in Hz/sec
-        self.header[b'baryv'] = 0.0
-        self.header[b'barya'] = 0.0
-        self.header[b'coarse_chan'] = coarse_chan
+        self.obs_length = self.tsteps_valid * header['DELTAT']
+        self.drift_rate_resolution = (1e6 * np.abs(header['DELTAF'])) / self.obs_length   # in Hz/sec
+        self.header['baryv'] = 0.0
+        self.header['barya'] = 0.0
+        self.header['coarse_chan'] = coarse_chan
         
         #EE For now I'm not using a shoulder. This is ok as long as I'm analyzing each coarse channel individually.
         #EE In general this parameter is an integer (even number).
@@ -217,14 +217,14 @@ class DATAH5:
         spectra = np.array(spec, dtype=np.float64)
 
         #Arrange data in ascending order in freq if not already in that format.
-        if self.header[b'DELTAF'] < 0.0:
+        if self.header['DELTAF'] < 0.0:
             spectra = spectra[:,::-1]
 
         #This check will add rows of zeros if the obs is too short (and thus not a power of two rows).
         if spectra.shape[0] != self.tsteps:
             spectra = np.append(spectra, np.zeros((self.tsteps-spectra.shape[0], self.fftlen)), axis=0)
         self.tsteps_valid = self.tsteps
-        self.obs_length = self.tsteps * self.header[b'DELTAT']
+        self.obs_length = self.tsteps * self.header['DELTAT']
 
         if spectra.shape != (self.tsteps_valid, self.fftlen):
             logger.error('Something is wrong with array size.')
@@ -257,24 +257,24 @@ class DATAH5:
         base_header = {}
 
         #used by file_writers.py
-        base_header[b'SOURCE'] = header[b'source_name'].replace(b'\xc2\xa0',b'_').replace(b' ',b'_')
-        base_header[b'MJD'] = header[b'tstart']
-        base_header[b'DEC'] = str(header[b'src_dej'])
-        base_header[b'RA'] = str(header[b'src_raj'])
-        base_header[b'DELTAF'] =  header[b'foff']
-        base_header[b'DELTAT'] = float(header[b'tsamp'])
+        base_header['SOURCE'] = header['source_name']
+        base_header['MJD'] = header['tstart']
+        base_header['DEC'] = str(header['src_dej'])
+        base_header['RA'] = str(header['src_raj'])
+        base_header['DELTAF'] =  header['foff']
+        base_header['DELTAT'] = float(header['tsamp'])
 
         #used by helper_functions.py
         if coarse:
-            base_header[b'NAXIS1'] = int(header[b'nchans']/self.tn_coarse_chan)
-            base_header[b'FCNTR'] = (self.f_stop - self.f_start)/2. + self.f_start
+            base_header['NAXIS1'] = int(header['nchans']/self.tn_coarse_chan)
+            base_header['FCNTR'] = (self.f_stop - self.f_start)/2. + self.f_start
         else:
-            base_header[b'NAXIS1'] = int(header[b'nchans'])
-            base_header[b'FCNTR'] = float(header[b'fch1']) + header[b'foff']*base_header[b'NAXIS1']/2
+            base_header['NAXIS1'] = int(header['nchans'])
+            base_header['FCNTR'] = float(header['fch1']) + header['foff']*base_header['NAXIS1']/2
 
         #other header values.
-        base_header[b'NAXIS'] = 2
-        base_header[b'NAXIS2'] = int(self.fil_file.n_ints_in_file)
+        base_header['NAXIS'] = 2
+        base_header['NAXIS2'] = int(self.fil_file.n_ints_in_file)
         return base_header
 
     def close(self):

@@ -12,14 +12,13 @@ install:
   - pip install matplotlib
   - pip install pandas
   - pip install cython
-  - pip install h5py==2.5.0
-  - pip install git+https://github.com/ucberkeleyseti/blimpy
-  - pip install git+https://github.com/kiyo-masui/bitshuffle
-  - python setup.py install
+  - pip install h5py --only-binary=h5py
+  - pip install blimpy
+  - pip install .
 
 # Command to run test
 script: 
-    - turboSETI voyager_test/Voyager1.single_coarse.fine_res.h5
+    - python setup.py test
     
 branches:
   only:

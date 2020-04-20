@@ -36,13 +36,9 @@ class max_vals:
         self.total_n_hits = None
 
 class hist_vals:
-<<<<<<< HEAD:turbo_seti/find_doppler/find_doppler.py
-    """ Temporary class that saved the normalized spectrum for all drift rates."""
-=======
     """
     Temporary class that saved the normalized spectrum for all drift rates.
     """
->>>>>>> dbee32a31de0ae9462c0d5388cde07c29f21c126:turbo_seti/findoppler/findopp.py
     def __init__(self):
         self.histsnr = None
         self.histdrift = None
@@ -104,12 +100,8 @@ class FindDoppler:
         return info_str
 
     def search(self):
-<<<<<<< HEAD:turbo_seti/find_doppler/find_doppler.py
-        """Top level search.
-=======
         """
         Top level search.
->>>>>>> dbee32a31de0ae9462c0d5388cde07c29f21c126:turbo_seti/findoppler/findopp.py
         """
         logger.debug("Start searching...")
         logger.debug(self.get_info())
@@ -131,11 +123,8 @@ class FindDoppler:
 
     def search_data(self, data_obj):
         """
-<<<<<<< HEAD:turbo_seti/find_doppler/find_doppler.py
-=======
         Search the waterfall data of file.
         :param data_obj:    DATAH5,     file's waterfall data
->>>>>>> dbee32a31de0ae9462c0d5388cde07c29f21c126:turbo_seti/findoppler/findopp.py
         """
 
         logger.info("Start searching for coarse channel: %s"%data_obj.header['coarse_chan'])
@@ -333,11 +322,6 @@ class FindDoppler:
 #  ======================================================================  #
 
 def populate_tree(spectra,tree_findoppler,nframes,tdwidth,tsteps,fftlen,shoulder_size,roll=0,reverse=0):
-<<<<<<< HEAD:turbo_seti/find_doppler/find_doppler.py
-    """ This script populates the find_doppler tree with the spectra.
-        It creates two "shoulders" (each region of tsteps*(shoulder_size/2) in size) to avoid "edge" issues.
-        It uses np.roll() for drift-rate blocks higher than 1.
-=======
     """
     This script populates the findoppler tree with the spectra.
     It creates two "shoulders" (each region of tsteps*(shoulder_size/2) in size) to avoid "edge" issues.
@@ -352,7 +336,6 @@ def populate_tree(spectra,tree_findoppler,nframes,tdwidth,tsteps,fftlen,shoulder
     :param roll:                int,            used to calculate amount each entry to the spectra should be rolled (shifted)
     :param reverse:             int(boolean),   used to determine which way spectra should be rolled (shifted)
     :return:                    ndarray,        spectra-populated version of the input tree_findoppler
->>>>>>> dbee32a31de0ae9462c0d5388cde07c29f21c126:turbo_seti/findoppler/findopp.py
     """
 
     if reverse:
@@ -447,9 +430,6 @@ def bitrev3(x):
     return x
 
 def hitsearch(spectrum, specstart, specend, hitthresh, drift_rate, header, fftlen, tdwidth, max_val, reverse):
-<<<<<<< HEAD:turbo_seti/find_doppler/find_doppler.py
-    """ Searches for hits: each channel if > hitthresh.
-=======
     """
     Searches for hits at given drift rate. A hit occurs in each channel if > hitthresh.
     :param spectrum:        ndarray,
@@ -463,7 +443,6 @@ def hitsearch(spectrum, specstart, specend, hitthresh, drift_rate, header, fftle
     :param max_val:         max_vals,           object to be filled with max values from this search and then returned
     :param reverse:         int(boolean),       used to flag whether fine channel should be reversed
     :return:                int, max_vals,      j is the amount of hits.
->>>>>>> dbee32a31de0ae9462c0d5388cde07c29f21c126:turbo_seti/findoppler/findopp.py
     """
 
     logger.debug('Start searching for hits at drift rate: %f'%drift_rate)
@@ -485,9 +464,6 @@ def hitsearch(spectrum, specstart, specend, hitthresh, drift_rate, header, fftle
     return j, max_val
 
 def tophitsearch(tree_findoppler_original, max_val, tsteps, nframes, header, tdwidth, fftlen,max_drift,obs_length, out_dir='', logwriter=None, filewriter=None,obs_info=None):
-<<<<<<< HEAD:turbo_seti/find_doppler/find_doppler.py
-    """This finds the hits with largest SNR within 2*tsteps frequency channels.
-=======
     """
     This finds the hits with largest SNR within 2*tsteps frequency channels.
     :param tree_findoppler_original:        ndarray,        spectra-populated findoppler tree
@@ -506,7 +482,6 @@ def tophitsearch(tree_findoppler_original, max_val, tsteps, nframes, header, tdw
                                                             local maximum of tophit. See report_tophit in filewriters.py
     :param obs_info:                        dict,
     :return:                                FileWriter,     same filewriter that was input
->>>>>>> dbee32a31de0ae9462c0d5388cde07c29f21c126:turbo_seti/findoppler/findopp.py
     """
 
     maxsnr = max_val.maxsnr

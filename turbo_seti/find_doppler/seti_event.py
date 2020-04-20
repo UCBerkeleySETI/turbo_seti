@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from .findopp import FinDoppler
+from .find_doppler import FindDoppler
 
 import sys
 import os
@@ -14,12 +14,26 @@ from optparse import OptionParser
 #import pdb;# pdb.set_trace()
 
 def make_list(option, opt_str, value, parser):
+    """
+    This function is used when certain commandline options are used when running turboSETI (-c). It is used to convert
+    the inputted option, which should be a comma separated string, into a list. Stores this in the inputted OptionParser
+    object's values field, under the inputted option. This is only called for the coarse_chans option currently,
+    essentially to parse the inputted coarse channels into a usable format.
+    :param option:      Option,         whose value should be set to the new list
+    :param opt_str:     string,         (unused) command line option inputted when main was run
+    :param value:       string,         in comma separated format which must be converted to list format
+    :param parser:      OptionParser,   instance whose option we are setting to the new list
+    :return: void
+    """
     v = value.replace('[','').replace(']','').split(',')
     v = list(map(int, v))
     setattr(parser.values, option.dest, v)
 
 def main():
-
+    """
+    This is the entry-point to turboSETI.
+    """
+    # Create an option parser to get command-line input/arguments
     p = OptionParser()
     p.set_usage('turboSETI <FULL_PATH_TO_FIL_FILE> [options]')
 
@@ -36,7 +50,8 @@ def main():
                  help='Number of coarse channels in file.')
     opts, args = p.parse_args(sys.argv[1:])
 
-    if len(args)!=1:
+    # Makes sure exactly one file is given as an arg
+    if len(args) != 1:
         print('Please specify a file name \nExiting.')
         sys.exit()
     else:
@@ -47,16 +62,16 @@ def main():
     obs_info['pulsar'] = 0  # Bool if pulsar detection.
     obs_info['pulsar_found'] = 0  # Bool if pulsar detection.
     obs_info['pulsar_dm'] = 0.0  # Pulsar expected DM.
-    obs_info['pulsar_snr'] = 0.0 # SNR
+    obs_info['pulsar_snr'] = 0.0  # Signal toNoise Ratio (SNR)
     obs_info['pulsar_stats'] = np.zeros(6)
-    obs_info['RFI_level'] = 0.0
-    obs_info['Mean_SEFD'] = 0.0
+    obs_info['RFI_level'] = 0.0  # Radio Frequency Interference
+    obs_info['Mean_SEFD'] = 0.0  # Mean System Equivalent Flux Density
     obs_info['psrflux_Sens'] = 0.0
-    obs_info['SEFDs_val'] = [0.0]
-    obs_info['SEFDs_freq'] = [0.0]
+    obs_info['SEFDs_val'] = [0.0]  # System Equivalent Flux Density values
+    obs_info['SEFDs_freq'] = [0.0]  # System Equivalent Flux Density frequency
     obs_info['SEFDs_freq_up'] = [0.0]
 
-    #Setting log level
+    # Setting log level
     if opts.loglevel == 'info':
         level_log = logging.INFO
     elif opts.loglevel == 'debug':
@@ -77,8 +92,8 @@ def main():
 
         logging.basicConfig(format=format,stream=stream,level = level_log)
 
-        find_seti_event = FinDoppler(filename, max_drift=opts.max_drift, snr=opts.snr, out_dir=opts.out_dir,
-                                     coarse_chans=opts.coarse_chans, obs_info=obs_info, n_coarse_chan=opts.n_coarse_chan)
+        find_seti_event = FindDoppler(filename, max_drift=opts.max_drift, snr=opts.snr, out_dir=opts.out_dir,
+                                      coarse_chans=opts.coarse_chans, obs_info=obs_info, n_coarse_chan=opts.n_coarse_chan)
         find_seti_event.search()
 ##EE-benshmark    cProfile.runctx('find_seti_event.search()',globals(),locals(),filename='profile_search_M%2.1f_S%2.1f_t%i'%(opts.max_drift,opts.snr,int(os.times()[-1])))
 

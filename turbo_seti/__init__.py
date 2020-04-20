@@ -1,5 +1,5 @@
-from .findoppler import seti_event
-from .findevent import find_event,plot_event,find_scan_sets
+from .find_doppler import seti_event
+from .find_event import find_event,plot_event,find_scan_sets
 from pkg_resources import get_distribution, DistributionNotFound
 
 try:

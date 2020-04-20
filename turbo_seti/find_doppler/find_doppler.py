@@ -36,13 +36,13 @@ class max_vals:
         self.total_n_hits = None
 
 class hist_vals:
-    ''' Temporary class that saved the normalized spectrum for all drift rates.'''
+    """ Temporary class that saved the normalized spectrum for all drift rates."""
     def __init__(self):
         self.histsnr = None
         self.histdrift = None
         self.histid = None
 
-class FinDoppler:
+class FindDoppler:
     """ """
     def __init__(self, datafile, max_drift, min_drift=0, snr=25.0, out_dir='./', coarse_chans=None, obs_info=None, flagging=None, n_coarse_chan=None):
         self.min_drift = min_drift
@@ -56,7 +56,23 @@ class FinDoppler:
 
         logger.info(self.data_handle.get_info())
         logger.info("A new FinDoppler instance created!")
+
+        if obs_info is None:
+            obs_info = {}
+            obs_info['pulsar']        = 0  # Bool if pulsar detection.
+            obs_info['pulsar_found']  = 0  # Bool if pulsar detection.
+            obs_info['pulsar_dm']     = 0.0  # Pulsar expected DM.
+            obs_info['pulsar_snr']    = 0.0  # Signal toNoise Ratio (SNR)
+            obs_info['pulsar_stats']  = np.zeros(6)
+            obs_info['RFI_level']     = 0.0  # Radio Frequency Interference
+            obs_info['Mean_SEFD']     = 0.0  # Mean System Equivalent Flux Density
+            obs_info['psrflux_Sens']  = 0.0
+            obs_info['SEFDs_val']     = [0.0]  # System Equivalent Flux Density values
+            obs_info['SEFDs_freq']    = [0.0]  # System Equivalent Flux Density frequency
+            obs_info['SEFDs_freq_up'] = [0.0]
+
         self.obs_info = obs_info
+
         self.status = True
         self.flagging = flagging
 
@@ -65,8 +81,8 @@ class FinDoppler:
         return info_str
 
     def search(self):
-        '''Top level search.
-        '''
+        """Top level search.
+        """
         logger.debug("Start searching...")
         logger.debug(self.get_info())
 
@@ -86,11 +102,11 @@ class FinDoppler:
             gc.collect()
 
     def search_data(self, data_obj):
-        '''
-        '''
+        """
+        """
 
-        logger.info("Start searching for coarse channel: %s"%data_obj.header[b'coarse_chan'])
-        self.logwriter.info("Start searching for %s ; coarse channel: %i "%(data_obj.filename,data_obj.header[b'coarse_chan']))
+        logger.info("Start searching for coarse channel: %s"%data_obj.header['coarse_chan'])
+        self.logwriter.info("Start searching for %s ; coarse channel: %i "%(data_obj.filename,data_obj.header['coarse_chan']))
         spectra, drift_indices = data_obj.load_data()
         tsteps = data_obj.tsteps
         tsteps_valid = data_obj.tsteps_valid
@@ -182,7 +198,7 @@ class FinDoppler:
             #----------------------------------------------------------------------
             if drift_block <= 0:
 
-                #Populates the findoppler tree with the spectra
+                #Populates the find_doppler tree with the spectra
                 populate_tree(spectra,tree_findoppler,nframes,tdwidth,tsteps,fftlen,shoulder_size,roll=drift_block,reverse=1)
 
                 #/* populate original array */
@@ -230,7 +246,7 @@ class FinDoppler:
             #----------------------------------------------------------------------
             if drift_block >= 0:
 
-                #Populates the findoppler tree with the spectra
+                #Populates the find_doppler tree with the spectra
                 populate_tree(spectra,tree_findoppler,nframes,tdwidth,tsteps,fftlen,shoulder_size,roll=drift_block,reverse=1)
 
                 #/* populate original array */
@@ -279,12 +295,12 @@ class FinDoppler:
 
 #         self.filewriter.report_coarse_channel(data_obj.header,max_val.total_n_hits)
         self.filewriter = tophitsearch(tree_findoppler_original, max_val, tsteps, nframes, data_obj.header, tdwidth, fftlen, self.max_drift,data_obj.obs_length, out_dir = self.out_dir, logwriter=self.logwriter, filewriter=self.filewriter, obs_info = self.obs_info)
-        logger.info("Total number of candidates for coarse channel "+ str(data_obj.header[b'coarse_chan']) +" is: %i"%max_val.total_n_hits)
+        logger.info("Total number of candidates for coarse channel "+ str(data_obj.header['coarse_chan']) +" is: %i"%max_val.total_n_hits)
 
 #  ======================================================================  #
 
 def populate_tree(spectra,tree_findoppler,nframes,tdwidth,tsteps,fftlen,shoulder_size,roll=0,reverse=0):
-    """ This script populates the findoppler tree with the spectra.
+    """ This script populates the find_doppler tree with the spectra.
         It creates two "shoulders" (each region of tsteps*(shoulder_size/2) in size) to avoid "edge" issues.
         It uses np.roll() for drift-rate blocks higher than 1.
     """
@@ -363,8 +379,8 @@ def bitrev3(x):
     return x
 
 def hitsearch(spectrum, specstart, specend, hitthresh, drift_rate, header, fftlen, tdwidth, max_val, reverse):
-    ''' Searches for hits: each channel if > hitthresh.
-    '''
+    """ Searches for hits: each channel if > hitthresh.
+    """
 
     logger.debug('Start searching for hits at drift rate: %f'%drift_rate)
     j = 0
@@ -385,8 +401,8 @@ def hitsearch(spectrum, specstart, specend, hitthresh, drift_rate, header, fftle
     return j, max_val
 
 def tophitsearch(tree_findoppler_original, max_val, tsteps, nframes, header, tdwidth, fftlen,max_drift,obs_length, out_dir='', logwriter=None, filewriter=None,obs_info=None):
-    '''This finds the hits with largest SNR within 2*tsteps frequency channels.
-    '''
+    """This finds the hits with largest SNR within 2*tsteps frequency channels.
+    """
 
     maxsnr = max_val.maxsnr
     logger.debug("original matrix size: %d\t(%d, %d)"%(len(tree_findoppler_original), tsteps, tdwidth))

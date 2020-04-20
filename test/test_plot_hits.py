@@ -1,10 +1,13 @@
 import blimpy as bl
 from turbo_seti.find_event import find_event, plot_event
 import pylab as plt
+import os
+
+HERE = os.path.split(os.path.abspath(__file__))[0]
 
 def test_plot_hit():
-    filename_dat = 'Voyager1.single_coarse.fine_res.dat'
-    filename_fil = 'Voyager1.single_coarse.fine_res.h5'
+    filename_dat = os.path.join(HERE, 'Voyager1.single_coarse.fine_res.dat')
+    filename_fil = os.path.join(HERE, 'Voyager1.single_coarse.fine_res.h5')
 
     table = find_event.make_table(filename_dat)
 

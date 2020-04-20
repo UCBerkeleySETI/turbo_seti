@@ -25,6 +25,14 @@ install_requires = [
     'pandas'
 ]
 
+test_requirements = [
+    'pytest',
+    'pytest-cov',
+    'pytest-runner',
+    'codecov',
+    'coverage'
+]
+
 entry_points = {
     'console_scripts' :
         ['turboSETI = turbo_seti.find_doppler.seti_event:main',
@@ -59,6 +67,7 @@ setup(
     cmdclass=cmdclass,
     ext_modules=cythonize(extensions),
     install_requires=install_requires,
+    tests_require=test_requirements,
     entry_points=entry_points,
     author="Emilio Enriquez",
     author_email="e.enriquez@berkeley.edu",

@@ -3,11 +3,11 @@ import logging
 import sys
 import os
 
+HERE = os.path.split(os.path.abspath(__file__))[0]
 
 def test_find_doppler_voyager():
 
-
-    filename_fil = 'Voyager1.single_coarse.fine_res.h5'
+    filename_fil = os.path.join(HERE, 'Voyager1.single_coarse.fine_res.h5')
     filename_dat = filename_fil.replace('.h5', '.dat')
     filename_log = filename_fil.replace('.h5', 'log')
 
@@ -18,7 +18,6 @@ def test_find_doppler_voyager():
         os.remove(filename_log)
 
     snr           = 10
-    out_dir       = './'
     coarse_chans  = ''
     obs_info      = None
     n_coarse_chan = 1
@@ -29,7 +28,7 @@ def test_find_doppler_voyager():
     stream = sys.stdout
     logging.basicConfig(format=format,stream=stream,level = level_log)
 
-    find_seti_event = FindDoppler(filename_fil, max_drift=max_drift, snr=snr, out_dir=out_dir,
+    find_seti_event = FindDoppler(filename_fil, max_drift=max_drift, snr=snr, out_dir=HERE,
                                   coarse_chans=coarse_chans, obs_info=obs_info, n_coarse_chan=n_coarse_chan)
     find_seti_event.search()
 

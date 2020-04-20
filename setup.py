@@ -17,21 +17,11 @@ __version__ = "1.2.0"
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-install_requires = [
-    'astropy',
-    'cython',
-    'numpy',
-    'blimpy',
-    'pandas'
-]
+with open("requirements.txt", "r") as fh:
+    install_requires = fh.readlines()
 
-test_requirements = [
-    'pytest',
-    'pytest-cov',
-    'pytest-runner',
-    'codecov',
-    'coverage'
-]
+with open("requirements_test.txt", "r") as fh:
+    test_requirements = fh.readlines()
 
 entry_points = {
     'console_scripts' :

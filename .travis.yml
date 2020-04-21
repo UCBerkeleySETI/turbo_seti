@@ -16,8 +16,7 @@ install:
 
 # Command to run test
 script:
-  - cd test; python download_test_data.py; cd ..
-  - python setup.py test
+  - cd test; python download_test_data.py; ./run_tests.sh;
     
 branches:
   only:

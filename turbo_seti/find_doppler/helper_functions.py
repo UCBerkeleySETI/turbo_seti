@@ -15,12 +15,17 @@ def chan_freq(header, fine_channel, tdwidth, ref_frame):
     return chanfreq
 
 
-#  ======================================================================  #
-#  This function bit-reverses the given value "inval" with the number of   #
-#  bits, "nbits".    ----  R. Ramachandran, 10-Nov-97, nfra.               #
-#  python version ----  H. Chen   Modified 2014                            #
-#  ======================================================================  #
 def bitrev(inval, nbits):
+    """
+    This function bit-reverses the given value "inval" with the number of
+    bits, "nbits".    ----  R. Ramachandran, 10-Nov-97, nfra.
+    python version ----  H. Chen   Modified 2014
+    :param inval:   number to be bit-reversed
+    :param nbits:   The length of inval in bits. If user only wants the bit-reverse of a certain amount of bits of
+                    inval, nbits is the amount of bits to be reversed counting from the least significant (rightmost)
+                    bit. Any bits beyond this length will not be reversed and will be truncated from the result.
+    :return:        the bit-reverse of inval. If there are more significant bits beyond nbits, they are truncated.
+    """
     if nbits <= 1:
         ibitr = inval
     else:
@@ -30,36 +35,11 @@ def bitrev(inval, nbits):
         k = inval
         ibitr = (1 & k) * ifact
         for i in range(2, nbits+1):
-            k /= 2
-            ifact /= 2
+            k = int(k / 2)
+            ifact = int(ifact / 2)
             ibitr += (1 & k) * ifact
     return ibitr
 
-#  ======================================================================  #
-#  This function bit-reverses the given value "inval" with the number of   #
-#  bits, "nbits".                                                          #
-#  python version ----  H. Chen   Modified 2014                            #
-#  reference: stackoverflow.com/questions/12681945                         #
-#  ======================================================================  #
-def bitrev2(inval, nbits, width=32):
-    b = '{:0{width}b}'.format(inval, width=width)
-    ibitr = int(b[-1:(width-1-nbits):-1], 2)
-    return ibitr
-
-#  ======================================================================  #
-#  This function bit-reverses the given value "inval" with 32bits    #
-#  python version ----  E.Enriquez   Modified 2016                            #
-#  reference: stackoverflow.com/questions/12681945                         #
-#  ======================================================================  #
-def bitrev3(x):
-    raise DeprecationWarning("WARNING: This needs testing.")
-
-    x = ((x & 0x55555555) << 1) | ((x & 0xAAAAAAAA) >> 1)
-    x = ((x & 0x33333333) << 2) | ((x & 0xCCCCCCCC) >> 2)
-    x = ((x & 0x0F0F0F0F) << 4) | ((x & 0xF0F0F0F0) >> 4)
-    x = ((x & 0x00FF00FF) << 8) | ((x & 0xFF00FF00) >> 8)
-    x = ((x & 0x0000FFFF) << 16) | ((x & 0xFFFF0000) >> 16)
-    return x
 
 def AxisSwap(inbuf, outbuf, nchans, NTSampInRead):
     #long int    j1, j2, indx, jndx;

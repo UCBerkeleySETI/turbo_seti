@@ -113,9 +113,15 @@ class FileWriter(GeneralWriter):
         offset = int((tdwidth - fftlen)/2)
         tdwidth =  len(max_val.maxsnr)
 
+        #print("Constant CRABING")
+        #print('offset', offset)
+        #print('index', ind)
+        #print('fftlen', fftlen)
+        #print('tdwidth', tdwidth)
+
         self.tophit_count += 1
         freq_start = chan_freq(header, ind_tuple[0]-offset, tdwidth, 0)
-        freq_end = chan_freq(header, ind_tuple[1]-1-offset, tdwidth, 0)
+        freq_end   = chan_freq(header, ind_tuple[1]-1-offset, tdwidth, 0)
 
         uncorr_freq = chan_freq(header, ind-offset, tdwidth, 0)
         corr_freq = chan_freq(header, ind-offset, tdwidth, 1)

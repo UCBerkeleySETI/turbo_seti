@@ -216,9 +216,10 @@ class DATAH5:
         spec = np.squeeze(self.fil_file.data)
         spectra = np.array(spec, dtype=np.float64)
 
+        # DCP APR 2020 -- COMMENTED OUT. THIS IS BREAKING STUFF IN CURRENT VERSION.
         #Arrange data in ascending order in freq if not already in that format.
-        if self.header['DELTAF'] < 0.0:
-            spectra = spectra[:,::-1]
+        #if self.header['DELTAF'] < 0.0:
+        #    spectra = spectra[:,::-1]
 
         #This check will add rows of zeros if the obs is too short (and thus not a power of two rows).
         if spectra.shape[0] != self.tsteps:
@@ -267,10 +268,10 @@ class DATAH5:
         #used by helper_functions.py
         if coarse:
             base_header['NAXIS1'] = int(header['nchans']/self.tn_coarse_chan)
-            base_header['FCNTR'] = (self.f_stop - self.f_start)/2. + self.f_start
+            base_header['FCNTR'] = np.abs(self.f_stop - self.f_start)/2. + np.min(self.f_start, self.f_stop)
         else:
             base_header['NAXIS1'] = int(header['nchans'])
-            base_header['FCNTR'] = float(header['fch1']) + header['foff']*base_header['NAXIS1']/2
+            base_header['FCNTR'] = float(header['fch1']) + header['foff'] * base_header['NAXIS1'] / 2
 
         #other header values.
         base_header['NAXIS'] = 2

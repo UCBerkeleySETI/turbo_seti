@@ -31,13 +31,14 @@ font = {'family' : 'DejaVu Sans',
 'size' : fontsize}
 MAX_IMSHOW_POINTS = (10096, 10096)
 
-def plot_hit(fil_filename, dat_filename, hit_id, bw=None):
+def plot_hit(fil_filename, dat_filename, hit_id, bw=None, offset=0):
     """ Plot a candidate from a .dat file
 
     Args:
         fil_filename (str): Path to filterbank file to plot
         dat_filename (str): Path to turbosSETI generated .dat output file of events
         hit_id (int): ID of hit in the dat file to plot (TopHitNum)
+        offset (float): Offset drift line on plot. Default 0.
     """
     # Load hit details
     dat = make_table(dat_filename)
@@ -51,7 +52,10 @@ def plot_hit(fil_filename, dat_filename, hit_id, bw=None):
         bw_mhz = bw * 1e-6
 
     fil = bl.Waterfall(fil_filename, f_start=f0 - bw_mhz / 2, f_stop=f0 + bw_mhz / 2)
+    t_duration = (fil.n_ints_in_file - 1) * fil.header['tsamp']
+
     fil.plot_waterfall()
+    overlay_drift(f0, hit['DriftRate'], t_duration, offset)
 
 
 def make_waterfall_plots(filenames_list, target, drates, fvals, f_start,f_stop, node_string, filter_level, ion=False,
@@ -215,6 +219,14 @@ def make_waterfall_plots(filenames_list, target, drates, fvals, f_start,f_stop, 
     return subplots
 
 def overlay_drift(f_event, drate, t_duration, offset=0):
+    """ Overlay drift line on plot
+
+    Args:
+        f_event (float): Start frequency of event in MHz
+        drate (float): Drift rate in Hz/s
+        t_duration (float): Time duration in seconds
+        offset (float): Offset line from event by amount. Default 0.
+    """
     if offset == 'auto':
         offset = - 0.2 * drate*t_duration
     plt.plot((f_event+offset/1e6, f_event+drate/1e6*t_duration+offset/1e6), (0, t_duration), c='#cc0000', ls='dashed', lw=2)

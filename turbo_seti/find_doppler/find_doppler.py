@@ -106,8 +106,11 @@ class FindDoppler:
         logger.debug("Start searching...")
         logger.debug(self.get_info())
 
-        self.logwriter = LogWriter('%s/%s.log'%(self.out_dir.rstrip('/'), self.data_handle.data_list[0].filename.split('/')[-1].replace('.h5','').replace('.fits','').replace('.fil','')))
-        self.filewriter = FileWriter('%s/%s.dat'%(self.out_dir.rstrip('/'), self.data_handle.data_list[0].filename.split('/')[-1].replace('.h5','').replace('.fits','').replace('.fil','')),self.data_handle.data_list[0].header)
+        self.logwriter = LogWriter('%s/%s.log'%(self.out_dir.rstrip('/'),
+                                    self.data_handle.data_list[0].filename.split('/')[-1].replace('.h5','').replace('.fits','').replace('.fil','')))
+        self.filewriter = FileWriter('%s/%s.dat'%(self.out_dir.rstrip('/'),
+                                     self.data_handle.data_list[0].filename.split('/')[-1].replace('.h5','').replace('.fits','').replace('.fil','')),
+                                     self.data_handle.data_list[0].header)
 
         logger.info("Start ET search for %s"%self.data_handle.data_list[0].filename)
         self.logwriter.info("Start ET search for %s"%(self.data_handle.data_list[0].filename))
@@ -238,6 +241,11 @@ class FindDoppler:
                 complete_drift_range = data_obj.drift_rate_resolution*np.array(range(-1*tsteps_valid*(np.abs(drift_block)+1)+1,-1*tsteps_valid*(np.abs(drift_block))+1))
                 for k,drift_rate in enumerate(complete_drift_range[(complete_drift_range<self.min_drift) & (complete_drift_range>=-1*self.max_drift)]):
                     # indx  = ibrev[drift_indices[::-1][k]] * tdwidth
+
+                    # DCP 2020.04 -- WAR to drift rate in flipped files
+                    if data_obj.header['DELTAF'] < 0:
+                        drift_rate *= -1
+
                     indx  = ibrev[drift_indices[::-1][(complete_drift_range<self.min_drift) & (complete_drift_range>=-1*self.max_drift)][k]] * tdwidth
 
                     # SEARCH NEGATIVE DRIFT RATES
@@ -250,18 +258,11 @@ class FindDoppler:
                     #Reverse spectrum back
                     spectrum = spectrum[::-1]
 
-##EE old wrong use of reverse            n_hits, max_val = hitsearch(spectrum, specstart, specend, self.snr, drift_rate, data_obj.header, fftlen, tdwidth, channel, max_val, 1)
                     n_hits, max_val = hitsearch(spectrum, specstart, specend, self.snr, drift_rate, data_obj.header, fftlen, tdwidth, max_val, 0)
                     info_str = "Found %d hits at drift rate %15.15f\n"%(n_hits, drift_rate)
                     max_val.total_n_hits += n_hits
                     logger.debug(info_str)
                     self.logwriter.info(info_str)
-
-##EE-debuging                    np.save(self.out_dir + '/spectrum_dr%f.npy'%(drift_rate),spectrum)
-
-##EE-debuging                    hist_val.histsnr[kk] = spectrum
-##EE-debuging                    hist_val.histdrift[kk] = drift_rate
-##EE-debuging                    kk+=1
 
             #----------------------------------------------------------------------
             # Positive drift rates search.
@@ -269,7 +270,8 @@ class FindDoppler:
             if drift_block >= 0:
 
                 #Populates the find_doppler tree with the spectra
-                populate_tree(spectra,tree_findoppler,nframes,tdwidth,tsteps,fftlen,shoulder_size,roll=drift_block,reverse=1)
+                populate_tree(spectra,tree_findoppler,nframes,tdwidth,tsteps,fftlen,shoulder_size,
+                              roll=drift_block,reverse=1)
 
                 # populate original array
                 np.copyto(tree_findoppler_original, tree_findoppler)
@@ -288,6 +290,11 @@ class FindDoppler:
                 for k,drift_rate in enumerate(complete_drift_range[(complete_drift_range>=self.min_drift) & (complete_drift_range<=self.max_drift)]):
 
                     indx  = ibrev[drift_indices[k]] * tdwidth
+
+                    #DCP 2020.04 -- WAR to drift rate in flipped files
+                    if data_obj.header['DELTAF'] < 0:
+                        drift_rate *= -1
+
                     # SEARCH POSITIVE DRIFT RATES
                     spectrum = tree_findoppler[indx: indx+tdwidth]
 
@@ -301,22 +308,11 @@ class FindDoppler:
                     logger.debug(info_str)
                     self.logwriter.info(info_str)
 
-                    #-------
-
-##EE-debuging                    np.save(self.out_dir + '/spectrum_dr%f.npy'%(drift_rate),spectrum)
-
-##EE-debuging                    hist_val.histsnr[kk] = spectrum
-##EE-debuging                    hist_val.histdrift[kk] = drift_rate
-##EE-debuging                    kk+=1
-        #-------
-##EE-debuging        np.save(self.out_dir + '/histsnr.npy', hist_val.histsnr)
-##EE-debuging        np.save(self.out_dir + '/histdrift.npy', hist_val.histdrift)
-
-        #----------------------------------------
         # Writing the top hits to file.
+        self.filewriter = tophitsearch(tree_findoppler_original, max_val, tsteps, nframes, data_obj.header, tdwidth,
+                                       fftlen, self.max_drift,data_obj.obs_length, out_dir = self.out_dir,
+                                       logwriter=self.logwriter, filewriter=self.filewriter, obs_info=self.obs_info)
 
-#         self.filewriter.report_coarse_channel(data_obj.header,max_val.total_n_hits)
-        self.filewriter = tophitsearch(tree_findoppler_original, max_val, tsteps, nframes, data_obj.header, tdwidth, fftlen, self.max_drift,data_obj.obs_length, out_dir = self.out_dir, logwriter=self.logwriter, filewriter=self.filewriter, obs_info = self.obs_info)
         logger.info("Total number of candidates for coarse channel "+ str(data_obj.header['coarse_chan']) +" is: %i"%max_val.total_n_hits)
 
 #  ======================================================================  #
@@ -366,68 +362,6 @@ def populate_tree(spectra,tree_findoppler,nframes,tdwidth,tsteps,fftlen,shoulder
     return tree_findoppler
 
 
-def bitrev(inval, nbits):
-    """
-    This function bit-reverses the given value "inval" with the number of
-    bits, "nbits".    ----  R. Ramachandran, 10-Nov-97, nfra.
-    python version ----  H. Chen   Modified 2014
-    :param inval:   number to be bit-reversed
-    :param nbits:   The length of inval in bits. If user only wants the bit-reverse of a certain amount of bits of
-                    inval, nbits is the amount of bits to be reversed counting from the least significant (rightmost)
-                    bit. Any bits beyond this length will not be reversed and will be truncated from the result.
-    :return:        the bit-reverse of inval. If there are more significant bits beyond nbits, they are truncated.
-    """
-    if nbits <= 1:
-        ibitr = inval
-    else:
-        ifact = 1
-        for i in range(1, nbits):
-           ifact *= 2
-        k = inval
-        ibitr = (1 & k) * ifact
-        for i in range(2, nbits+1):
-            k = int(k / 2)
-            ifact = int(ifact / 2)
-            ibitr += (1 & k) * ifact
-    return ibitr
-
-
-def bitrev2(inval, nbits, width=32):
-    """
-    This function bit-reverses the given value "inval" with the number of bits, "nbits".                                                          #
-    python version ----  H. Chen   Modified 2014
-    reference: stackoverflow.com/questions/12681945
-    This function serves the same purpose as bitrev, but is unused. It is slightly slower than bitrev. UNUSED
-    :param inval:   number to be bit-reversed
-    :param nbits:   The length of inval in bits. If user only wants the bit-reverse of a certain amount of bits of
-                    inval, nbits is the amount of bits to be reversed counting from the least significant (rightmost)
-                    bit. Any bits beyond this length will not be reversed and will be truncated from the result.
-    :param width:   the maximum length of inval in bits. Must be greater than or equal to nbits
-    :return:        the bit-reverse of inval. If there are more significant bits beyond nbits, they are truncated.
-    """
-    b = '{:0{width}b}'.format(inval, width=width)
-    ibitr = int(b[-1:(width-1-nbits):-1], 2)
-    return ibitr
-
-
-def bitrev3(x):
-    """
-    This function bit-reverses the given value "x" with 32bits
-    python version ----  E.Enriquez   Modified 2016
-    reference: stackoverflow.com/questions/12681945
-    Unlike the other two versions of bitrev, this one always reverses all 32 bits of the input, there is no nbits input
-    so one cannot bit-reverse only a part of the input. UNUSED
-    :param x:   32-bit number to be bit-reversed
-    :return:    bit-reversed x
-    """
-    raise DeprecationWarning("WARNING: This needs testing.")
-
-    x = ((x & 0x55555555) << 1) | ((x & 0xAAAAAAAA) >> 1)
-    x = ((x & 0x33333333) << 2) | ((x & 0xCCCCCCCC) >> 2)
-    x = ((x & 0x0F0F0F0F) << 4) | ((x & 0xF0F0F0F0) >> 4)
-    x = ((x & 0x00FF00FF) << 8) | ((x & 0xFF00FF00) >> 8)
-    x = ((x & 0x0000FFFF) << 16) | ((x & 0xFFFF0000) >> 16)
-    return x
 
 def hitsearch(spectrum, specstart, specend, hitthresh, drift_rate, header, fftlen, tdwidth, max_val, reverse):
     """

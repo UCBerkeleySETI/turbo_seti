@@ -1,5 +1,5 @@
 import blimpy as bl
-from turbo_seti.find_doppler import FindDoppler
+from turbo_seti.find_doppler import FindDoppler, seti_event
 from turbo_seti import find_event, plot_event
 import pylab as plt
 import numpy as np
@@ -125,6 +125,35 @@ def test_find_doppler_voyager_flipped():
     plot_hits(filename_fil, filename_dat)
 
 
+def test_turboSETI_entry_point():
+    """ Test the command line utility turboSETI """
+
+    filename_fil = os.path.join(HERE, 'Voyager1.single_coarse.fine_res.flipped.h5')
+    args = [filename_fil, ]
+    seti_event.main(args)
+
+def test_plotting():
+    """ Some basic plotting tests
+
+    TODO: Improve these tests (and the functions for that matter!
+    """
+    filename_fil = os.path.join(HERE, 'Voyager1.single_coarse.fine_res.h5')
+    fil = bl.Waterfall(filename_fil)
+
+    # Test make_waterfall_plots -- needs 6x files
+    filenames_list = [filename_fil] * 6
+    target  = 'Voyager'
+    drates  = [-0.392226]
+    fvals   = [8419.274785]
+    f_start = 8419.274374 - 600e-6
+    f_stop  = 8419.274374 + 600e-6
+    node_string = 'test'
+    filter_level = 1
+    plot_event.make_waterfall_plots(filenames_list, target, drates, fvals, f_start, f_stop, node_string, filter_level)
+    plt.show()
+
 if __name__ == "__main__":
     test_find_doppler_voyager()
     test_find_doppler_voyager_flipped()
+    test_turboSETI_entry_point()
+    test_plotting()

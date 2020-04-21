@@ -18,6 +18,7 @@ import logging; logging.disable(logging.CRITICAL);
 #import updated_find_event
 import pandas as pd
 import blimpy as bl
+from astropy.time import Time
 
 #Plotting packages import
 import matplotlib
@@ -30,6 +31,7 @@ fontsize=16
 font = {'family' : 'DejaVu Sans',
 'size' : fontsize}
 MAX_IMSHOW_POINTS = (10096, 10096)
+
 
 def plot_hit(fil_filename, dat_filename, hit_id, bw=None, offset=0):
     """ Plot a candidate from a .dat file
@@ -56,6 +58,52 @@ def plot_hit(fil_filename, dat_filename, hit_id, bw=None, offset=0):
 
     fil.plot_waterfall()
     overlay_drift(f0, hit['DriftRate'], t_duration, offset)
+
+
+def rebin(d, n_x, n_y):
+    """ Rebin data by averaging bins together
+    Args:
+    d (np.array): data
+    n_x (int): number of bins in x dir to rebin into one
+    n_y (int): number of bins in y dir to rebin into one
+    Returns:
+    d: rebinned data with shape (n_x, n_y)
+    """
+
+    if d.ndim == 2:
+        if n_y is None:
+            n_y = 1
+        if n_x is None:
+            n_x = 1
+        print ('d.shape[0]', d.shape[0])
+        print ('d.shape[1]', d.shape[1])
+        print ('n_x', n_x)
+        print ('n_y', n_y)
+        d = d[:int(d.shape[0] // n_x) * n_x, :int(d.shape[1] // n_y) * n_y]
+        d = d.reshape((d.shape[0] // n_x, n_x, d.shape[1] // n_y, n_y))
+        d = d.mean(axis=3)
+        d = d.mean(axis=1)
+    elif d.ndim == 1:
+        d = d[:int(d.shape[0] // n_x) * n_x]
+        d = d.reshape((d.shape[0] // n_x, n_x))
+        d = d.mean(axis=1)
+    else:
+        raise RuntimeError("Only NDIM <= 2 supported")
+    return d
+
+
+def overlay_drift(f_event, drate, t_duration, offset=0):
+    """ Overlay drift line on plot
+
+    Args:
+        f_event (float): Start frequency of event in MHz
+        drate (float): Drift rate in Hz/s
+        t_duration (float): Time duration in seconds
+        offset (float): Offset line from event by amount. Default 0.
+    """
+    if offset == 'auto':
+        offset = - 0.2 * drate*t_duration
+    plt.plot((f_event+offset/1e6, f_event+drate/1e6*t_duration+offset/1e6), (0, t_duration), c='#cc0000', ls='dashed', lw=2)
 
 
 def make_waterfall_plots(filenames_list, target, drates, fvals, f_start,f_stop, node_string, filter_level, ion=False,
@@ -86,14 +134,14 @@ def make_waterfall_plots(filenames_list, target, drates, fvals, f_start,f_stop, 
     filheader=fil.header
     f={}
     for key, value in filheader.items():
-        f[key.decode("utf-8")]=value
+        f[key]=value
     filheader=f
 
     print ('filheader', filheader)
     t0 = filheader['tstart']
     plot_f, plot_data = fil.grab_data(f_start=f_start, f_stop=f_stop)
     dec_fac_x, dec_fac_y = 1, 1
-    print ('plot_data', plot_data)
+    #print ('plot_data', plot_data)
 
     #rebinning data to plot correctly with fewer plots
     if plot_data.shape[0] > MAX_IMSHOW_POINTS[0]:
@@ -107,39 +155,9 @@ def make_waterfall_plots(filenames_list, target, drates, fvals, f_start,f_stop, 
     n_x=dec_fac_x
     n_y=dec_fac_y
 
-    """ Rebin data by averaging bins together
-    Args:
-    d (np.array): data
-    n_x (int): number of bins in x dir to rebin into one
-    n_y (int): number of bins in y dir to rebin into one
-    Returns:
-    d: rebinned data with shape (n_x, n_y)
-    """
-
-    if d.ndim == 2:
-        if n_y is None:
-            n_y = 1
-        if n_x is None:
-            n_x = 1
-        print ('d.shape[0]', d.shape[0])
-        print ('d.shape[1]', d.shape[1])
-        print ('n_x', n_x)
-        print ('n_y', n_y)
-        d = d[:int(d.shape[0] // n_x) * n_x, :int(d.shape[1] // n_y) * n_y]
-        d = d.reshape((d.shape[0] // n_x, n_x, d.shape[1] // n_y, n_y))
-        d = d.mean(axis=3)
-        d = d.mean(axis=1)
-    elif d.ndim == 1:
-        d = d[:int(d.shape[0] // n_x) * n_x]
-        d = d.reshape((d.shape[0] // n_x, n_x))
-        d = d.mean(axis=1)
-    else:
-        raise RuntimeError("Only NDIM <= 2 supported")
+    d = rebin(d, n_x, n_y)
     plot_data=d
-    print ('d', d)
-
-
-
+    #print('d', d)
 
     #plot_data = rebin(plot_data, dec_fac_x, dec_fac_y)
 
@@ -170,10 +188,7 @@ def make_waterfall_plots(filenames_list, target, drates, fvals, f_start,f_stop, 
         subplots.append(subplot)
         fil = bl.Waterfall(filename, f_start=f_start, f_stop=f_stop)
         filheader=fil.header
-        z={}
-        for key, value in filheader.items():
-            z[key.decode("utf-8")]=value
-        filheader=z
+
 
         try:
             this_plot = plot_waterfall(fil,f_start=f_start, f_stop=f_stop, drate=drate_max,
@@ -218,20 +233,8 @@ def make_waterfall_plots(filenames_list, target, drates, fvals, f_start,f_stop, 
 
     return subplots
 
-def overlay_drift(f_event, drate, t_duration, offset=0):
-    """ Overlay drift line on plot
 
-    Args:
-        f_event (float): Start frequency of event in MHz
-        drate (float): Drift rate in Hz/s
-        t_duration (float): Time duration in seconds
-        offset (float): Offset line from event by amount. Default 0.
-    """
-    if offset == 'auto':
-        offset = - 0.2 * drate*t_duration
-    plt.plot((f_event+offset/1e6, f_event+drate/1e6*t_duration+offset/1e6), (0, t_duration), c='#cc0000', ls='dashed', lw=2)
-    
-def plot_waterfall(fil, f_start=None, f_stop=None, drate=None, if_id=0, logged=True,cb=False,freq_label=False,MJD_time=False, **kwargs):
+def plot_waterfall(fil, f_start=None, f_stop=None, drate=None, if_id=0, logged=True, cb=False,freq_label=False,MJD_time=False, **kwargs):
     """ Plot waterfall of data
     Args:
         f_start (float): start frequency, in MHz
@@ -258,37 +261,9 @@ def plot_waterfall(fil, f_start=None, f_stop=None, drate=None, if_id=0, logged=T
     n_x=dec_fac_x
     n_y=dec_fac_y
 
-    """ Rebin data by averaging bins together
-    Args:
-    d (np.array): data
-    n_x (int): number of bins in x dir to rebin into one
-    n_y (int): number of bins in y dir to rebin into one
-    Returns:
-    d: rebinned data with shape (n_x, n_y)
-    """
-
-    if d.ndim == 2:
-        if n_y is None:
-            n_y = 1
-        if n_x is None:
-            n_x = 1
-        print ('d.shape[0]', d.shape[0])
-        print ('d.shape[1]', d.shape[1])
-        print ('n_x', n_x)
-        print ('n_y', n_y)
-        d = d[:int(d.shape[0] // n_x) * n_x, :int(d.shape[1] // n_y) * n_y]
-        d = d.reshape((d.shape[0] // n_x, n_x, d.shape[1] // n_y, n_y))
-        d = d.mean(axis=3)
-        d = d.mean(axis=1)
-    elif d.ndim == 1:
-        d = d[:int(d.shape[0] // n_x) * n_x]
-        d = d.reshape((d.shape[0] // n_x, n_x))
-        d = d.mean(axis=1)
-    else:
-        raise RuntimeError("Only NDIM <= 2 supported")
+    d = rebin(d, n_x, n_y)
     plot_data=d
-    print ('d', d)
-
+    #print('d', d)
 
     #plot_data = rebin(plot_data, dec_fac_x, dec_fac_y)
 
@@ -326,7 +301,8 @@ def plot_waterfall(fil, f_start=None, f_stop=None, drate=None, if_id=0, logged=T
 
     return this_plot 
 
-def plot_candidate_events_individually(full_candidate_event_dataframe, correct_fils, source_name, node_string, filter_level, show=False, overwrite=False, offset=0, **kwargs):
+def plot_candidate_events_individually(full_candidate_event_dataframe, correct_fils, source_name,
+                                       node_string, filter_level, show=False, overwrite=False, offset=0, **kwargs):
     trimmed_candidate_event_dataframe=pd.read_csv(full_candidate_event_dataframe)
     print ('full_candidate_event_dataframe', full_candidate_event_dataframe)
     #get only the events in the dataframe that are from the right target

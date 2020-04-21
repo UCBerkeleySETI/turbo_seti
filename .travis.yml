@@ -15,8 +15,9 @@ install:
   - pip install .
 
 # Command to run test
-script: 
-    - python setup.py test
+script:
+  - cd test; python download_test_data.py; cd ..
+  - python setup.py test
     
 branches:
   only:

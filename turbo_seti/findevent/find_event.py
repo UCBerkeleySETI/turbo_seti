@@ -15,7 +15,7 @@ Usage (beta):
 import pandas as pd
 import pdb;# pdb.set_trace()
 import time
-from blimpy import Filterbank
+# Issue #36: from blimpy import Filterbank
 import numpy as np
 from blimpy.utils import db, lin, rebin, closest
 from optparse import OptionParser

@@ -257,20 +257,20 @@ class DATAH5:
         base_header = {}
 
         #used by file_writers.py
-        base_header[b'SOURCE'] = header[b'source_name'].replace(b'\xc2\xa0',b'_').replace(b' ',b'_')
-        base_header[b'MJD'] = header[b'tstart']
-        base_header[b'DEC'] = str(header[b'src_dej'])
-        base_header[b'RA'] = str(header[b'src_raj'])
-        base_header[b'DELTAF'] =  header[b'foff']
-        base_header[b'DELTAT'] = float(header[b'tsamp'])
+        base_header[b'SOURCE'] = header['source_name'].replace('\xc2\xa0','_').replace(' ','_')
+        base_header[b'MJD'] = header['tstart']
+        base_header[b'DEC'] = str(header['src_dej'])
+        base_header[b'RA'] = str(header['src_raj'])
+        base_header[b'DELTAF'] =  header['foff']
+        base_header[b'DELTAT'] = float(header['tsamp'])
 
         #used by helper_functions.py
         if coarse:
-            base_header[b'NAXIS1'] = int(header[b'nchans']/self.tn_coarse_chan)
+            base_header[b'NAXIS1'] = int(header['nchans']/self.tn_coarse_chan)
             base_header[b'FCNTR'] = (self.f_stop - self.f_start)/2. + self.f_start
         else:
-            base_header[b'NAXIS1'] = int(header[b'nchans'])
-            base_header[b'FCNTR'] = float(header[b'fch1']) + header[b'foff']*base_header[b'NAXIS1']/2
+            base_header[b'NAXIS1'] = int(header['nchans'])
+            base_header[b'FCNTR'] = float(header['fch1']) + header['foff']*base_header[b'NAXIS1']/2
 
         #other header values.
         base_header[b'NAXIS'] = 2

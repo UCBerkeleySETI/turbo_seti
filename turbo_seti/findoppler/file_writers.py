@@ -39,18 +39,21 @@ class GeneralWriter:
 
     def open(self, mode='a'):
         """
-        Opens the file with the inputted mode.
+        Opens the file with the inputted mode, then closes it. Does not actually leave the file opened, only used for
+        changing mode.
         :param mode:    string,     mode which we want to assign to this file, same modes as the built-in python
                                     built-in open function: r - read, a - append, w -write, x - create
         :return: void
         """
         if self.filehandle.closed:
-            self.filehandle = open(self.filename, mode)
+            with open(self.filename, mode) as myfile:
+                self.filehandle = myfile
         elif self.filehandle.mode == mode:
             return
         else:
             self.close()
-            self.filehandle = open(self.filename, mode)
+            with open(self.filename, mode) as myfile:
+                self.filehandle = myfile
 
     def is_open(self):
         """
@@ -92,6 +95,7 @@ class GeneralWriter:
         don't have to actually write an empty string to it.
         """
         self.open('w')
+        self.write('')
         self.open('a')
 
 class FileWriter(GeneralWriter):

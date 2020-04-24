@@ -92,7 +92,6 @@ class GeneralWriter:
         don't have to actually write an empty string to it.
         """
         self.open('w')
-        self.write('')
         self.open('a')
 
 class FileWriter(GeneralWriter):

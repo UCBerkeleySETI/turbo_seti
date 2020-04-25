@@ -41,26 +41,6 @@ def bitrev(inval, nbits):
     return ibitr
 
 
-def AxisSwap(inbuf, outbuf, nchans, NTSampInRead):
-    #long int    j1, j2, indx, jndx;
-    for j1 in range(0, NTSampInRead):
-        indx  = j1 * nchans
-        for j2 in range(nchans-1, -1, -1):
-            jndx = j2 * NTSampInRead + j1
-            outbuf[jndx]  = inbuf[indx+j2]
-
-def FlipBand(outbuf, nchans, NTSampInRead):
-    temp = np.zeros(nchans*NTSampInRead, dtype=np.float64)
-
-    indx  = (nchans - 1);
-    for i in range(0, nchans):
-        jndx = (indx - i) * NTSampInRead
-        kndx = i * NTSampInRead
-        np.copyto(temp[jndx: jndx+NTSampInRead], outbuf[kndx + NTSampInRead])
-    #memcpy(outbuf, temp, (sizeof(float)*NTSampInRead * nchans));
-    outbuf = temp
-    return
-
 def FlipX(outbuf, xdim, ydim):
     temp = np.empty_like(outbuf[0:xdim])
     logger_hf.debug("FlipX: temp array dimension: %s"%str(temp.shape))
@@ -70,6 +50,7 @@ def FlipX(outbuf, xdim, ydim):
         np.copyto(temp, outbuf[indx:indx+xdim])
         np.copyto(outbuf[indx: indx+xdim], temp[::-1])
     return
+
 
 def comp_stats(arrey):
     #Compute mean and stddev of floating point vector array in a fast way, without using the outliers.

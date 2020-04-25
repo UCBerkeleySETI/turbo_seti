@@ -1,5 +1,5 @@
 import blimpy as bl
-from turbo_seti.find_doppler import FindDoppler, seti_event
+from turbo_seti import FindDoppler, seti_event
 from turbo_seti import find_event, plot_event
 import pylab as plt
 import numpy as np

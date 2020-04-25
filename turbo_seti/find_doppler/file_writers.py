@@ -56,9 +56,17 @@ class GeneralWriter:
                 self.filehandle = myfile
 
     def is_open(self):
+        """
+        Checks if file is open.
+        :return:    boolean,    true if file is open, false otherwise
+        """
         return not self.filehandle.closed
 
     def writable(self):
+        """
+        Checks if file is open, and if it is, checks that mode is either write or append.
+        :return:    boolean,    true if file is open and writeable, false otherwise
+        """
         if self.is_open() and (('w' in self.filehandle.mode) or ('a' in self.filehandle.mode)):
             return True
         else:

@@ -21,12 +21,8 @@ try:
 except:
     import taylor_tree as tt
 
-#EE-benshmark
-#import cProfile
-
 #For debugging
 #import pdb;# pdb.set_trace()
-
 class max_vals:
     def __init__(self):
         self.maxsnr = None
@@ -117,10 +113,6 @@ class FindDoppler:
 
         for ii,target_data_obj in enumerate(self.data_handle.data_list):
             self.search_data(target_data_obj)
-##EE-benshmark            cProfile.runctx('self.search_data(target_data_obj)',globals(),locals(),filename='profile_M%2.1f_S%2.1f_t%i'%(self.max_drift,self.snr,int(os.times()[-1])))
-
-            #----------------------------------------
-            #Closing instance. Collect garbage.
             self.data_handle.data_list[ii].close()
             gc.collect()
 
@@ -129,7 +121,6 @@ class FindDoppler:
         Search the waterfall data of file.
         :param data_obj:    DATAH5,     file's waterfall data
         """
-
         logger.info("Start searching for coarse channel: %s"%data_obj.header['coarse_chan'])
         self.logwriter.info("Start searching for %s ; coarse channel: %i "%(data_obj.filename,data_obj.header['coarse_chan']))
         spectra, drift_indices = data_obj.load_data()
@@ -189,16 +180,6 @@ class FindDoppler:
             max_val.maxid = np.zeros(tdwidth, dtype='uint32')
         if max_val.total_n_hits == None:
             max_val.total_n_hits = 0
-
-##EE-debuging
-#         hist_val = hist_vals()
-#         hist_len = int(np.ceil(2*(self.max_drift-self.min_drift)/data_obj.drift_rate_resolution))
-#         if hist_val.histsnr == None:
-#             hist_val.histsnr = np.zeros((hist_len,tdwidth), dtype=np.float64)
-#         if hist_val.histdrift == None:
-#             hist_val.histdrift = np.zeros((hist_len), dtype=np.float64)
-#         if hist_val.histid == None:
-#             hist_val.histid = np.zeros(tdwidth, dtype='uint32')
 
         #EE: Making "shoulders" to avoid "edge effects". Could do further testing.
         specstart = int(tsteps*shoulder_size/2)
@@ -339,20 +320,13 @@ def populate_tree(spectra,tree_findoppler,nframes,tdwidth,tsteps,fftlen,shoulder
     else:
         direction = 1
 
-#EE Also, the shouldering is maybe not important, since I'm already making my own flagging fo 10k channels
-#EE And Since , I have a very large frequency number comparted to the time lenght.
-##EE Wondering if here should have a data cube instead...maybe not, i guess this is related to the bit-reversal.
-
     for i in range(0, nframes):
         sind = tdwidth*i + tsteps*int(shoulder_size/2)
         cplen = fftlen
 
         ##EE copy spectra into tree_findoppler, leaving two regions in each side blanck (each region of tsteps*(shoulder_size/2) in size).
-#        np.copyto(tree_findoppler[sind: sind + cplen], spectra[i])
         # Copy spectra into tree_findoppler, with rolling.
         np.copyto(tree_findoppler[sind: sind + cplen], np.roll(spectra[i],roll*i*direction))
-
-#EE code below will be replaced, since I think is better to use the median of the data as "flag" than to add other data into the shoulders.
 
 #         ##EE loads the end part of the current spectrum into the left hand side black region in tree_findoppler (comment below says "next spectra" but for that need i+1...bug?)
          #load end of current spectra into left hand side of next spectra

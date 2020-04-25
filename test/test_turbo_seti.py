@@ -153,7 +153,8 @@ def test_plotting():
     plt.show()
 
 if __name__ == "__main__":
+
+    test_turboSETI_entry_point()
     test_find_doppler_voyager()
     test_find_doppler_voyager_flipped()
-    test_turboSETI_entry_point()
     test_plotting()

@@ -12,31 +12,29 @@ from Cython.Distutils import build_ext
 import numpy
 from setuptools.extension import Extension
 
-__version__ = "1.1.1"
+__version__ = "1.2.0"
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-install_requires = [
-    'astropy',
-    'cython',
-    'numpy',
-    'blimpy',
-    'pandas'
-]
+with open("requirements.txt", "r") as fh:
+    install_requires = fh.readlines()
+
+with open("requirements_test.txt", "r") as fh:
+    test_requirements = fh.readlines()
 
 entry_points = {
     'console_scripts' :
-        ['turboSETI = turbo_seti.findoppler.seti_event:main',
-         'find_event = turbo_seti.findevent.find_event:main',
-         'find_scan_sets = turbo_seti.findevent.find_scan_sets:main',
-         'plot_event = turbo_seti.findevent.plot_event:main',
+        ['turboSETI = turbo_seti.find_doppler.seti_event:main',
+         'find_event = turbo_seti.find_event.find_event:main',
+         'find_scan_sets = turbo_seti.find_event.find_scan_sets:main',
+         'plot_event = turbo_seti.find_event.plot_event:main',
      ]
 }
 
 extensions = [Extension(
-        name="turbo_seti.findoppler.taylor_tree",
-        sources=["turbo_seti/findoppler/taylor_tree.pyx"],
+        name="turbo_seti.find_doppler.taylor_tree",
+        sources=["turbo_seti/find_doppler/taylor_tree.pyx"],
         include_dirs=[numpy.get_include()],
         )
     ]
@@ -59,6 +57,7 @@ setup(
     cmdclass=cmdclass,
     ext_modules=cythonize(extensions),
     install_requires=install_requires,
+    tests_require=test_requirements,
     entry_points=entry_points,
     author="Emilio Enriquez",
     author_email="e.enriquez@berkeley.edu",

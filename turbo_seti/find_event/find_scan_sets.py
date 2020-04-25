@@ -1,10 +1,10 @@
 #!/usr/bin/env python
-'''
+"""
 
 This module is very BL-GBT oriented. Will transfer to different repo.
 
  ..author: Emilio Enriquez
-'''
+"""
 
 import pandas as pd
 from argparse import ArgumentParser
@@ -15,8 +15,8 @@ import numpy as np
 pd.options.mode.chained_assignment = None  # To remove pandas warnings: default='warn'
 
 def find_scan_sets(filename,band,ok_bands = ['L','S']):
-    '''Finding scan sets, needs filename of csv file and band.
-    '''
+    """Finding scan sets, needs filename of csv file and band.
+    """
 
     if '.csv' in filename:
         spider_danny = True

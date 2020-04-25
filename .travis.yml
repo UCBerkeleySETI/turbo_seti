@@ -9,17 +9,14 @@ install:
   - sudo apt-get install -qq libhdf5-serial-dev
   - pip install --upgrade pip setuptools wheel
   - pip install --only-binary=numpy,scipy numpy scipy
-  - pip install matplotlib
-  - pip install pandas
-  - pip install cython
-  - pip install h5py==2.5.0
-  - pip install git+https://github.com/ucberkeleyseti/blimpy
-  - pip install git+https://github.com/kiyo-masui/bitshuffle
-  - python setup.py install
+  - pip install h5py --only-binary=h5py
+  - pip install -r requirements.txt
+  - pip install -r requirements_test.txt
+  - pip install .
 
 # Command to run test
-script: 
-    - turboSETI voyager_test/Voyager1.single_coarse.fine_res.h5
+script:
+  - cd test; python download_test_data.py; ./run_tests.sh;
     
 branches:
   only:

@@ -2,13 +2,19 @@ import os
 
 import h5py
 import hdf5plugin
+import blimpy as bl
 
 HERE = os.path.split(os.path.abspath(__file__))[0]
 
+
 def download_voyager_data():
     """ Download Voyager test data """
-    # TODO: move Voyager data out of repo -- currently, this call is not needed as repo comes with data.
-    pass
+    os.system('wget http://blpd0.ssl.berkeley.edu/Voyager_data/Voyager1.single_coarse.fine_res.h5')
+
+
+def create_fil_from_voyager_h5(voyager_fp):
+    """ """
+    os.system("h52fil %s" % voyager_fp)
 
 
 def flip_data(filename):
@@ -34,5 +40,7 @@ def flip_data(filename):
     print("Done.")
 
 if __name__ == "__main__":
+    #  download_voyager_data()   # Currently included in repo
     voyager_fp = os.path.join(HERE, 'Voyager1.single_coarse.fine_res.h5')
     flip_data(voyager_fp)
+    create_fil_from_voyager_h5(voyager_fp)

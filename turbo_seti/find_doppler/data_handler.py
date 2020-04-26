@@ -29,7 +29,7 @@ class DATAHandle:
         :param size_limit:      float,       maximum size in MB that the file is allowed to be
         :param out_dir:         string,      directory where output files should be saved
         """
-        self.filename = filename
+
         if filename and os.path.isfile(filename):
             self.filename = filename
             self.out_dir = out_dir
@@ -82,7 +82,8 @@ class DATAHandle:
         """
 
         fil_file = Waterfall(self.filename)
-        new_filename = self.out_dir+self.filename.replace('.fil','.h5').split('/')[-1]
+        bn = os.path.basename(self.filename)
+        new_filename = os.path.join(self.out_dir, bn.replace('.fil', '.h5'))
         fil_file.write_to_hdf5(new_filename)
         self.filename = new_filename
 

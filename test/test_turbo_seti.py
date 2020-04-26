@@ -11,8 +11,9 @@ HERE = os.path.split(os.path.abspath(__file__))[0]
 def find_doppler(filename_fil):
     """ Run turboseti doppler search on filename with default params """
     print("Searching %s" % filename_fil)
-    filename_dat = filename_fil.replace('.h5', '.dat')
-    filename_log = filename_fil.replace('.h5', 'log')
+    suffix = os.path.splitext(filename_fil)[1]
+    filename_dat = filename_fil.replace(suffix, '.dat')
+    filename_log = filename_fil.replace(suffix, 'log')
 
     if os.path.exists(filename_dat):
         os.remove(filename_dat)
@@ -124,6 +125,14 @@ def test_find_doppler_voyager_flipped():
     validate_voyager_hits(filename_dat)
     plot_hits(filename_fil, filename_dat)
 
+def test_find_doppler_voyager_filterbank():
+    """ Run turboseti on Voyager data (filterbank version) """
+    filename_fil = os.path.join(HERE, 'Voyager1.single_coarse.fine_res.fil')
+    filename_dat = filename_fil.replace('.fil', '.dat')
+    find_doppler(filename_fil)
+    #validate_voyager_hits(filename_dat)
+    #plot_hits(filename_fil, filename_dat)
+
 
 def test_turboSETI_entry_point():
     """ Test the command line utility turboSETI """
@@ -154,7 +163,8 @@ def test_plotting():
 
 if __name__ == "__main__":
 
-    test_turboSETI_entry_point()
-    test_find_doppler_voyager()
-    test_find_doppler_voyager_flipped()
-    test_plotting()
+    #test_turboSETI_entry_point()
+    #test_find_doppler_voyager()
+    #test_find_doppler_voyager_flipped()
+    #test_plotting()
+    test_find_doppler_voyager_filterbank()

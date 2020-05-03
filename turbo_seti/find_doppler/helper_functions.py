@@ -42,6 +42,16 @@ def bitrev(inval, nbits):
 
 
 def FlipX(outbuf, xdim, ydim):
+    """
+    This function takes in an array of values and iteratively flips ydim chunks of values of length xdim. For example,
+    if you have an array [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] and enter it with xdim = 5 and ydim = 2, the array will be
+    modified to become [5, 4, 3, 2, 1, 10, 9, 8, 7, 6]. Note that if you wish for the whole array to be modified in this
+    way, xdim * ydim should equal the length of the array. If ydim * xdim is greater than the length of the array, this
+    function will error.
+    :param outbuf:          ndarray,        an array with shape = (int, 1)
+    :param xdim:            int,            size of segments to be flipped
+    :param ydim:            int,            amount of segments of size xdim to be flipped
+    """
     temp = np.empty_like(outbuf[0:xdim])
     logger_hf.debug("FlipX: temp array dimension: %s"%str(temp.shape))
 
@@ -53,7 +63,11 @@ def FlipX(outbuf, xdim, ydim):
 
 
 def comp_stats(arrey):
-    #Compute mean and stddev of floating point vector array in a fast way, without using the outliers.
+    """
+    Compute mean and stddev of floating point vector array in a fast way, without using the outliers.
+    :param arrey:       ndarray,        floating point vector array
+    :return:            float, float,   median and standard deviation of input array
+    """
 
     new_vec = np.sort(arrey,axis=None)
 

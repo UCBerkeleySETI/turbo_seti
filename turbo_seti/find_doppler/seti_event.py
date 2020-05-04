@@ -11,8 +11,13 @@ from argparse import ArgumentParser
 
 
 def main(args=None):
-    """
-    This is the entry-point to turboSETI.
+    """This is the entry-point to turboSETI.
+
+    Args:
+      args: (Default value = None)
+
+    Returns:
+
     """
     # Create an option parser to get command-line input/arguments
     p = ArgumentParser(description='turboSETI doppler drift narrowband search utility.')

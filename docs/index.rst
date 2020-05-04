@@ -1,14 +1,12 @@
-.. turbo_seti documentation master file, created by
-   sphinx-quickstart on Sun May  3 14:09:54 2020.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 Welcome to turbo_seti's documentation!
 ======================================
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+
+   find_doppler.rst
+   find_event.rst
 
 
 

@@ -105,6 +105,12 @@ OBS_LENGTH = 300.
 def end_search(t0):
     """ends the search when there are no candidates left, or when the filter
     level matches the user-specified level
+
+    Args:
+      t0: 
+
+    Returns:
+
     """
     #Report elapsed search time
     t1 = time.time()
@@ -113,12 +119,13 @@ def end_search(t0):
     return
 
 def read_dat(filename):
-    """ Read a turboseti .dat file
+    """Read a turboseti .dat file
 
     Args:
-        filename (str): Name of .dat file to open
+      filename(str): Name of .dat file to open
 
-    Returns: pandas dataframe of hits
+    Returns:
+        pandas dataframe of hits
     """
 
     file_dat = open(filename.strip())
@@ -187,9 +194,17 @@ def read_dat(filename):
     return df_data
 
 def make_table(filename, init=False):
-    """ Creates a pandas dataframe with column names standard for turboSETI .dat
+    """Creates a pandas dataframe with column names standard for turboSETI .dat
     output files, either directly (if) or by reading the file line-by line and
     then reorganizing the output (else)
+
+    Args:
+      filename: 
+      init:  (Default value = False)
+
+    Returns:
+        df_data: pandas dataframe
+
     """
     
     if init:
@@ -207,6 +222,15 @@ def make_table(filename, init=False):
 def calc_freq_range(hit,delta_t=0,max_dr=True,follow=False):
     """Calculates a range of frequencies where RFI in an off-source could
         be related to a hit in an on-source given a freq and drift_rate.
+
+    Args:
+      hit: 
+      delta_t:  (Default value = 0)
+      max_dr:  (Default value = True)
+      follow:  (Default value = False)
+
+    Returns:
+        list [low_bound, high_bound]
     """
     if max_dr:
         drift_rate = MAX_DRIFT_RATE
@@ -229,8 +253,17 @@ def calc_freq_range(hit,delta_t=0,max_dr=True,follow=False):
     return [low_bound,high_bound]
 
 def follow_event(hit,on_table,get_count=True):
-    """ Follows a given hit to the next observation of the same target and 
+    """Follows a given hit to the next observation of the same target and
     looks for hits which could be part of the same event.
+
+    Args:
+      hit: 
+      on_table: 
+      get_count:  (Default value = True)
+
+    Returns:
+        new_on_table or count
+
     """
 
     #uses calc_freq_range to see how much the hit *should* have drifted by
@@ -253,19 +286,25 @@ def follow_event(hit,on_table,get_count=True):
     else:
         return new_on_table
 
-def find_events(dat_file_list,
-                SNR_cut=10,
-                check_zero_drift=False,
-                filter_threshold=3,
-                on_off_first='ON'):
-    """ Reads a list of turboSETI .dat files.
+def find_events(dat_file_list,  SNR_cut=10, check_zero_drift=False, filter_threshold=3, on_off_first='ON'):
+    """Reads a list of turboSETI .dat files.
         It calls other functions to find events within this group of files.
-        Filter_threshold allows the return of a table of events with hits at 
+        Filter_threshold allows the return of a table of events with hits at
         different levels of filtering.
         Filter_threshold = [1,2,3] means:
             1) Hits above an SNR cut witout AB check
             2) Hits that are only in some As and no Bs
             3) Hits that are only in all As and no Bs
+
+    Args:
+      dat_file_list: 
+      SNR_cut:  (Default value = 10)
+      check_zero_drift:  (Default value = False)
+      filter_threshold:  (Default value = 3)
+      on_off_first:  (Default value = 'ON')
+
+    Returns:
+
     """
     #Initializing timer
     t0 = time.time()
@@ -406,6 +445,14 @@ def find_events(dat_file_list,
     if empty_counter == 0:
         first_on = on_but_not_off_table_list[0]#
         def hit_func(hit):
+            """
+
+            Args:
+              hit: 
+
+            Returns:
+
+            """
             val = 0
             for i in range(1, len(on_but_not_off_table_list)):
                 val += follow_event(hit, on_but_not_off_table_list[i])

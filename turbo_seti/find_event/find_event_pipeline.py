@@ -106,6 +106,21 @@ def find_event_pipeline(dat_file_list_str,
                         number_in_cadence=6, 
                         saving=True, 
                         user_validation=False): 
+    """
+
+    Args:
+      dat_file_list_str: 
+      SNR_cut:  (Default value = 10)
+      check_zero_drift:  (Default value = False)
+      filter_threshold:  (Default value = 3)
+      on_off_first:  (Default value = 'ON')
+      number_in_cadence:  (Default value = 6)
+      saving:  (Default value = True)
+      user_validation:  (Default value = False)
+
+    Returns:
+
+    """
     print()
     print("************   BEGINNING FIND_EVENT PIPELINE   **************")
     print()

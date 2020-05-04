@@ -19,9 +19,13 @@ logger = logging.getLogger(__name__)
 SIZE_LIM = 256.0   # File size limit in MB. If larger then make a split mapping.
 
 class DATAHandle:
-    """
-    Class to setup input file for further processing of data. Handles conversion to h5 (from fil), extraction of
+    """Class to setup input file for further processing of data. Handles conversion to h5 (from fil), extraction of
     coarse channel info, waterfall info, and file size checking.
+
+    Args:
+
+    Returns:
+
     """
     def __init__(self, filename=None, size_limit=SIZE_LIM, out_dir='./', n_coarse_chan=None, coarse_chans=None):
         """
@@ -67,9 +71,7 @@ class DATAHandle:
             raise IOError("File %s doesn\'t exists, please check!"%self.filename)
 
     def get_info(self):
-        """
-        :return:    dict,    header of the blimpy file
-        """
+        """:return:    dict,    header of the blimpy file"""
 
         fil_file = Waterfall(self.filename,load_data=False)
         return fil_file.header
@@ -139,9 +141,13 @@ class DATAHandle:
         return data_list
 
 class DATAH5:
-    """
-    This class is where the waterfall data is loaded, as well as the header info.
+    """This class is where the waterfall data is loaded, as well as the header info.
     It creates other attributes related to the dedoppler search (load_drift_indexes).
+
+    Args:
+
+    Returns:
+
     """
 
     def __init__(self, filename, size_limit = SIZE_LIM,f_start=None, f_stop=None,t_start=None, t_stop=None,coarse_chan=1,tn_coarse_chan=None):
@@ -202,9 +208,13 @@ class DATAH5:
         self.tdwidth = self.fftlen + self.shoulder_size*self.tsteps
 
     def load_data(self,):
-        """
-        Read the spectra and drift indices from file.
+        """Read the spectra and drift indices from file.
         :return:    ndarray, ndarray        spectra, drift indices
+
+        Args:
+
+        Returns:
+
         """
         self.fil_file.read_data(f_start=self.f_start, f_stop=self.f_stop)
 
@@ -237,9 +247,13 @@ class DATAH5:
         return spectra, drift_indexes
 
     def load_drift_indexes(self):
-        """
-        The drift indices are read from a stored file so that there is no need to recalculate. This speed things up.
+        """The drift indices are read from a stored file so that there is no need to recalculate. This speed things up.
         :return:    ndarray     drift indices
+
+        Args:
+
+        Returns:
+
         """
         n = int(np.log2(self.tsteps))
         di_array = np.genfromtxt(resource_filename('turbo_seti', 'drift_indexes/drift_indexes_array_%d.txt'%n), delimiter=' ', dtype=int)
@@ -283,6 +297,11 @@ class DATAH5:
         """Closes file and sets the data attribute `.closed` to
         True. A closed object can no longer be used for I/O operations.
         `close()` may be called multiple times without error.
+
+        Args:
+
+        Returns:
+
         """
 
         # Call file object destructor which should close the file

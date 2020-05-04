@@ -16,6 +16,15 @@ pd.options.mode.chained_assignment = None  # To remove pandas warnings: default=
 
 def find_scan_sets(filename,band,ok_bands = ['L','S']):
     """Finding scan sets, needs filename of csv file and band.
+
+    Args:
+      filename: 
+      band: 
+      ok_bands:  (Default value = ['L')
+      'S']: 
+
+    Returns:
+
     """
 
     if '.csv' in filename:
@@ -294,7 +303,7 @@ def find_scan_sets(filename,band,ok_bands = ['L','S']):
         file_list.write(''.join(list_A_stars))
 
 def main():
-    """ Main funtion for find_event scripts. """
+    """Main funtion for find_event scripts."""
 
     parser = ArgumentParser(description="Command line utility for creating a list of ON/OFF pairs of spliced data.")
     parser.add_argument('filename', type=str, help='Full path and filename to read (csv).')

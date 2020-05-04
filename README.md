@@ -109,3 +109,4 @@ See `/datax/eenriquez/voyager_test/*/*.log`, `/datax/eenriquez/voyager_test/*.da
 --------------------------
 
 [![Build Status](https://travis-ci.org/UCBerkeleySETI/turbo_seti.svg?branch=master)](https://travis-ci.org/UCBerkeleySETI/turbo_seti)
+[![Documentation Status](https://readthedocs.org/projects/turbo-seti/badge/?version=latest)](https://turbo-seti.readthedocs.io/en/latest/?badge=latest)

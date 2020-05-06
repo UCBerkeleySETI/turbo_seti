@@ -10,5 +10,5 @@ find_doppler.py
 helper_functions.py
 -------------------
 
-.. automodule:: turboseti.find_doppler.helper_functions
+.. automodule:: turbo_seti.find_doppler.helper_functions
     :members:

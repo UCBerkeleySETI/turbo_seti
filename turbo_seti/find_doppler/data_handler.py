@@ -67,8 +67,9 @@ class DATAHandle:
 
         else:
             self.status = False
-            logger.error("File %s doesn\'t exists, please check!"%self.filename)
-            raise IOError("File %s doesn\'t exists, please check!"%self.filename)
+            errmsg = "File {} doesn\'t exist, please check!".format(filename)
+            logger.error(errmsg)
+            raise IOError(errmsg)
 
     def get_info(self):
         """:return:    dict,    header of the blimpy file"""

@@ -6,6 +6,17 @@ logger_hf = logging.getLogger(__name__)
 
 
 def chan_freq(header, fine_channel, tdwidth, ref_frame):
+    """
+
+    Args:
+      header: 
+      fine_channel: 
+      tdwidth: 
+      ref_frame: 
+
+    Returns:
+
+    """
     fftlen = header['NAXIS1']
     chan_index = fine_channel - (tdwidth-fftlen)/2
     chanfreq = header['FCNTR'] + (chan_index - fftlen/2)*header['DELTAF']
@@ -16,15 +27,19 @@ def chan_freq(header, fine_channel, tdwidth, ref_frame):
 
 
 def bitrev(inval, nbits):
-    """
-    This function bit-reverses the given value "inval" with the number of
+    """This function bit-reverses the given value "inval" with the number of
     bits, "nbits".    ----  R. Ramachandran, 10-Nov-97, nfra.
     python version ----  H. Chen   Modified 2014
-    :param inval:   number to be bit-reversed
-    :param nbits:   The length of inval in bits. If user only wants the bit-reverse of a certain amount of bits of
-                    inval, nbits is the amount of bits to be reversed counting from the least significant (rightmost)
-                    bit. Any bits beyond this length will not be reversed and will be truncated from the result.
-    :return:        the bit-reverse of inval. If there are more significant bits beyond nbits, they are truncated.
+
+    Args:
+      inval: number to be bit-reversed
+      nbits: The length of inval in bits. If user only wants the bit-reverse of a certain amount of bits of
+    inval, nbits is the amount of bits to be reversed counting from the least significant (rightmost)
+    bit. Any bits beyond this length will not be reversed and will be truncated from the result.
+
+    Returns:
+      : the bit-reverse of inval. If there are more significant bits beyond nbits, they are truncated.
+
     """
     if nbits <= 1:
         ibitr = inval
@@ -41,27 +56,21 @@ def bitrev(inval, nbits):
     return ibitr
 
 
-def AxisSwap(inbuf, outbuf, nchans, NTSampInRead):
-    #long int    j1, j2, indx, jndx;
-    for j1 in range(0, NTSampInRead):
-        indx  = j1 * nchans
-        for j2 in range(nchans-1, -1, -1):
-            jndx = j2 * NTSampInRead + j1
-            outbuf[jndx]  = inbuf[indx+j2]
-
-def FlipBand(outbuf, nchans, NTSampInRead):
-    temp = np.zeros(nchans*NTSampInRead, dtype=np.float64)
-
-    indx  = (nchans - 1);
-    for i in range(0, nchans):
-        jndx = (indx - i) * NTSampInRead
-        kndx = i * NTSampInRead
-        np.copyto(temp[jndx: jndx+NTSampInRead], outbuf[kndx + NTSampInRead])
-    #memcpy(outbuf, temp, (sizeof(float)*NTSampInRead * nchans));
-    outbuf = temp
-    return
-
 def FlipX(outbuf, xdim, ydim):
+    """This function takes in an array of values and iteratively flips ydim chunks of values of length xdim. For example,
+    if you have an array [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] and enter it with xdim = 5 and ydim = 2, the array will be
+    modified to become [5, 4, 3, 2, 1, 10, 9, 8, 7, 6]. Note that if you wish for the whole array to be modified in this
+    way, xdim * ydim should equal the length of the array. If ydim * xdim is greater than the length of the array, this
+    function will error.
+
+    Args:
+      outbuf: ndarray,        an array with shape = (int, 1)
+      xdim: int,            size of segments to be flipped
+      ydim: int,            amount of segments of size xdim to be flipped
+
+    Returns:
+
+    """
     temp = np.empty_like(outbuf[0:xdim])
     logger_hf.debug("FlipX: temp array dimension: %s"%str(temp.shape))
 
@@ -71,8 +80,17 @@ def FlipX(outbuf, xdim, ydim):
         np.copyto(outbuf[indx: indx+xdim], temp[::-1])
     return
 
+
 def comp_stats(arrey):
-    #Compute mean and stddev of floating point vector array in a fast way, without using the outliers.
+    """Compute mean and stddev of floating point vector array in a fast way, without using the outliers.
+
+    Args:
+      arrey: ndarray,        floating point vector array
+
+    Returns:
+      : float, float,   median and standard deviation of input array
+
+    """
 
     new_vec = np.sort(arrey,axis=None)
 

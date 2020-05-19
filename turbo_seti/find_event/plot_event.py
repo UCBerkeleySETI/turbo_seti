@@ -34,13 +34,17 @@ MAX_IMSHOW_POINTS = (10096, 10096)
 
 
 def plot_hit(fil_filename, dat_filename, hit_id, bw=None, offset=0):
-    """ Plot a candidate from a .dat file
+    """Plot a candidate from a .dat file
 
     Args:
-        fil_filename (str): Path to filterbank file to plot
-        dat_filename (str): Path to turbosSETI generated .dat output file of events
-        hit_id (int): ID of hit in the dat file to plot (TopHitNum)
-        offset (float): Offset drift line on plot. Default 0.
+      fil_filename(str): Path to filterbank file to plot
+      dat_filename(str): Path to turbosSETI generated .dat output file of events
+      hit_id(int): ID of hit in the dat file to plot (TopHitNum)
+      offset(float, optional): Offset drift line on plot. Default 0.
+      bw:  (Default value = None)
+
+    Returns:
+
     """
     # Load hit details
     dat = make_table(dat_filename)
@@ -61,13 +65,16 @@ def plot_hit(fil_filename, dat_filename, hit_id, bw=None, offset=0):
 
 
 def rebin(d, n_x, n_y):
-    """ Rebin data by averaging bins together
+    """Rebin data by averaging bins together
+
     Args:
-    d (np.array): data
-    n_x (int): number of bins in x dir to rebin into one
-    n_y (int): number of bins in y dir to rebin into one
+      d(np.array): data
+      n_x(int): number of bins in x dir to rebin into one
+      n_y: 
+
     Returns:
-    d: rebinned data with shape (n_x, n_y)
+      d: rebinned data with shape (n_x, n_y)
+
     """
 
     if d.ndim == 2:
@@ -93,13 +100,16 @@ def rebin(d, n_x, n_y):
 
 
 def overlay_drift(f_event, drate, t_duration, offset=0):
-    """ Overlay drift line on plot
+    """Overlay drift line on plot
 
     Args:
-        f_event (float): Start frequency of event in MHz
-        drate (float): Drift rate in Hz/s
-        t_duration (float): Time duration in seconds
-        offset (float): Offset line from event by amount. Default 0.
+      f_event(float): Start frequency of event in MHz
+      drate(float): Drift rate in Hz/s
+      t_duration(float): Time duration in seconds
+      offset(float, optional): Offset line from event by amount. Default 0.
+
+    Returns:
+
     """
     if offset == 'auto':
         offset = - 0.2 * drate*t_duration
@@ -109,7 +119,30 @@ def overlay_drift(f_event, drate, t_duration, offset=0):
 def make_waterfall_plots(filenames_list, target, drates, fvals, f_start,f_stop, node_string, filter_level, ion=False,
                          epoch=None,bw=250.0, local_host='',plot_name='',save_pdf_plot=False,saving_fig=False,offset=0,
                          dedoppler=False,**kwargs):
-    """ Makes waterfall plots per group of ON-OFF pairs (up to 6 plots.)
+    """Makes waterfall plots per group of ON-OFF pairs (up to 6 plots.)
+
+    Args:
+      filenames_list: 
+      target: 
+      drates: 
+      fvals: 
+      f_start: 
+      f_stop: 
+      node_string: 
+      filter_level: 
+      ion:  (Default value = False)
+      epoch:  (Default value = None)
+      bw:  (Default value = 250.0)
+      local_host:  (Default value = '')
+      plot_name:  (Default value = '')
+      save_pdf_plot:  (Default value = False)
+      saving_fig:  (Default value = False)
+      offset:  (Default value = 0)
+      dedoppler:  (Default value = False)
+      **kwargs: 
+
+    Returns:
+
     """
     
     #prepares for plotting
@@ -235,13 +268,23 @@ def make_waterfall_plots(filenames_list, target, drates, fvals, f_start,f_stop, 
 
 
 def plot_waterfall(fil, f_start=None, f_stop=None, drate=None, if_id=0, logged=True, cb=False,freq_label=False,MJD_time=False, **kwargs):
-    """ Plot waterfall of data
+    """Plot waterfall of data
+
     Args:
-        f_start (float): start frequency, in MHz
-        f_stop (float): stop frequency, in MHz
-        logged (bool): Plot in linear (False) or dB units (True),
-        cb (bool): for plotting the colorbar
-        kwargs: keyword args to be passed to matplotlib imshow()
+      f_start(float, optional): start frequency, in MHz (Default value = None)
+      f_stop(float, optional): stop frequency, in MHz (Default value = None)
+      logged(bool, optional): Plot in linear (False) or dB units (True), (Default value = True)
+      cb(bool, optional): for plotting the colorbar (Default value = False)
+      kwargs: keyword args to be passed to matplotlib imshow()
+      fil: 
+      drate:  (Default value = None)
+      if_id:  (Default value = 0)
+      freq_label:  (Default value = False)
+      MJD_time:  (Default value = False)
+      **kwargs: 
+
+    Returns:
+
     """
 
     #prepare font
@@ -303,6 +346,22 @@ def plot_waterfall(fil, f_start=None, f_stop=None, drate=None, if_id=0, logged=T
 
 def plot_candidate_events_individually(full_candidate_event_dataframe, correct_fils, source_name,
                                        node_string, filter_level, show=False, overwrite=False, offset=0, **kwargs):
+    """
+
+    Args:
+      full_candidate_event_dataframe: 
+      correct_fils: 
+      source_name: 
+      node_string: 
+      filter_level: 
+      show:  (Default value = False)
+      overwrite:  (Default value = False)
+      offset:  (Default value = 0)
+      **kwargs: 
+
+    Returns:
+
+    """
     trimmed_candidate_event_dataframe=pd.read_csv(full_candidate_event_dataframe)
     print ('full_candidate_event_dataframe', full_candidate_event_dataframe)
     #get only the events in the dataframe that are from the right target

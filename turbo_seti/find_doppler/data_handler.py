@@ -19,9 +19,13 @@ logger = logging.getLogger(__name__)
 SIZE_LIM = 256.0   # File size limit in MB. If larger then make a split mapping.
 
 class DATAHandle:
-    """
-    Class to setup input file for further processing of data. Handles conversion to h5 (from fil), extraction of
+    """Class to setup input file for further processing of data. Handles conversion to h5 (from fil), extraction of
     coarse channel info, waterfall info, and file size checking.
+
+    Args:
+
+    Returns:
+
     """
     def __init__(self, filename=None, size_limit=SIZE_LIM, out_dir='./', n_coarse_chan=None, coarse_chans=None):
         """
@@ -29,7 +33,7 @@ class DATAHandle:
         :param size_limit:      float,       maximum size in MB that the file is allowed to be
         :param out_dir:         string,      directory where output files should be saved
         """
-        self.filename = filename
+
         if filename and os.path.isfile(filename):
             self.filename = filename
             self.out_dir = out_dir
@@ -63,13 +67,12 @@ class DATAHandle:
 
         else:
             self.status = False
-            logger.error("File %s doesn\'t exists, please check!"%self.filename)
-            raise IOError("File %s doesn\'t exists, please check!"%self.filename)
+            errmsg = "File {} doesn\'t exist, please check!".format(filename)
+            logger.error(errmsg)
+            raise IOError(errmsg)
 
     def get_info(self):
-        """
-        :return:    dict,    header of the blimpy file
-        """
+        """:return:    dict,    header of the blimpy file"""
 
         fil_file = Waterfall(self.filename,load_data=False)
         return fil_file.header
@@ -82,7 +85,8 @@ class DATAHandle:
         """
 
         fil_file = Waterfall(self.filename)
-        new_filename = self.out_dir+self.filename.replace('.fil','.h5').split('/')[-1]
+        bn = os.path.basename(self.filename)
+        new_filename = os.path.join(self.out_dir, bn.replace('.fil', '.h5'))
         fil_file.write_to_hdf5(new_filename)
         self.filename = new_filename
 
@@ -138,9 +142,13 @@ class DATAHandle:
         return data_list
 
 class DATAH5:
-    """
-    This class is where the waterfall data is loaded, as well as the header info.
+    """This class is where the waterfall data is loaded, as well as the header info.
     It creates other attributes related to the dedoppler search (load_drift_indexes).
+
+    Args:
+
+    Returns:
+
     """
 
     def __init__(self, filename, size_limit = SIZE_LIM,f_start=None, f_stop=None,t_start=None, t_stop=None,coarse_chan=1,tn_coarse_chan=None):
@@ -201,9 +209,13 @@ class DATAH5:
         self.tdwidth = self.fftlen + self.shoulder_size*self.tsteps
 
     def load_data(self,):
-        """
-        Read the spectra and drift indices from file.
+        """Read the spectra and drift indices from file.
         :return:    ndarray, ndarray        spectra, drift indices
+
+        Args:
+
+        Returns:
+
         """
         self.fil_file.read_data(f_start=self.f_start, f_stop=self.f_stop)
 
@@ -236,9 +248,13 @@ class DATAH5:
         return spectra, drift_indexes
 
     def load_drift_indexes(self):
-        """
-        The drift indices are read from a stored file so that there is no need to recalculate. This speed things up.
+        """The drift indices are read from a stored file so that there is no need to recalculate. This speed things up.
         :return:    ndarray     drift indices
+
+        Args:
+
+        Returns:
+
         """
         n = int(np.log2(self.tsteps))
         di_array = np.genfromtxt(resource_filename('turbo_seti', 'drift_indexes/drift_indexes_array_%d.txt'%n), delimiter=' ', dtype=int)
@@ -282,6 +298,11 @@ class DATAH5:
         """Closes file and sets the data attribute `.closed` to
         True. A closed object can no longer be used for I/O operations.
         `close()` may be called multiple times without error.
+
+        Args:
+
+        Returns:
+
         """
 
         # Call file object destructor which should close the file

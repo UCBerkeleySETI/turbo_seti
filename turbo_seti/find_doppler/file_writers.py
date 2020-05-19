@@ -8,19 +8,30 @@ from .helper_functions import chan_freq
 import logging
 
 def tophits_writer(spectra_slice, hit_indices, header, format='txt'):
+    """
+
+    Args:
+      spectra_slice: 
+      hit_indices: 
+      header: 
+      format: (Default value = 'txt')
+
+    Returns:
+
+    """
     return None
 
 class GeneralWriter:
-    """
-    Wrapper class for file operations.
-    """
+    """Wrapper class for file operations."""
     def __init__(self, filename='', mode='a'):
         """
         Initializes GeneralWriter object. Opens given file with given mode, sets new object's filehandle to the file
         object, sets the new object's filename to the file's name, then closes the file.
-        :param filename:    string,     name of file on which we would like to perform operations
-        :param mode:        string,     mode which we want to use to open file, same modes as the built-in python
-                                        built-in open function: r - read, a - append, w -write, x - create
+
+        Args:
+            filename:    string,     name of file on which we would like to perform operations
+            mode:        string,     mode which we want to use to open file, same modes as the built-in python
+                                      built-in open function: r - read, a - append, w -write, x - create
         """
         with open(filename, mode) as myfile:
             self.filehandle = myfile
@@ -28,9 +39,7 @@ class GeneralWriter:
         return None
 
     def close(self):
-        """
-        Closes file object if it is open.
-        :return: void
+        """Closes file object if it is open.
         """
         if self.filehandle.closed:
             pass
@@ -38,12 +47,12 @@ class GeneralWriter:
             self.filehandle.close()
 
     def open(self, mode='a'):
-        """
-        Opens the file with the inputted mode, then closes it. Does not actually leave the file opened, only used for
+        """Opens the file with the inputted mode, then closes it. Does not actually leave the file opened, only used for
         changing mode.
-        :param mode:    string,     mode which we want to assign to this file, same modes as the built-in python
-                                    built-in open function: r - read, a - append, w -write, x - create
-        :return: void
+
+        Args:
+          mode: string,     mode which we want to assign to this file, same modes as the built-in python
+        built-in open function: r - read, a - append, w -write, x - create (Default value = 'a')
         """
         if self.filehandle.closed:
             with open(self.filename, mode) as myfile:
@@ -56,16 +65,19 @@ class GeneralWriter:
                 self.filehandle = myfile
 
     def is_open(self):
-        """
-        Checks if file is open.
-        :return:    boolean,    true if file is open, false otherwise
+        """Checks if file is open.
+        Returns:  boolean,    true if file is open, false otherwise
         """
         return not self.filehandle.closed
 
     def writable(self):
-        """
-        Checks if file is open, and if it is, checks that mode is either write or append.
+        """Checks if file is open, and if it is, checks that mode is either write or append.
         :return:    boolean,    true if file is open and writeable, false otherwise
+
+        Args:
+
+        Returns:
+
         """
         if self.is_open() and (('w' in self.filehandle.mode) or ('a' in self.filehandle.mode)):
             return True
@@ -73,12 +85,16 @@ class GeneralWriter:
             return False
 
     def write(self, info_str, mode='a'):
-        """
-        Sets file mode to a writeable mode and opens it if it is not already open in a writeable mode, writes info_str
+        """Sets file mode to a writeable mode and opens it if it is not already open in a writeable mode, writes info_str
         to it, and then closes it. If the file was not previously open when this is called, the file is closed after
         writing in order to maintain the state the filewriter was in before.
-        :param info_str:    string,     data to be written to file
-        :param mode:        string,     mode for file. If it is not a writeable mode, it will be set to a writeable mode
+
+        Args:
+          info_str: string,     data to be written to file
+          mode: string,     mode for file. If it is not a writeable mode, it will be set to a writeable mode (Default value = 'a')
+
+        Returns:
+
         """
         if (not 'w' in mode) and (not 'a' in mode):
             mode = 'a'
@@ -90,21 +106,23 @@ class GeneralWriter:
             self.filehandle.write(info_str)
 
     def start_over(self):
-        """
-        Wipes the given file and then opens it in append mode. Note that opening a file in write mode wipes it, so we
+        """Wipes the given file and then opens it in append mode. Note that opening a file in write mode wipes it, so we
         don't have to actually write an empty string to it.
+
+        Args:
+
+        Returns:
+
         """
         self.open('w')
         self.write('')
         self.open('a')
 
 class FileWriter(GeneralWriter):
-    """
-    Used to write information to turboSETI output files.
-    """
+    """Used to write information to turboSETI output files."""
     def __init__(self, filename, header):
-        """
-        Initializes FileWriter object and writes its header.
+        """ Initializes FileWriter object and writes its header.
+
         :param filename:    string,     name of file on which we would like to perform operations
         :param header:      dict,       information to be written to header of file filename
         """
@@ -117,13 +135,18 @@ class FileWriter(GeneralWriter):
         self.tophit_count = 0
 
     def report_coarse_channel(self, header,total_n_candi):
-        """
-        This function does nothing due to the first line, which returns before the rest of the code can run.
+        """This function does nothing due to the first line, which returns before the rest of the code can run.
         It was supposed to write info to file if coarse channel option was entered in the commandline
         arguments, but is no longer in use. According to previous documentation, it is supposed to:
         Write header information per given obs.
-        :param header:              dict,       contains coarse channel info to be written to file
-        :param total_n_candi:       int,        number of hits
+
+        Args:
+          header: dict
+          total_n_candi: int
+
+        Returns:
+          
+
         """
 
         return None
@@ -133,10 +156,14 @@ class FileWriter(GeneralWriter):
         self.write(info_str)
 
     def report_header(self, header):
-        """
-        Write header information per given obs.
-        :param header:      dict,       information to be written to file header
-        :return: void
+        """Write header information per given obs.
+
+        Args:
+          header: dict,       information to be written to file header
+
+        Returns:
+          : void
+
         """
 
         info_str = '# Source:%s\n# MJD: %18.12f\tRA: %s\tDEC: %s\n# DELTAT: %10.6f\tDELTAF(Hz): %10.6f\n'%\
@@ -161,20 +188,24 @@ class FileWriter(GeneralWriter):
         self.write('# --------------------------\n')
 
     def report_tophit(self, max_val, ind, ind_tuple, tdwidth, fftlen, header,total_n_candi,spec_slice=None,obs_info=None):
-        """
-        This function looks into the top hit in a region, basically finds the local maximum and saves that.
-        :param max_val:         findopp.max_vals,
-        :param ind:             int,                    index at which top hit is located in max_val's maxdrift and
-                                                        maxsnr
-        :param ind_tuple:       tuple(int, int)         (lbound, ubound)
-        :param tdwidth:         int,
-        :param fftlen:          int,                    length of the fast fourier transform matrix
-        :param header:          dict,                   contains info on coarse channel to be written to file
-        :param total_n_candi:   int,
-        :param spec_slice:      dict,
-        :param obs_info:        dict,                   used to hold info found on file, including info about pulsars,
-                                                        RFI, and SEFD
-        :return: FileWriter object that called this function.
+        """This function looks into the top hit in a region, basically finds the local maximum and saves that.
+
+        Args:
+          max_val: findopp.max_vals,
+          ind: int,                    index at which top hit is located in max_val's maxdrift and
+        maxsnr
+          ind_tuple: tuple(int, int)         (lbound, ubound)
+          tdwidth: int,
+          fftlen: int,                    length of the fast fourier transform matrix
+          header: dict,                   contains info on coarse channel to be written to file
+          total_n_candi: int,
+          spec_slice: dict, (Default value = None)
+          obs_info: dict,                   used to hold info found on file, including info about pulsars,
+        RFI, and SEFD (Default value = None)
+
+        Returns:
+          : FileWriter object that called this function.
+
         """
 
         offset = int((tdwidth - fftlen)/2)
@@ -211,20 +242,27 @@ class FileWriter(GeneralWriter):
         return self
 
 class LogWriter(GeneralWriter):
-    """
-    Used to write data to log.
-    """
+    """Used to write data to log."""
     def report_candidate(self, info_str):
-        """
-        Does nothing. Unimplemented and unused.
+        """Does nothing. Unimplemented and unused.
+
+        Args:
+          info_str: 
+
+        Returns:
+
         """
         return None
 
     def info(self, info_str):
-        """
-        Writes info_str to file.
-        :param info_str:    string,     to be written to file
-        :return: void
+        """Writes info_str to file.
+
+        Args:
+          info_str: string,     to be written to file
+
+        Returns:
+          : void
+
         """
         self.write(info_str + '\n')
         return None

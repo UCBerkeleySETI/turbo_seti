@@ -3,4 +3,4 @@ include MANIFEST.in
 include *.md
 include *.txt
 recursive-include turbo_seti/drift_indexes *.txt
-recursive-include turbo_seti/findoppler *.pyx
+recursive-include turbo_seti/find_doppler *.pyx

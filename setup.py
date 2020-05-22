@@ -13,7 +13,7 @@ from Cython.Distutils import build_ext
 import numpy
 from setuptools.extension import Extension
 
-__version__ = "1.2.1"
+__version__ = "1.2.2"
 
 with open("README.md", "r") as fh:
     long_description = fh.read()

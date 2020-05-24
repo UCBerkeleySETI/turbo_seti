@@ -284,7 +284,7 @@ class DATAH5:
         #used by helper_functions.py
         if coarse:
             base_header['NAXIS1'] = int(header['nchans']/self.tn_coarse_chan)
-            base_header['FCNTR'] = np.abs(self.f_stop - self.f_start)/2. + np.min(self.f_start, self.f_stop)
+            base_header['FCNTR'] = np.abs(self.f_stop - self.f_start)/2. + np.fmin(self.f_start, self.f_stop)
         else:
             base_header['NAXIS1'] = int(header['nchans'])
             base_header['FCNTR'] = float(header['fch1']) + header['foff'] * base_header['NAXIS1'] / 2

@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 '''
+Part of the Breakthrough Listen software package turboSETI
+
 Backend script to find drifting, narrowband events in a generalized cadence of 
 ON-OFF radio SETI observations.
 
@@ -426,4 +428,5 @@ def find_events(dat_file_list,
         return
     
     #----------------------------------------------------------------------
+
 

@@ -4,6 +4,8 @@
 Front-facing script to find drifting, narrowband events in a set of generalized 
 cadences of ON-OFF radio SETI observations.
 
+Part of the Breakthrough Listen software package turboSETI
+
 In this code, the following terminology is used:
 Hit = single strong narrowband signal in an observation
 Event = a strong narrowband signal that is associated with multiple hits
@@ -18,7 +20,7 @@ Usage (beta):
     find_event_pipeline.find_event_pipeline(dat_file_list_str, 
                                             SNR_cut=10,
                                             check_zero_drift=False,
-                                            filter_level=3, 
+                                            filter_threshold=3, 
                                             on_off_first='ON', 
                                             number_in_cadence=6, 
                                             saving=True,  
@@ -79,6 +81,8 @@ Usage (beta):
 author: 
     Version 2.0 - Sofia Sheikh (ssheikhmsa@gmail.com), 
     Version 1.0 - Emilio Enriquez (jeenriquez@gmail.com)
+    
+Last updated: 05/24/2020
 
 ***
 NOTE: This code works for .dat files that were produced by seti_event.py
@@ -154,8 +158,10 @@ def find_event_pipeline(dat_file_list_str,
         file_sublist = dat_file_list[number_in_cadence*i:((i*number_in_cadence)+(number_in_cadence))]
         if on_off_first == 'ON':
             name=file_sublist[0].split('_')[5]  
+            id_num = (file_sublist[0].split('_')[6]).split('.')[0]
         if on_off_first == 'OFF':
             name=file_sublist[1].split('_')[5] 
+            id_num = (file_sublist[1].split('_')[6]).split('.')[0]
         print()
         print("***       " + name + "       ***")
         print()
@@ -179,12 +185,14 @@ def find_event_pipeline(dat_file_list_str,
     
     if saving == True:
         if check_zero_drift == True:
-            filestring = name + '_f' + str(filter_threshold) + '_snr' + str(SNR_cut) + '_zero' + '.csv'
+            filestring = name + '_' + id_num + '_f' + str(filter_threshold) + '_snr' + str(SNR_cut) + '_zero' + '.csv'
         else:
-            filestring = name + '_f' + str(filter_threshold) + '_snr' + str(SNR_cut) + '.csv'
-        
+            filestring = name + '_' + id_num + '_f' + str(filter_threshold) + '_snr' + str(SNR_cut) + '.csv'
+            
+    if not isinstance(find_event_output_dataframe, list):
         find_event_output_dataframe.to_csv(filestring)
-
+    else:
+        print("Sorry, no events to save :(")
 
     return(find_event_output_dataframe)
 

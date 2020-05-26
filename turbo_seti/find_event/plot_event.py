@@ -1,8 +1,88 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
-Script to plot events
-    ..author: Sofia Sheikh (ssheikhmsa@gmail.com)
-    ..modified to work for GC data by Karen Perez (kip8@cornell.edu)
+Part of the Breakthrough Listen software package turboSETI
+
+Backend script to plot drifting, narrowband events in a generalized cadence of 
+ON-OFF radio SETI observations.
+
+The main function contained in this file is *plot_candidate_events*
+    Plot_candidate_events uses the other helper functions in this file 
+    (described below) to plot events from a turboSETI event .csv file. 
+    
+The following helper functions are contained in this file:
+    overlay_drift           - creates a dashed red line at the recorded 
+                              frequency and drift rate of the plotted event -
+                              can overlay the signal exactly or be offset by 
+                              some amount (offset can be 0 or 'auto')
+    plot_waterfall          - makes a single-panel waterfall plot (frequency 
+                              vs. time vs. intensity) for one of the on or off 
+                              observations in the cadence of interest, at the 
+                              frequency of the expected event. Calls 
+                              overlay_drift
+    make_waterfall_plots    - makes a series of waterfall plots, to be read 
+                              from top to bottom, displaying a full cadence 
+                              at the frequency of a recorded event from 
+                              find_event. Calls plot_waterfall
+    plot_candidate_events   - Calls make_waterfall_plots on each event in the 
+                              input .csv file
+                      
+Usage (beta):
+    It is highly recommended that users interact with this program via the
+    front-facing plot_event_pipeline.py script. See the usage of that file in
+    its own documentation. 
+    
+    If you would like to run plot_candidate_events without calling
+    plot_event_pipeline.py, the usage is as follows:
+    
+    plot_event.plot_candidate_events(candidate_event_dataframe, 
+                                     fil_file_list, 
+                                     filter_level, 
+                                     source_name_list,
+                                     offset=0)
+        
+    candidate_event_dataframe   A pandas dataframe containing information
+                                about a candidate event. The necessary data
+                                includes the start and stop frequencies, the
+                                drift rate, and the source name. To determine
+                                the required variable names and formatting
+                                conventions, see the output of
+                                find_event_pipeline.
+                   
+    fil_file_list               A Python list that contains a series of 
+                                strings corresponding to the filenames of .fil 
+                                files, each on a new line, that corresponds to 
+                                the cadence used to create the .csv file used 
+                                for event_csv_string.
+                   
+    filter_level                A string indicating the filter level of the 
+                                cadence used to generate the 
+                                candidate_event_dataframe. Used only for
+                                output file naming, convention is "f1", "f2",
+                                or "f3". Descriptions for the three levels of
+                                filtering can be found in the documentation
+                                for find_event.py
+
+    source_name_list            A Python list that contains a series of strings
+                                corresponding to the source names of the
+                                cadence in chronological (descending through
+                                the plot panels) cadence.
+                        
+    offset                      The amount that the overdrawn "best guess" 
+                                line from the event parameters in the csv 
+                                should be shifted from its original position 
+                                to enhance readability. Can be set to 0 
+                                (default; draws line on top of estimated
+                                event) or 'auto' (shifts line to the left by 
+                                an auto-calculated amount, with addition lines 
+                                showing original position).
+
+author: 
+    Version 2.0 - Sofia Sheikh (ssheikhmsa@gmail.com)
+    Version 1.0 - Emilio Enriquez (jeenriquez@gmail.com)
+    
+Last updated: 05/24/2020
+
 """
 
 #General packages import
@@ -18,19 +98,17 @@ import logging; logging.disable(logging.CRITICAL);
 #import updated_find_event
 import pandas as pd
 import blimpy as bl
-from astropy.time import Time
+from blimpy.utils import rebin
 
 #Plotting packages import
 import matplotlib
 import matplotlib.pyplot as plt
 
-from .find_event import make_table
-
 #preliminary plot arguments
 fontsize=16
 font = {'family' : 'DejaVu Sans',
 'size' : fontsize}
-MAX_IMSHOW_POINTS = (10096, 10096)
+MAX_IMSHOW_POINTS = (4096, 1268)
 
 
 def plot_hit(fil_filename, dat_filename, hit_id, bw=None, offset=0):
@@ -157,29 +235,17 @@ def make_waterfall_plots(filenames_list, target, drates, fvals, f_start,f_stop, 
     factor = 1e6
     units = 'Hz'
 
-    #sets up the sub-plots
-    n_plots = len(filenames_list)
-    fig = plt.subplots(n_plots, sharex=True, sharey=True,figsize=(10, 2*n_plots))
 
     #finding plotting values range for the first panel (A1)
     fil = bl.Waterfall(filenames_list[0], f_start=f_start, f_stop=f_stop)
-    
-    filheader=fil.header
-    f={}
-    for key, value in filheader.items():
-        f[key]=value
-    filheader=f
 
-    print ('filheader', filheader)
-    t0 = filheader['tstart']
+    t0 = fil.header['tstart']
     plot_f, plot_data = fil.grab_data(f_start=f_start, f_stop=f_stop)
     dec_fac_x, dec_fac_y = 1, 1
-    #print ('plot_data', plot_data)
-
-    #rebinning data to plot correctly with fewer plots
+    
+    #rebinning data to plot correctly with fewer points
     if plot_data.shape[0] > MAX_IMSHOW_POINTS[0]:
-        dec_fac_x = plot_data.shape[0] / MAX_IMSHOW_POINTS[0] 
-        print ('dec_fac_x', dec_fac_x)
+        dec_fac_x = plot_data.shape[0] // MAX_IMSHOW_POINTS[0] 
     if plot_data.shape[1] > MAX_IMSHOW_POINTS[1]:
         dec_fac_y =  plot_data.shape[1] /  MAX_IMSHOW_POINTS[1]
         print ('dec_fac_y', dec_fac_y)
@@ -202,7 +268,7 @@ def make_waterfall_plots(filenames_list, target, drates, fvals, f_start,f_stop, 
     
     #defining more plot parameters
     delta_f = 0.000250
-    epoch = filheader['tstart']
+    epoch = fil.header['tstart']
     mid_f = np.abs(f_start+f_stop)/2.
     drate_max = np.max(np.abs(drates))
     
@@ -219,30 +285,43 @@ def make_waterfall_plots(filenames_list, target, drates, fvals, f_start,f_stop, 
     for i,filename in enumerate(filenames_list):
         subplot = plt.subplot(n_plots,1,i+1)
         subplots.append(subplot)
+        
+        #read in data
         fil = bl.Waterfall(filename, f_start=f_start, f_stop=f_stop)
-        filheader=fil.header
 
 
         try:
-            this_plot = plot_waterfall(fil,f_start=f_start, f_stop=f_stop, drate=drate_max,
-                                       vmin=vmin,vmax=vmax,**kwargs)
-            for drate, fval in zip(drates, fvals):
-                t_elapsed = Time(filheader['tstart'], format='mjd').unix - Time(t0, format='mjd').unix
-                t_duration = (fil.n_ints_in_file -1)* filheader['tsamp']
-                f_event = fval + drate / 1e6 * t_elapsed
-                overlay_drift(f_event, drate, t_duration, offset)
+            #make plot with plot_waterfall
+            source_name = source_name_list[i]
+            this_plot = plot_waterfall(fil,
+                                       source_name,
+                                       f_start=f_start, 
+                                       f_stop=f_stop, 
+                                       drift_rate=drift_rate,
+                                       **kwargs)
+            
+            #calculate parameters for estimated drift line
+            t_elapsed = Time(fil.header['tstart'], format='mjd').unix - Time(t0, format='mjd').unix
+            t_duration = (fil.n_ints_in_file - 1) * fil.header['tsamp']
+            f_event = f_mid + drift_rate / 1e6 * t_elapsed
+            
+            #plot estimated drift line
+            overlay_drift(f_event, f_start, f_stop, drift_rate, t_duration, offset)
         except:
             raise
             
-    #Titling the plot
+        #Title the full plot
         if i == 0:
-            srcname = "%s $\dot{\\nu}$=%2.3f Hzs$^{-1}$" % (target, drate_max)
-            plt.title(srcname)
-    #Plot formatting
-        if i < len(filenames_list)-1:
+            plot_title = "%s \n $\dot{\\nu}$ = %2.3f Hz/s" % (on_source_name, drift_rate)
+            plt.title(plot_title)
+        #Format full plot
+        if i < len(fil_file_list)-1:
             plt.xticks(np.arange(f_start, f_stop, delta_f/4.), ['','','',''])
 
-    #More plot formatting.
+    #More overall plot formatting, axis labelling
+    factor = 1e6
+    units = 'Hz'
+            
     ax = plt.gca()
     ax.get_xaxis().get_major_formatter().set_useOffset(False)
     xloc = np.linspace(f_start, f_stop, 5)
@@ -252,16 +331,16 @@ def make_waterfall_plots(filenames_list, target, drates, fvals, f_start,f_stop, 
         units = 'kHz'
     plt.xticks(xloc, xticks)
     plt.xlabel("Relative Frequency [%s] from %f MHz"%(units,mid_f),fontdict=font)
-
-    #Colorbar
+    
+    #Add colorbar
     cax = fig[0].add_axes([0.94, 0.11, 0.03, 0.77])
-    fig[0].colorbar(this_plot,cax=cax,label='Power [dB counts]')
+    fig[0].colorbar(this_plot,cax=cax,label='Normalized Power')
     
     #Adjust plots
     plt.subplots_adjust(hspace=0,wspace=0)
     
     #save the figures
-    plt.savefig(node_string + '_f' + str(filter_level) + '_' + target[0] + '_dr_' + "{:0.2f}".format(drate_max) + '_freq_' "{:0.2f}".format(f_start) + ".png",
+    plt.savefig(filter_level + '_' + on_source_name + '_dr_' + "{:0.2f}".format(drift_rate) + '_freq_' "{:0.6f}".format(f_start) + ".png",
                bbox_inches='tight')
 
     return subplots
@@ -416,6 +495,7 @@ def plot_candidate_events_individually(full_candidate_event_dataframe, correct_f
         f_start, f_stop = np.sort((f_mid-bw/2,  f_mid+bw/2))
 
         #Print useful values
+        print('')
         print('*************************************************')
         print('***     The Parameters for This Plot Are:     ***')
         print('*************************************************')   
@@ -428,7 +508,8 @@ def plot_candidate_events_individually(full_candidate_event_dataframe, correct_f
         print('Expected Drift (Hz/s) = ', drate)
         print('*************************************************')
         print('*************************************************')
-                
+        print('')
+        
         #Pass info to make_waterfall_plots() function
         subplots = make_waterfall_plots(filelist, 
                                         [source_id], 

@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 """
+Part of the Breakthrough Listen software package turboSETI
+
 Backend script to find drifting, narrowband events in a generalized cadence of 
 ON-OFF radio SETI observations.
 
@@ -100,8 +102,6 @@ pd.options.mode.chained_assignment = None
 MAX_DRIFT_RATE = 2.0    # NOTE: these two values need to be updated.
 OBS_LENGTH = 300.
 #------
-
-
 def end_search(t0):
     """ends the search when there are no candidates left, or when the filter
     level matches the user-specified level

@@ -2,8 +2,9 @@
 '''
 Part of the Breakthrough Listen software package turboSETI
 
-Backend script to find drifting, narrowband events in a generalized cadence of 
-ON-OFF radio SETI observations.
+Backend script to find drifting, narrowband events in a generalized cadence of
+radio SETI observations (any number of ons, any number of offs, any pattern -
+streamlined for alternating on-off sequences).
 
 In this code, the following terminology is used:
 Hit = single strong narrowband signal in an observation
@@ -38,7 +39,8 @@ Usage (beta):
                            SNR_cut=10, 
                            check_zero_drift=False, 
                            filter_threshold=3, 
-                           on_off_first='ON')
+                           on_off_first='ON',
+                           complex_cadence=False)
     
     file_sublist        A Python list of .dat files with ON observations of a
                         single target alternating with OFF observations. This 
@@ -73,6 +75,11 @@ Usage (beta):
     on_off_first        Tells the code whether the .dat sequence starts with
                         the ON or the OFF observation. Valid entries are 'ON'
                         and 'OFF' only. Default is 'ON'.
+                        
+    complex_cadence     A Python list of 1s and 0s corresponding to which
+                        files in the file_sublist are on-sources and which are
+                        off_sources for complex (i.e. non alternating) cadences.
+                        Default is False.
                     
 author: 
     Version 2.0 - Sofia Sheikh (ssheikhmsa@gmail.com)
@@ -245,7 +252,8 @@ def find_events(dat_file_list,
                 SNR_cut=10,
                 check_zero_drift=False,
                 filter_threshold=3,
-                on_off_first='ON'):
+                on_off_first='ON',
+                complex_cadence=False):
     ''' Reads a list of turboSETI .dat files.
         It calls other functions to find events within this group of files.
         Filter_threshold allows the return of a table of events with hits at 
@@ -264,20 +272,27 @@ def find_events(dat_file_list,
     #Preparing to read in the list of files
     on_table_list = []
     off_table_list = []
+    
     off_count = 1 
     on_count = 1  
-    
+        
+    odd_even_indicator = 0
     on_off_indicator = 0
-    number_of_ons = int(np.floor(len(dat_file_list) / 2.0))
-    if on_off_first == 'ON':
-        on_off_indicator = 1
-        number_of_ons = int(np.ceil(len(dat_file_list) / 2.0))
+    if complex_cadence == False:
+        number_of_ons = int(np.floor(len(dat_file_list) / 2.0))
+        if on_off_first == 'ON':
+            odd_even_indicator = 1
+            number_of_ons = int(np.ceil(len(dat_file_list) / 2.0))  
     
+    #reading in the list of files 
     for i,dat_file in enumerate(dat_file_list):
-        #Checking if the file is an on or off observation, based on index
-        if i%2 == on_off_indicator:
+        if complex_cadence != False:
+            on_off_indicator = int(complex_cadence[i])
+        #Checking if the file is an on or off observation
+        #if off
+        if (i%2 == odd_even_indicator and complex_cadence == False) or (on_off_indicator == 0 and complex_cadence != False):
             #Using make_table function to read the .dat file 
-            #and create the pandas hit table
+            #and create the pandas hit table for off sources
             off_table_i=make_table(dat_file)
             off_table_i['status'] = 'off_table_%i'%off_count
             print('Loaded %i hits from %s'%(len(off_table_i), dat_file))
@@ -286,9 +301,10 @@ def find_events(dat_file_list,
             off_table_list.append(off_table_i)
             off_count+=1
             
+        #if on
         else: 
             #Using make_table function to read the .dat file 
-            #and create the pandas hit table
+            #and create the pandas hit table for on sources
             on_table_i=make_table(dat_file)
             on_table_i['status'] = 'on_table_%i'%on_count
             print('Loaded %i hits from %s'%(len(on_table_i), dat_file))
@@ -296,7 +312,7 @@ def find_events(dat_file_list,
             #Grouping all of the on hits into one table
             on_table_list.append(on_table_i)
             off_count+=1
-    
+                    
     #If there are no hits on any on target, end the program
     if not len(on_table_list):
         print('There are no hits in this cadence :(')
@@ -312,7 +328,8 @@ def find_events(dat_file_list,
     if on_table['Source'].unique().shape[0] > 1:
         raise ValueError('There are multiple sources in the on table.' 
                          'Please check your input files, ' 
-                         'on_off_first parameter.')
+                         'on_off_first parameter,'
+                         'or complex_cadence.')
     
     #Obtain the start times for each hit in the first on table
     ref_time = float(on_table[on_table['status'] == 'on_table_1']['MJD'].unique()[0])

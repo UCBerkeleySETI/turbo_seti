@@ -3,6 +3,7 @@
 # git tag x.y.z
 # git push && git push --tags
 # rm -rf dist; python setup.py sdist bdist_wheel
+# auditwheel repair dist/*.whl -w dist/ (Linux)
 # TEST: twine upload --repository-url https://test.pypi.org/legacy/ dist/*
 # twine upload dist/*
 
@@ -12,7 +13,7 @@ from Cython.Distutils import build_ext
 import numpy
 from setuptools.extension import Extension
 
-__version__ = "1.2.0"
+__version__ = "1.2.2"
 
 with open("README.md", "r") as fh:
     long_description = fh.read()

@@ -4,6 +4,7 @@ from turbo_seti import find_event, plot_event
 import pylab as plt
 import numpy as np
 import os
+import pytest
 
 HERE = os.path.split(os.path.abspath(__file__))[0]
 
@@ -11,9 +12,8 @@ HERE = os.path.split(os.path.abspath(__file__))[0]
 def find_doppler(filename_fil):
     """ Run turboseti doppler search on filename with default params """
     print("Searching %s" % filename_fil)
-    suffix = os.path.splitext(filename_fil)[1]
-    filename_dat = filename_fil.replace(suffix, '.dat')
-    filename_log = filename_fil.replace(suffix, 'log')
+    filename_dat = filename_fil.replace('.h5', '.dat')
+    filename_log = filename_fil.replace('.h5', 'log')
 
     if os.path.exists(filename_dat):
         os.remove(filename_dat)
@@ -161,10 +161,17 @@ def test_plotting():
     plot_event.make_waterfall_plots(filenames_list, target, drates, fvals, f_start, f_stop, node_string, filter_level)
     plt.show()
 
+def test_data_handler():
+    """ Basic data handler test """
+    from turbo_seti.find_doppler import data_handler
+    with pytest.raises(AttributeError):
+        fh = data_handler.DATAHandle(filename='made_up_not_existing_file.h5')
+
 if __name__ == "__main__":
 
     #test_turboSETI_entry_point()
     #test_find_doppler_voyager()
     #test_find_doppler_voyager_flipped()
     #test_plotting()
-    test_find_doppler_voyager_filterbank()
+    #test_find_doppler_voyager_filterbank()
+    test_data_handler()

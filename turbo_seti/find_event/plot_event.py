@@ -99,6 +99,7 @@ import logging; logging.disable(logging.CRITICAL);
 import pandas as pd
 import blimpy as bl
 from blimpy.utils import rebin
+from .find_event import make_table
 
 #Plotting packages import
 import matplotlib

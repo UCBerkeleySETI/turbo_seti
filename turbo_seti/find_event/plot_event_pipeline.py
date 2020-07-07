@@ -58,7 +58,7 @@ Last updated: 05/24/2020
 
 """
 
-#import plot_event
+import turboseti.plot_event.plot_event
 import pandas
 from astropy import units as u
 from astropy.coordinates import Angle

@@ -21,13 +21,13 @@ ctypedef np.float64_t DTYPE_t
 
 @cython.boundscheck(False)
 def taylor_flt(np.ndarray[DTYPE_t, ndim=1] outbuf, long mlen, long nchn):
-    '''
+    """
     Parameters:
         outbuf       : input array (float), replaced by dedispersed data
                        at the output
         mlen         : dimension of outbuf[] (long int)
         nchn         : number of frequency channels (long int)
-    '''
+    """
 
     assert outbuf.dtype == DTYPE
 

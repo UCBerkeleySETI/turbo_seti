@@ -106,10 +106,41 @@ function.
 #required packages and programs
 import find_event
 import pandas as pd
+from astropy import units as u
+from astropy.coordinates import SkyCoord
+from itertools import takewhile
 
 #required for find_event
 import time
 import numpy as np
+
+
+def coord_grabber(dat_file_list):
+    ra_string = "RA: "
+    dec_string = "DEC: "
+    coord_strings = [ra_string, dec_string]
+    
+    coord_list = []
+    
+    for dat_file in dat_file_list:    
+        with open(dat_file, 'r') as fobj:
+                headiter = takewhile(lambda s: s.startswith('#'), fobj)
+                full_header = list(headiter)  
+                ra = ''
+                dec = ''
+                for coord in coord_strings:
+                    coord_line = full_header[4]
+                    coord_index = coord_line.find(coord) + len(coord)
+                    coord_to_end = coord_line[coord_index:]
+                    end_of_coord = coord_to_end.find("\t")
+                    coord_only = coord_to_end[0:end_of_coord]
+                    if coord == ra_string:
+                        ra = coord_only
+                    else:
+                        dec = coord_only
+                icrs_coords = SkyCoord(ra, dec)
+                coord_list.append(icrs_coords)
+    return(coord_list)
 
 def find_event_pipeline(dat_file_list_str,
                         SNR_cut=10, 
@@ -142,7 +173,9 @@ def find_event_pipeline(dat_file_list_str,
     for dat in dat_file_list:
         source_name = dat.split('_')[5] 
         source_name_list.append(source_name)
-        
+      
+    ##################
+    #Getting the cadence for off-source SNR estimates
     if on_source_complex_cadence != False:
         complex_cadence = []
         for i in range(0, len(source_name_list)):
@@ -151,8 +184,37 @@ def find_event_pipeline(dat_file_list_str,
                 complex_cadence.append(1)
             else:
                 complex_cadence.append(0)
-        print("The derived cadence is: " + str(complex_cadence))
+        cadence = complex_cadence
+        print("The derived cadence is: " + str(cadence))
+    else:
+        complex_cadence = False
+        cadence = []
+        odd_even_indicator = 0
+        if on_off_first == 'ON':
+            odd_even_indicator = 1
+        for i,dat_file in enumerate(dat_file_list):
+            #if off
+            if i%2 == odd_even_indicator:
+                cadence.append(0)
+            #if on
+            else: 
+                cadence.append(1)
+
+    coord_list = coord_grabber(dat_file_list)
+    dist_list = []
     
+    
+    first_on_index = cadence.index(1)
+    for i in range(0, len(cadence)):
+        if cadence[i] == 1:
+            dist_list.append(0)
+            continue
+        else: 
+            dist = coord_list[first_on_index].separation(coord_list[i])
+            dist_list.append(dist)
+    
+    ##################
+
     print("There are " + str(len(dat_file_list)) + " total files in the filelist " + dat_file_list_str)
     print("therefore, looking for events in " + str(int(n_files/number_in_cadence)) + " on-off set(s)")
     print("with a minimum SNR of " + str(SNR_cut))
@@ -188,7 +250,7 @@ def find_event_pipeline(dat_file_list_str,
         candidate_list = []
         for i in range((int(n_files/number_in_cadence))):
             file_sublist = dat_file_list[number_in_cadence*i:((i*number_in_cadence)+(number_in_cadence))]
-            if complex_cadence == False:
+            if on_source_complex_cadence == False:
                 if on_off_first == 'ON':
                     name = file_sublist[0].split('_')[5]  
                     id_num = (file_sublist[0].split('_')[6]).split('.')[0]
@@ -226,11 +288,20 @@ def find_event_pipeline(dat_file_list_str,
             filestring = name + '_' + id_num + '_f' + str(filter_threshold) + '_snr' + str(SNR_cut) + '_zero' + '.csv'
         else:
             filestring = name + '_' + id_num + '_f' + str(filter_threshold) + '_snr' + str(SNR_cut) + '.csv'            
+        
         if not isinstance(find_event_output_dataframe, list):
-            find_event_output_dataframe.to_csv(filestring)
+            with open(filestring, 'a') as f:
+                f.write('#[')
+                for i, dist in enumerate(dist_list):
+                    if i == len(dist_list) - 1:
+                        #dist in degrees
+                        f.write(str(dist) + ']\n')
+                    else:    
+                        #dist in degrees
+                        f.write(str(dist) + ',')
+                find_event_output_dataframe.to_csv(f)
+            
         else:
             print("Sorry, no events to save :(")
 
     return(find_event_output_dataframe)
-
-

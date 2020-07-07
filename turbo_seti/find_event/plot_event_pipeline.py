@@ -58,7 +58,7 @@ Last updated: 05/24/2020
 
 """
 
-from . import plot_event_candidate events
+from . import plot_candidate_events
 import pandas
 from astropy import units as u
 from astropy.coordinates import Angle

@@ -30,7 +30,7 @@ It was originally based on `dedoppler` [dedoppler](http://github.com/cs150bf/gbt
 ### Dependencies
 
 - astropy
-- pyximport
+- cython
 - numpy
 - blimpy (Breakthrough Listen I/O Methods for Python :  https://github.com/UCBerkeleySETI/blimpy)
 
@@ -86,7 +86,7 @@ Will add an example file here in the near future.
 
 ```python
 > import turbo_seti
-> from turbo_seti.findoppler.findopp import FinDoppler
+> from turbo_seti.find_doppler.find_doppler import FindDoppler
 ```
 
 **BL internal**:
@@ -109,3 +109,4 @@ See `/datax/eenriquez/voyager_test/*/*.log`, `/datax/eenriquez/voyager_test/*.da
 --------------------------
 
 [![Build Status](https://travis-ci.org/UCBerkeleySETI/turbo_seti.svg?branch=master)](https://travis-ci.org/UCBerkeleySETI/turbo_seti)
+[![Documentation Status](https://readthedocs.org/projects/turbo-seti/badge/?version=latest)](https://turbo-seti.readthedocs.io/en/latest/?badge=latest)

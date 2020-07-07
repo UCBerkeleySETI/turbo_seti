@@ -58,31 +58,41 @@ Last updated: 05/24/2020
 
 """
 
-from . import plot_event
+import plot_event
 import pandas
-
+from astropy import units as u
+from astropy.coordinates import Angle
 
 def plot_event_pipeline(event_csv_string, 
                         fils_list_string,  
                         user_validation=False,
-                        offset=0):
+                        offset=0,
+                        plot_snr=False):
     
-    # reading in the .csv containing the events
-    candidate_event_dataframe = pandas.read_csv(event_csv_string)
+    #reading in the .csv containing the events
+    candidate_event_dataframe = pandas.read_csv(event_csv_string, comment='#')
     
-    # reading in the list of .fil files
+    with open(event_csv_string, "r") as file:
+        distances = file.readline()
+    distance_list = distances[2:-2].split(',')
+    for i,distance in enumerate(distance_list):
+        if len(distance) == 1:
+            distance = '0d'
+    plot_snr_list = distance_list
+            
+    #reading in the list of .fil files
     fil_file_list = []
     for file in pandas.read_csv(fils_list_string, encoding='utf-8', header=None, chunksize=1):
         fil_file_list.append(file.iloc[0,0])  
         
-    # obtaining source names
+    #obtaining source names
     source_name_list = []
     for fil in fil_file_list:
         source_name = fil.split('_')[5] 
         source_name_list.append(source_name)
      
-    # get rid of bytestring "B'"s if they're there (early versions of
-    # seti_event.py added "B'"s to all of the source names)
+    #get rid of bytestring "B'"s if they're there (early versions of 
+    #seti_event.py added "B'"s to all of the source names)
     on_source_name_original = candidate_event_dataframe.Source[0]
     if on_source_name_original[0] == 'B' and on_source_name_original[-1] == '\'':
         on_source_name = on_source_name_original[2:-2]   
@@ -91,10 +101,11 @@ def plot_event_pipeline(event_csv_string,
     candidate_event_dataframe = candidate_event_dataframe.replace(to_replace=on_source_name_original,
                                            value=on_source_name)
         
-    # take filter-level information from the .csv filename
+    #take filter-level information from the .csv filename
     filter_level = event_csv_string.split('_')[2] 
-
-    # begin user validation
+    
+    
+    #begin user validation
     print("Plotting some events for: ", on_source_name)
     print("There are " + str(len(candidate_event_dataframe.Source)) + " total events in the csv file " + event_csv_string)
     print("therefore, you are about to make " + str(len(candidate_event_dataframe.Source)) + " .png files.")
@@ -110,10 +121,12 @@ def plot_event_pipeline(event_csv_string,
             if reply[0] == 'n':
                 return
 
-    # move to plot_event.py for the actual plotting
+    #move to plot_event.py for the actual plotting
     plot_event.plot_candidate_events(candidate_event_dataframe, 
-                                     fil_file_list,
-                                     filter_level,
-                                     source_name_list,
-                                     offset=offset)
+                                   fil_file_list, 
+                                   filter_level,
+                                   source_name_list,
+                                   offset=offset,
+                                   plot_snr_list=plot_snr_list)
+
     return

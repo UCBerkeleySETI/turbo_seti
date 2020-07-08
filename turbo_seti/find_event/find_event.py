@@ -358,9 +358,16 @@ def find_events(dat_file_list,  SNR_cut=10, check_zero_drift=False, filter_thres
     #and a giant off table
     on_table = pd.concat(on_table_list,ignore_index=True)
     off_table = pd.concat(off_table_list,ignore_index=True)        
-    
+
     #Check that all targets in the on_table come from the same source
-    if on_table['Source'].unique().shape[0] > 1:
+    #Fix issue where some sources have B'' format
+    uniqlist = list(on_table['Source'].unique())
+    for i, ele in enumerate(uniqlist):
+        try:
+            uniqlist[i] = ele.strip("'B")
+        except:
+            continue
+    if len(set(uniqlist)) > 1:
         raise ValueError('There are multiple sources in the on table.' 
                          'Please check your input files, ' 
                          'on_off_first parameter.')

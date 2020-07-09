@@ -95,7 +95,11 @@ function.
 """
 
 #required packages and programs
-import find_event
+try:
+    import find_event
+except:
+    from . import find_event
+
 import pandas as pd
 
 #required for updated_find_event

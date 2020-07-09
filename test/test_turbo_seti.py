@@ -7,10 +7,12 @@ import os
 import pytest
 
 HERE = os.path.split(os.path.abspath(__file__))[0]
-
+VOYAH5 = 'Voyager1.single_coarse.fine_res.h5'
+VOYAH5FLIPPED = 'Voyager1.single_coarse.fine_res.flipped.h5'
 
 def find_doppler(filename_fil):
     """ Run turboseti doppler search on filename with default params """
+    print("\n===== find_doppler =====")
     print("Searching %s" % filename_fil)
     filename_dat = filename_fil.replace('.h5', '.dat')
     filename_log = filename_fil.replace('.h5', 'log')
@@ -34,6 +36,7 @@ def find_doppler(filename_fil):
 
 def plot_hits(filename_fil, filename_dat):
     """ Plot the hits in a .dat file. """
+    print("\n===== plot_hits =====")
     table = find_event.read_dat(filename_dat)
     print(table)
 
@@ -66,6 +69,7 @@ def validate_voyager_hits(filename_dat):
     002	 -0.373093	245.707905	   8419.297025	   8419.297025	300646	   8419.296614	   8419.297430	...
     001	 -0.392226	 31.220642	   8419.274372	   8419.274372	292538	   8419.273961	   8419.274777	...
     """
+    print("\n===== validate_voyager_hits =====")
     h = find_event.read_dat(filename_dat)
 
     valid_data = [
@@ -110,7 +114,8 @@ def validate_voyager_hits(filename_dat):
 
 def test_find_doppler_voyager():
     """ Run turboseti on Voyager data """
-    filename_fil = os.path.join(HERE, 'Voyager1.single_coarse.fine_res.h5')
+    print("\n===== test_find_doppler_voyager =====")
+    filename_fil = os.path.join(HERE, VOYAH5)
     filename_dat = filename_fil.replace('.h5', '.dat')
     find_doppler(filename_fil)
     validate_voyager_hits(filename_dat)
@@ -119,7 +124,8 @@ def test_find_doppler_voyager():
 
 def test_find_doppler_voyager_flipped():
     """ Run turboseti on Voyager data (flipped in frequency) """
-    filename_fil = os.path.join(HERE, 'Voyager1.single_coarse.fine_res.flipped.h5')
+    print("\n===== test_find_doppler_voyager_flipped =====")
+    filename_fil = os.path.join(HERE, VOYAH5FLIPPED)
     filename_dat = filename_fil.replace('.h5', '.dat')
     find_doppler(filename_fil)
     validate_voyager_hits(filename_dat)
@@ -127,7 +133,8 @@ def test_find_doppler_voyager_flipped():
 
 def test_find_doppler_voyager_filterbank():
     """ Run turboseti on Voyager data (filterbank version) """
-    filename_fil = os.path.join(HERE, 'Voyager1.single_coarse.fine_res.fil')
+    print("\n===== test_find_doppler_voyager_filterbank =====")
+    filename_fil = os.path.join(HERE, VOYAH5)
     filename_dat = filename_fil.replace('.fil', '.dat')
     find_doppler(filename_fil)
     #validate_voyager_hits(filename_dat)
@@ -136,8 +143,8 @@ def test_find_doppler_voyager_filterbank():
 
 def test_turboSETI_entry_point():
     """ Test the command line utility turboSETI """
-
-    filename_fil = os.path.join(HERE, 'Voyager1.single_coarse.fine_res.flipped.h5')
+    print("\n===== test_turboSETI_entry_point =====")
+    filename_fil = os.path.join(HERE, VOYAH5FLIPPED)
     args = [filename_fil, ]
     seti_event.main(args)
 
@@ -146,7 +153,8 @@ def test_plotting():
 
     TODO: Improve these tests (and the functions for that matter!
     """
-    filename_fil = os.path.join(HERE, 'Voyager1.single_coarse.fine_res.h5')
+    print("\n===== test_plotting =====")
+    filename_fil = os.path.join(HERE, VOYAH5)
     fil = bl.Waterfall(filename_fil)
 
     # Test make_waterfall_plots -- needs 6x files
@@ -163,15 +171,16 @@ def test_plotting():
 
 def test_data_handler():
     """ Basic data handler test """
+    print("\n===== test_data_handler =====")
     from turbo_seti.find_doppler import data_handler
-    with pytest.raises(AttributeError):
+    with pytest.raises(OSError): # not AttributeError
         fh = data_handler.DATAHandle(filename='made_up_not_existing_file.h5')
 
 if __name__ == "__main__":
 
-    #test_turboSETI_entry_point()
-    #test_find_doppler_voyager()
-    #test_find_doppler_voyager_flipped()
-    #test_plotting()
-    #test_find_doppler_voyager_filterbank()
+    test_turboSETI_entry_point()
+    test_find_doppler_voyager()
+    test_find_doppler_voyager_flipped()
+    #### NOT YET: test_plotting() - see issue #52
+    test_find_doppler_voyager_filterbank()
     test_data_handler()

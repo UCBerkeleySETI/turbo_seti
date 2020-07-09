@@ -191,8 +191,8 @@ def plot_waterfall(fil,
     #add source name
     ax = plt.gca()
     plt.text(0.03, 0.8, source_name, transform=ax.transAxes, bbox=dict(facecolor='white'))
-    if plot_snr != False:
-        plt.text(0.03, 0.6, plot_snr, transform=ax.transAxes, bbox=dict(facecolor='white'))
+    #if plot_snr != False:
+    #    plt.text(0.03, 0.6, plot_snr, transform=ax.transAxes, bbox=dict(facecolor='white'))
     #return plot
     return this_plot 
 

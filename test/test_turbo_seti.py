@@ -5,13 +5,16 @@ import pylab as plt
 import numpy as np
 import os
 import pytest
+import time
 
 HERE = os.path.split(os.path.abspath(__file__))[0]
 VOYAH5 = 'Voyager1.single_coarse.fine_res.h5'
 VOYAH5FLIPPED = 'Voyager1.single_coarse.fine_res.flipped.h5'
 
+
 def find_doppler(filename_fil):
     """ Run turboseti doppler search on filename with default params """
+    t0 = time.time()
     print("\n===== find_doppler =====")
     print("Searching %s" % filename_fil)
     filename_dat = filename_fil.replace('.h5', '.dat')
@@ -32,6 +35,8 @@ def find_doppler(filename_fil):
     find_seti_event = FindDoppler(filename_fil, max_drift=max_drift, snr=snr, out_dir=HERE,
                                   coarse_chans=coarse_chans, obs_info=obs_info, n_coarse_chan=n_coarse_chan)
     find_seti_event.search()
+    t_taken = time.time() - t0
+    print("Time taken: %2.2fs" % t_taken)
 
 
 def plot_hits(filename_fil, filename_dat):

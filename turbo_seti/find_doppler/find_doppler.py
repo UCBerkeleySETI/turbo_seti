@@ -32,12 +32,14 @@ class max_vals:
         self.maxid = None
         self.total_n_hits = None
 
+
 class hist_vals:
     """Temporary class that saved the normalized spectrum for all drift rates."""
     def __init__(self):
         self.histsnr = None
         self.histdrift = None
         self.histid = None
+
 
 class FindDoppler:
     """ """
@@ -212,7 +214,8 @@ class FindDoppler:
             if drift_block <= 0:
 
                 #Populates the find_doppler tree with the spectra
-                populate_tree(spectra,tree_findoppler,nframes,tdwidth,tsteps,fftlen,shoulder_size,roll=drift_block,reverse=1)
+                populate_tree(spectra,tree_findoppler,nframes,tdwidth,tsteps,fftlen,shoulder_size,
+                              roll=drift_block,reverse=1)
 
                 # populate original array
                 np.copyto(tree_findoppler_original, tree_findoppler)
@@ -305,6 +308,7 @@ class FindDoppler:
 
 #  ======================================================================  #
 
+
 def populate_tree(spectra,tree_findoppler,nframes,tdwidth,tsteps,fftlen,shoulder_size,roll=0,reverse=0):
     """This script populates the findoppler tree with the spectra.
     It creates two "shoulders" (each region of tsteps*(shoulder_size/2) in size) to avoid "edge" issues.
@@ -347,7 +351,6 @@ def populate_tree(spectra,tree_findoppler,nframes,tdwidth,tsteps,fftlen,shoulder
     return tree_findoppler
 
 
-
 def hitsearch(spectrum, specstart, specend, hitthresh, drift_rate, header, fftlen, tdwidth, max_val, reverse):
     """Searches for hits at given drift rate. A hit occurs in each channel if > hitthresh.
 
@@ -385,6 +388,7 @@ def hitsearch(spectrum, specstart, specend, hitthresh, drift_rate, header, fftle
             max_val.maxid[k] = used_id
 
     return j, max_val
+
 
 def tophitsearch(tree_findoppler_original, max_val, tsteps, nframes, header, tdwidth, fftlen,max_drift,obs_length, out_dir='', logwriter=None, filewriter=None,obs_info=None):
     """This finds the hits with largest SNR within 2*tsteps frequency channels.

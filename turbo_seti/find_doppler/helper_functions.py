@@ -71,28 +71,21 @@ def FlipX(outbuf, xdim, ydim):
     Returns:
 
     """
-    temp = np.empty_like(outbuf[0:xdim])
-    logger_hf.debug("FlipX: temp array dimension: %s"%str(temp.shape))
-
-    for j in range(0, ydim):
-        indx = j * xdim
-        np.copyto(temp, outbuf[indx:indx+xdim])
-        np.copyto(outbuf[indx: indx+xdim], temp[::-1])
-    return
+    np.copyto(outbuf, outbuf.reshape((ydim, xdim))[:, ::-1].ravel())
 
 
-def comp_stats(arrey):
+def comp_stats(np_arr):
     """Compute mean and stddev of floating point vector array in a fast way, without using the outliers.
 
     Args:
-      arrey: ndarray,        floating point vector array
+      np_arr: ndarray,        floating point vector array
 
     Returns:
-      : float, float,   median and standard deviation of input array
+      the_median, the_stddev : float, float,   median and standard deviation of input array
 
     """
 
-    new_vec = np.sort(arrey,axis=None)
+    new_vec = np.sort(np_arr)
 
     #Removing the lowest 5% and highest 5% of data, this takes care of outliers.
     new_vec = new_vec[int(len(new_vec)*.05):int(len(new_vec)*.95)]

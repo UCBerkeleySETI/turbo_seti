@@ -53,15 +53,18 @@ class DATAHandle:
             self.filestat = os.stat(filename)
             self.filesize = self.filestat.st_size/(1024.0**2)
 
+            # Grab header from DATAH5
+            dobj_master = DATAH5(filename)
+            self.header = dobj_master.header
+            dobj_master.close()
+
             # Make sure file is not larger than limit. If it is, we must split the file
-            if self.filesize > size_limit:
-                logger.info("The file is of size %f MB, exceeding our size limit %f MB. Split needed..."%(self.filesize, size_limit))
-                self.data_list = self.__split_h5()
-            else:
-                #EE This is here mainly for testing. Since need to keep in mind the band pass shape.
-                logger.debug("File size %f MB within range %f MB, okay..."%(self.filesize, size_limit))
-                data_obj = DATAH5(filename)
-                self.data_list = [data_obj]
+            self.data_list = self.__split_h5()
+            #else:
+            #    #EE This is here mainly for testing. Since need to keep in mind the band pass shape.
+            #    logger.debug("File size %f MB within range %f MB, okay..."%(self.filesize, size_limit))
+            #    data_obj = DATAH5(filename)
+            #    self.data_list = [data_obj]
 
             self.status = True
 
@@ -132,9 +135,11 @@ class DATAHandle:
             if f_start > f_stop:
                 f_start, f_stop = f_stop, f_start
 
-            data_obj = DATAH5(self.filename, f_start=f_start, f_stop=f_stop, coarse_chan=chan, tn_coarse_chan=n_coarse_chan)
-
-#----------------------------------------------------------------
+            data_obj = {'filename': self.filename,
+                        'f_start': f_start,
+                        'f_stop': f_stop,
+                        'coarse_chan': chan,
+                        'tn_coarse_chan': n_coarse_chan}
 
             #This appends to a list of all data instance selections. So that all get processed later.
             data_list.append(data_obj)
@@ -151,7 +156,8 @@ class DATAH5:
 
     """
 
-    def __init__(self, filename, size_limit = SIZE_LIM,f_start=None, f_stop=None,t_start=None, t_stop=None,coarse_chan=1,tn_coarse_chan=None):
+    def __init__(self, filename, size_limit=SIZE_LIM, f_start=None, f_stop=None, t_start=None, t_stop=None,
+                 coarse_chan=1, tn_coarse_chan=None):
         """
         :param filename:        string      name of file
         :param size_limit:      float       maximum size in MB that the file is allowed to be

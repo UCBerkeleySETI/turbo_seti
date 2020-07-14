@@ -8,7 +8,7 @@ import logging
 logger = logging.getLogger(__name__)
 import gc   #Garbage collector.
 
-from .data_handler import DATAHandle
+from .data_handler import DATAHandle, DATAH5
 from .file_writers import FileWriter, LogWriter
 from .helper_functions import *
 
@@ -107,31 +107,38 @@ class FindDoppler:
         logger.debug("Start searching...")
         logger.debug(self.get_info())
 
-        self.logwriter = LogWriter('%s/%s.log'%(self.out_dir.rstrip('/'),
-                                    self.data_handle.data_list[0].filename.split('/')[-1].replace('.h5','').replace('.fits','').replace('.fil','')))
+        filename_in = self.data_handle.filename
+        header_in   = self.data_handle.header
+
+        self.logwriter  = LogWriter('%s/%s.log'%(self.out_dir.rstrip('/'),
+                                    filename_in.split('/')[-1].replace('.h5', '').replace('.fits', '').replace('.fil', '')))
         self.filewriter = FileWriter('%s/%s.dat'%(self.out_dir.rstrip('/'),
-                                     self.data_handle.data_list[0].filename.split('/')[-1].replace('.h5','').replace('.fits','').replace('.fil','')),
-                                     self.data_handle.data_list[0].header)
+                                     filename_in.split('/')[-1].replace('.h5', '').replace('.fits', '').replace('.fil', '')),
+                                     header_in)
 
-        logger.info("Start ET search for %s"%self.data_handle.data_list[0].filename)
-        self.logwriter.info("Start ET search for %s"%(self.data_handle.data_list[0].filename))
+        logger.info("Start ET search for %s" % filename_in)
+        self.logwriter.info("Start ET search for %s" % filename_in)
 
-        for ii,target_data_obj in enumerate(self.data_handle.data_list):
+        for ii, target_data_obj in enumerate(self.data_handle.data_list):
             self.search_data(target_data_obj)
-            self.data_handle.data_list[ii].close()
+            #self.data_handle.data_list[ii].close()
             gc.collect()
 
-    def search_data(self, data_obj):
+    def search_data(self, data_dict):
         """Search the waterfall data of a data handler (coarse channel).
 
         Args:
-          data_obj(DATAH5): File's waterfall data handler
+          data_dict (dict): File's waterfall data handler
 
         Returns:
 
         """
-        logger.info("Start searching for coarse channel: %s"%data_obj.header['coarse_chan'])
-        self.logwriter.info("Start searching for %s ; coarse channel: %i "%(data_obj.filename,data_obj.header['coarse_chan']))
+        d = data_dict
+        logger.info("Start searching for coarse channel: %s" % d['coarse_chan'])
+        data_obj = DATAH5(d['filename'], f_start=d['f_start'], f_stop=d['f_stop'],
+                          coarse_chan=d['coarse_chan'], tn_coarse_chan=d['tn_coarse_chan'])
+
+        self.logwriter.info("Start searching for %s ; coarse channel: %i " % (d['filename'], d['coarse_chan']))
         spectra, drift_indices = data_obj.load_data()
         tsteps = data_obj.tsteps
         tsteps_valid = data_obj.tsteps_valid
@@ -177,7 +184,7 @@ class FindDoppler:
         for i in range(0, tsteps):
             ibrev[i] = bitrev(i, int(np.log2(tsteps)))
 
-##EE: should double check if tdwidth is really better than fftlen here.
+        ##EE: should double check if tdwidth is really better than fftlen here.
         max_val = max_vals()
         if max_val.maxsnr == None:
             max_val.maxsnr = np.zeros(tdwidth, dtype=np.float64)
@@ -203,7 +210,7 @@ class FindDoppler:
         #--------------------------------
         drift_rate_nblock = int(np.floor(self.max_drift / (data_obj.drift_rate_resolution*tsteps_valid)))
 
-##EE-debuging        kk = 0
+        ##EE-debuging        kk = 0
 
         for drift_block in range(-1*drift_rate_nblock,drift_rate_nblock+1):
             logger.debug( "Drift_block %i"%drift_block)
@@ -305,6 +312,7 @@ class FindDoppler:
                                        logwriter=self.logwriter, filewriter=self.filewriter, obs_info=self.obs_info)
 
         logger.info("Total number of candidates for coarse channel "+ str(data_obj.header['coarse_chan']) +" is: %i"%max_val.total_n_hits)
+        data_obj.close()
 
 #  ======================================================================  #
 

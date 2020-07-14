@@ -123,7 +123,7 @@ class FindDoppler:
             self.search_data(target_data_obj)
             gc.collect()
 
-    def search_dask(self):
+    def search_dask(self, n_partitions=8):
         """Top level search routine"""
         logger.debug("Start searching...")
         logger.debug(self.get_info())
@@ -144,7 +144,7 @@ class FindDoppler:
         logger.info("Start ET search for %s" % filename_in)
         self.logwriter.info("Start ET search for %s" % filename_in)
 
-        b = db.from_sequence(self.data_handle.data_list, npartitions=8)
+        b = db.from_sequence(self.data_handle.data_list, npartitions=n_partitions)
 
         with ProgressBar():
             m = b.map(search_data,

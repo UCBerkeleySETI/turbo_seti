@@ -12,7 +12,7 @@ VOYAH5 = 'Voyager1.single_coarse.fine_res.h5'
 VOYAH5FLIPPED = 'Voyager1.single_coarse.fine_res.flipped.h5'
 
 
-def find_doppler(filename_fil, use_dask=False):
+def find_doppler(filename_fil):
     """ Run turboseti doppler search on filename with default params """
     t0 = time.time()
     print("\n===== find_doppler =====")
@@ -34,10 +34,7 @@ def find_doppler(filename_fil, use_dask=False):
 
     find_seti_event = FindDoppler(filename_fil, max_drift=max_drift, snr=snr, out_dir=HERE,
                                   coarse_chans=coarse_chans, obs_info=obs_info, n_coarse_chan=n_coarse_chan)
-    if use_dask:
-        find_seti_event.search_parallel()
-    else:
-        find_seti_event.search()
+    find_seti_event.search()
     t_taken = time.time() - t0
     print("Time taken: %2.2fs" % t_taken)
 
@@ -157,7 +154,7 @@ def test_turboSETI_entry_point():
     args = [filename_fil, ]
     seti_event.main(args)
 
-def test_plotting():
+def NOT_YET_test_plotting(): # see issue #52
     """ Some basic plotting tests
 
     TODO: Improve these tests (and the functions for that matter!
@@ -190,7 +187,7 @@ def test_dask():
     print("\n===== test_find_doppler_voyager =====")
     filename_fil = os.path.join(HERE, VOYAH5)
     filename_dat = filename_fil.replace('.h5', '.dat')
-    find_doppler(filename_fil, use_dask=True)
+    find_doppler(filename_fil)
     #validate_voyager_hits(filename_dat)
     #plot_hits(filename_fil, filename_dat)
 

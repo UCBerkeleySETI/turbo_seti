@@ -71,10 +71,8 @@ def main(args=None):
 
         find_seti_event = FindDoppler(args.filename, max_drift=args.max_drift, snr=args.snr, out_dir=args.out_dir,
                                       coarse_chans=coarse_chans, obs_info=None, n_coarse_chan=args.n_coarse_chan)
-        if args.n_parallel == 1:
-            find_seti_event.search()
-        else:
-            find_seti_event.search_dask(n_partitions=args.n_parallel)
+
+        find_seti_event.search(n_partitions=args.n_parallel)
 
         t1 = time.time()
         print('Search time: %5.2f min' % ((t1-t0)/60.))

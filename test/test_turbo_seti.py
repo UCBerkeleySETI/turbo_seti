@@ -35,7 +35,7 @@ def find_doppler(filename_fil, use_dask=False):
     find_seti_event = FindDoppler(filename_fil, max_drift=max_drift, snr=snr, out_dir=HERE,
                                   coarse_chans=coarse_chans, obs_info=obs_info, n_coarse_chan=n_coarse_chan)
     if use_dask:
-        find_seti_event.search_dask()
+        find_seti_event.search_parallel()
     else:
         find_seti_event.search()
     t_taken = time.time() - t0
@@ -79,6 +79,7 @@ def validate_voyager_hits(filename_dat):
     """
     print("\n===== validate_voyager_hits =====")
     h = find_event.read_dat(filename_dat)
+    print(h)
 
     valid_data = [
         {

@@ -180,6 +180,7 @@ def test_plotting():
 
 def test_data_handler():
     """ Basic data handler test """
+<<<<<<< HEAD
     print("\n===== test_data_handler =====")
     from turbo_seti.find_doppler import data_handler
     with pytest.raises(OSError): # not AttributeError
@@ -201,4 +202,15 @@ if __name__ == "__main__":
     test_find_doppler_voyager_flipped()
     #### NOT YET: test_plotting() - see issue #52
     test_find_doppler_voyager_filterbank()
+    from turbo_seti.find_doppler import data_handler
+    with pytest.raises(AttributeError):
+        fh = data_handler.DATAHandle(filename='made_up_not_existing_file.h5')
+
+if __name__ == "__main__":
+
+    #test_turboSETI_entry_point()
+    #test_find_doppler_voyager()
+    #test_find_doppler_voyager_flipped()
+    #test_plotting()
+    #test_find_doppler_voyager_filterbank()
     test_data_handler()

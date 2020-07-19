@@ -35,6 +35,8 @@ def main(args=None):
                    help='Comma separated list of coarse channels to analyze.')
     p.add_argument('-n', '--n_coarse_chan', dest='n_coarse_chan', type=int, default=None,
                    help='Number of coarse channels in file.')
+    p.add_argument('-p', '--n_parallel', dest='n_parallel', type=int, default=1,
+                   help='Number of threads to run in parallel. Default to 1 (single threaded)')
 
     if args is None:
         args = p.parse_args()
@@ -69,7 +71,8 @@ def main(args=None):
 
         find_seti_event = FindDoppler(args.filename, max_drift=args.max_drift, snr=args.snr, out_dir=args.out_dir,
                                       coarse_chans=coarse_chans, obs_info=None, n_coarse_chan=args.n_coarse_chan)
-        find_seti_event.search()
+
+        find_seti_event.search(n_partitions=args.n_parallel)
 
         t1 = time.time()
         print('Search time: %5.2f min' % ((t1-t0)/60.))

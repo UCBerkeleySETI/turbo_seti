@@ -71,7 +71,7 @@ setup(
     zip_safe=False,
     options={"bdist_wheel": {"universal": "1"}},
     classifiers=[
-        "Development Status :: Development Status :: 4 - Beta",
+        "Development Status :: 4 - Beta",
         "Intended Audience :: Science/Research",
         "Programming Language :: Python :: 3",
         "Topic :: Scientific/Engineering",

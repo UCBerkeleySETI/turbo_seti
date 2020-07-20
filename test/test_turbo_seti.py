@@ -148,9 +148,6 @@ def test_find_doppler_voyager_filterbank():
     print("\n===== test_find_doppler_voyager_filterbank =====")
     filename_fil = os.path.join(HERE, VOYAH5)
     find_doppler(filename_fil)
-    #validate_voyager_hits(filename_dat)
-    #plot_hits(filename_fil, filename_dat)
-
 
 def test_turboSETI_entry_point():
     """ Test the command line utility turboSETI """
@@ -186,12 +183,14 @@ def test_data_handler():
         fh = data_handler.DATAHandle(filename='made_up_not_existing_file.h5')
 
 def test_dask():
-    """ Run turboseti on Voyager data """
-    print("\n===== test_find_doppler_voyager =====")
+    """ Test dask capability on Voyager data """
     filename_fil = os.path.join(HERE, VOYAH5)
-    find_doppler(filename_fil)
-    #validate_voyager_hits(filename_dat)
-    #plot_hits(filename_fil, filename_dat)
+    FD = FindDoppler(datafile=filename_fil, max_drift=2, out_dir=HERE)
+    print("===== test_dask ===== n_partitions=None")
+    FD.search()
+    print("===== test_dask ===== n_partitions=2")
+    FD.search(n_partitions=2)
+    print("===== test_dask ===== End")
 
 if __name__ == "__main__":
 

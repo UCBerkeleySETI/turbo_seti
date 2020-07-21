@@ -420,7 +420,6 @@ def hitsearch(spectrum, specstart, specend, hitthresh, drift_rate, header, tdwid
       hitthresh: float,              signal to noise ratio used as threshold for determining hits
       drift_rate: float,              drift rate at which we are searching for hits
       header: dict,               header in fits header format. See data_handler.py's DATAH5 class header
-      fftlen: int,                UNUSED
       tdwidth: int,
       max_val: max_vals,           object to be filled with max values from this search and then returned
       reverse: int(boolean),       used to flag whether fine channel should be reversed
@@ -457,13 +456,11 @@ def tophitsearch(tree_findoppler_original, max_val, tsteps, header, tdwidth, fft
       tree_findoppler_original: ndarray,        spectra-populated findoppler tree
       max_val: max_vals,       contains max values from hitsearch
       tsteps: int,
-      nframes: int,            UNUSED
       header: dict,           header in fits header format. See data_handler.py's DATAH5 class header. Used to report tophit in filewriter
       tdwidth: int,
       fftlen: int,            length of fast fourier transform (fft) matrix
       max_drift: float,          Max drift rate in Hz/second
       obs_length: float,
-      out_dir: string,         UNUSED (Default value = '')
       logwriter: LogWriter       logwriter to which we should write if we find a top hit (Default value = None)
       filewriter: FileWriter      filewriter corresponding to file to which we should save the
     local maximum of tophit. See report_tophit in filewriters.py (Default value = None)

@@ -88,9 +88,7 @@ cpdef int bitrev(int inval, int nbits) except *:
     if nbits <= 1:
         ibitr = inval
     else:
-        ifact = 1
-        for i in range(1, nbits):
-           ifact *= 2
+        ifact = 2**(nbits - 1)
         k = inval
         ibitr = (1 & k) * ifact
         for i in range(2, nbits+1):

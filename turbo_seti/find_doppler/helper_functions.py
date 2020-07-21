@@ -30,6 +30,7 @@ def bitrev(inval, nbits):
     """This function bit-reverses the given value "inval" with the number of
     bits, "nbits".    ----  R. Ramachandran, 10-Nov-97, nfra.
     python version ----  H. Chen   Modified 2014
+    2020-07-21 speedup --- R. Elkins (texadactyl)
 
     Args:
       inval: number to be bit-reversed
@@ -44,15 +45,14 @@ def bitrev(inval, nbits):
     if nbits <= 1:
         ibitr = inval
     else:
-        ifact = 1
-        for i in range(1, nbits):
-           ifact *= 2
+        ifact = 2**(nbits - 1)
         k = inval
-        ibitr = (1 & k) * ifact
+        ibitr = 0 if (1 & k == 0) else ifact
         for i in range(2, nbits+1):
-            k = int(k / 2)
-            ifact = int(ifact / 2)
-            ibitr += (1 & k) * ifact
+            k = k >> 1
+            ifact = ifact >> 1
+            if 1 & k:
+                ibitr += ifact
     return ibitr
 
 

@@ -88,10 +88,10 @@ Usage (beta):
                         automated scripts. Default is False.
                     
 author: 
-    Version 2.0 - Sofia Sheikh (ssheikhmsa@gmail.com), 
+    Version 2.0 - Sofia Sheikh (ssheikhmsa@gmail.com) and Karen Perez (kip2105@columbia.edu)
     Version 1.0 - Emilio Enriquez (jeenriquez@gmail.com)
     
-Last updated: 05/24/2020
+Last updated: 07/22/2020
 
 ***
 NOTE: This code works for .dat files that were produced by seti_event.py
@@ -141,6 +141,7 @@ def find_event_pipeline(dat_file_list_str,
     
     if on_source_complex_cadence == False:
         print("Assuming the first observation is an " + on_off_first)
+        complex_cadence = on_source_complex_cadence
         
     if on_source_complex_cadence != False:
         print("Assuming a complex cadence for the following on source: " + on_source_complex_cadence)

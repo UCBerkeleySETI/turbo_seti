@@ -145,7 +145,7 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
 
     Args:
         data_dict (dict): File's waterfall data handler.
-                        Required keys: {'filename','f_start', 'f_stop', 'coarse_chan', 'tn_coarse_chan'}
+                        Required keys: {'filename','f_start', 'f_stop', 'coarse_chan', 'n_coarse_chan'}
         find_doppler_instance (FindDoppler): Instance of FindDoppler class (needed to access search params)
         logwriter (LogWriter): A LogWriter to write log output into. If None, one will be created.
         filewriter (FileWriter): A FileWriter to use to write the dat file. If None, one will be created.
@@ -168,7 +168,7 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
 
     #logger.info("Start searching for coarse channel: %s" % d['coarse_chan'])
     data_obj = DATAH5(d['filename'], f_start=d['f_start'], f_stop=d['f_stop'],
-                      coarse_chan=d['coarse_chan'], tn_coarse_chan=d['tn_coarse_chan'])
+                      coarse_chan=d['coarse_chan'], n_coarse_chan=d['n_coarse_chan'])
 
     fileroot_out = filename_in.split('/')[-1].replace('.h5', '').replace('.fits', '').replace('.fil', '')
     if logwriter is None:

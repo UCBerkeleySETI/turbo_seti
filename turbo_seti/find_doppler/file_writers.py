@@ -1,25 +1,8 @@
 #!/usr/bin/env python
 
 import numpy as np
-import astropy.io.fits as pyfits
 from .helper_functions import chan_freq
 
-
-import logging
-
-def tophits_writer(spectra_slice, hit_indices, header, format='txt'):
-    """
-
-    Args:
-      spectra_slice: 
-      hit_indices: 
-      header: 
-      format: (Default value = 'txt')
-
-    Returns:
-
-    """
-    return None
 
 class GeneralWriter:
     """Wrapper class for file operations."""
@@ -36,7 +19,6 @@ class GeneralWriter:
         with open(filename, mode) as myfile:
             self.filehandle = myfile
             self.filename = filename
-        return None
 
     def close(self):
         """Closes file object if it is open.
@@ -79,10 +61,7 @@ class GeneralWriter:
         Returns:
 
         """
-        if self.is_open() and (('w' in self.filehandle.mode) or ('a' in self.filehandle.mode)):
-            return True
-        else:
-            return False
+        return self.is_open() and (('w' in self.filehandle.mode) or ('a' in self.filehandle.mode))
 
     def write(self, info_str, mode='a'):
         """Sets file mode to a writeable mode and opens it if it is not already open in a writeable mode, writes info_str
@@ -96,7 +75,7 @@ class GeneralWriter:
         Returns:
 
         """
-        if (not 'w' in mode) and (not 'a' in mode):
+        if mode not in ('a', 'w'):
             mode = 'a'
         if not self.writable():
             with open(self.filename, mode) as myfile:
@@ -151,6 +130,7 @@ class FileWriter(GeneralWriter):
 
         return None
         
+        ########################################## Unreachable code follows
         self.write('# Coarse Channel Number: %i \n' % header['coarse_chan'])
         info_str = '# Number of hits: %i \n'%total_n_candi
         self.write(info_str)
@@ -187,7 +167,7 @@ class FileWriter(GeneralWriter):
         self.write(info_str)
         self.write('# --------------------------\n')
 
-    def report_tophit(self, max_val, ind, ind_tuple, tdwidth, fftlen, header,total_n_candi,spec_slice=None,obs_info=None):
+    def report_tophit(self, max_val, ind, ind_tuple, tdwidth, fftlen, header, total_n_candi, obs_info=None):
         """This function looks into the top hit in a region, basically finds the local maximum and saves that.
 
         Args:
@@ -199,7 +179,7 @@ class FileWriter(GeneralWriter):
           fftlen: int,                    length of the fast fourier transform matrix
           header: dict,                   contains info on coarse channel to be written to file
           total_n_candi: int,
-          spec_slice: dict, (Default value = None)
+          ### spec_slice: dict, (Default value = None) <--- UNUSED
           obs_info: dict,                   used to hold info found on file, including info about pulsars,
         RFI, and SEFD (Default value = None)
 
@@ -243,17 +223,6 @@ class FileWriter(GeneralWriter):
 
 class LogWriter(GeneralWriter):
     """Used to write data to log."""
-    def report_candidate(self, info_str):
-        """Does nothing. Unimplemented and unused.
-
-        Args:
-          info_str: 
-
-        Returns:
-
-        """
-        return None
-
     def info(self, info_str):
         """Writes info_str to file.
 
@@ -265,7 +234,3 @@ class LogWriter(GeneralWriter):
 
         """
         self.write(info_str + '\n')
-        return None
-
-
-

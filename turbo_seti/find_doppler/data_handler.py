@@ -139,7 +139,7 @@ class DATAHandle:
                         'f_start': f_start,
                         'f_stop': f_stop,
                         'coarse_chan': chan,
-                        'tn_coarse_chan': n_coarse_chan}
+                        'n_coarse_chan': n_coarse_chan}
 
             #This appends to a list of all data instance selections. So that all get processed later.
             data_list.append(data_obj)

@@ -1,20 +1,28 @@
-#!/usr/bin/env python
+"""
+Class FindDoppler
 
+Non-object functions:
+    search_coarse_channel
+    populate_tree
+    hitsearch
+    tophitsearch
+"""
+
+import logging
+
+# Parallel python support
+import dask.bag as db
+from dask.diagnostics import ProgressBar
 
 import numpy as np
-import sys
-import os
-import logging
-logger = logging.getLogger(__name__)
-import gc   #Garbage collector.
-
-from .data_handler import DATAHandle, DATAH5
-from .file_writers import FileWriter, LogWriter
-from .helper_functions import *
 
 #For importing cython code
 import pyximport
 pyximport.install(setup_args={"include_dirs":np.get_include()}, reload_support=True)
+
+from .data_handler import DATAHandle, DATAH5
+from .file_writers import FileWriter, LogWriter
+from .helper_functions import bitrev, chan_freq, comp_stats, FlipX
 
 try:
     from . import taylor_tree as tt
@@ -24,13 +32,10 @@ except:
 #For debugging
 #import pdb;# pdb.set_trace()
 
-# Parallel python support
-import dask
-import dask.bag as db
-from dask.diagnostics import ProgressBar
+logger = logging.getLogger(__name__)
 
 class max_vals:
-    """ """
+    """ Class used to initialize some maximums """
     def __init__(self):
         self.maxsnr = None
         self.maxdrift = None
@@ -91,13 +96,13 @@ class FindDoppler:
     def get_info(self):
         """Generate info string
 
-        Args:
+        Args: None
 
         Returns:
           : String that contains the values of this FinDoppler object's attributes.
 
         """
-        info_str = "File: %s\n drift rates (min, max): (%f, %f)\n SNR: %f\n"%(self.data_handle.filename, self.min_drift, self.max_drift,self.snr)
+        info_str = "File: %s\n drift rates (min, max): (%f, %f)\n SNR: %f\n"%(self.data_handle.filename, self.min_drift, self.max_drift, self.snr)
         return info_str
 
     def search(self, n_partitions=1):
@@ -114,11 +119,9 @@ class FindDoppler:
         filename_in = self.data_handle.filename
         header_in   = self.data_handle.header
 
-        logwriter  = LogWriter('%s/%s.log'%(self.out_dir.rstrip('/'),
-                                    filename_in.split('/')[-1].replace('.h5', '').replace('.fits', '').replace('.fil', '')))
-        filewriter = FileWriter('%s/%s.dat'%(self.out_dir.rstrip('/'),
-                                     filename_in.split('/')[-1].replace('.h5', '').replace('.fits', '').replace('.fil', '')),
-                                     header_in)
+        wfilename = filename_in.split('/')[-1].replace('.h5', '').replace('.fits', '').replace('.fil', '')
+        logwriter = LogWriter('%s/%s.log'%(self.out_dir.rstrip('/'), wfilename))
+        filewriter = FileWriter('%s/%s.dat'%(self.out_dir.rstrip('/'), wfilename), header_in)
 
         logger.info("Start ET search for %s" % filename_in)
         logwriter.info("Start ET search for %s" % filename_in)
@@ -131,7 +134,7 @@ class FindDoppler:
         else:
             b = db.from_sequence(self.data_handle.data_list, npartitions=n_partitions)
             with ProgressBar():
-                m = b.map(search_coarse_channel, self).compute()
+                b.map(search_coarse_channel, self).compute()
 
 
 def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, filewriter=None):
@@ -165,13 +168,12 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
     data_obj = DATAH5(d['filename'], f_start=d['f_start'], f_stop=d['f_stop'],
                       coarse_chan=d['coarse_chan'], n_coarse_chan=d['n_coarse_chan'])
 
-    fileroot_out = filename_in.split('/')[-1].replace('.h5', '').replace('.fits', '').replace('.fil','')
+    fileroot_out = filename_in.split('/')[-1].replace('.h5', '').replace('.fits', '').replace('.fil', '')
     if logwriter is None:
-        logwriter = LogWriter('%s/%s_%i.log' % (out_dir.rstrip('/'),fileroot_out, d['coarse_chan']))
+        logwriter = LogWriter('%s/%s_%i.log' % (out_dir.rstrip('/'), fileroot_out, d['coarse_chan']))
     if filewriter is None:
-        filewriter = FileWriter('%s/%s_%i.dat' % (out_dir.rstrip('/'),fileroot_out, d['coarse_chan']), header_in)
+        filewriter = FileWriter('%s/%s_%i.dat' % (out_dir.rstrip('/'), fileroot_out, d['coarse_chan']), header_in)
 
-    #self.logwriter.info("Start searching for %s ; coarse channel: %i " % (d['filename'], d['coarse_chan']))
     spectra, drift_indices = data_obj.load_data()
     tsteps = data_obj.tsteps
     tsteps_valid = data_obj.tsteps_valid
@@ -191,8 +193,9 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
         ##EE Flagging spikes in time series.
         time_series = spectra.sum(axis=1)
         time_series_median = np.median(time_series)
-        mask = (time_series - time_series_median) / time_series.std() > 10  # Flagging spikes > 10 in SNR
 
+        # Flagging spikes > 10 in SNR
+        mask = (time_series - time_series_median) / time_series.std() > 10
         if mask.any():
             logwriter.info("Found spikes in the time series. Removing ...")
             spectra[mask, :] = time_series_median / float(
@@ -282,8 +285,8 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
                     drift_rate *= -1
 
                 indx = ibrev[drift_indices[::-1][
-                    (complete_drift_range < min_drift) & (complete_drift_range >= -1 * max_drift)][
-                    k]] * tdwidth
+                    (complete_drift_range < min_drift)
+                    & (complete_drift_range >= -1 * max_drift)][k]] * tdwidth
 
                 # SEARCH NEGATIVE DRIFT RATES
                 spectrum = tree_findoppler_flip[indx: indx + tdwidth]
@@ -295,8 +298,9 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
                 # Reverse spectrum back
                 spectrum = spectrum[::-1]
 
-                n_hits, max_val = hitsearch(spectrum, specstart, specend, snr, drift_rate, data_obj.header,
-                                            fftlen, tdwidth, max_val, 0)
+                n_hits, max_val = hitsearch(spectrum, specstart, specend, snr,
+                                            drift_rate, data_obj.header,
+                                            tdwidth, max_val, 0)
                 info_str = "Found %d hits at drift rate %15.15f\n" % (n_hits, drift_rate)
                 max_val.total_n_hits += n_hits
                 logger.debug(info_str)
@@ -326,8 +330,8 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
             complete_drift_range = data_obj.drift_rate_resolution * np.array(
                 range(tsteps_valid * (drift_block), tsteps_valid * (drift_block + 1)))
 
-            for k, drift_rate in enumerate(complete_drift_range[(complete_drift_range >= min_drift) & (
-                    complete_drift_range <= max_drift)]):
+            for k, drift_rate in enumerate(complete_drift_range[(complete_drift_range >= min_drift)
+                                                                & (complete_drift_range <= max_drift)]):
 
                 indx = ibrev[drift_indices[k]] * tdwidth
 
@@ -343,16 +347,16 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
                 spectrum /= the_stddev
 
                 n_hits, max_val = hitsearch(spectrum, specstart, specend, snr, drift_rate, data_obj.header,
-                                            fftlen, tdwidth, max_val, 0)
+                                            tdwidth, max_val, 0)
                 info_str = "Found %d hits at drift rate %15.15f\n" % (n_hits, drift_rate)
                 max_val.total_n_hits += n_hits
                 logger.debug(info_str)
                 logwriter.info(info_str)
 
     # Writing the top hits to file.
-    filewriter = tophitsearch(tree_findoppler_original, max_val, tsteps, nframes, data_obj.header, tdwidth,
-                                   fftlen, max_drift, data_obj.obs_length, out_dir=out_dir,
-                                   logwriter=logwriter, filewriter=filewriter, obs_info=obs_info)
+    filewriter = tophitsearch(tree_findoppler_original, max_val, tsteps, data_obj.header, tdwidth,
+                              fftlen, max_drift, data_obj.obs_length,
+                              logwriter=logwriter, filewriter=filewriter, obs_info=obs_info)
 
     logger.info("Total number of candidates for coarse channel " + str(
         data_obj.header['coarse_chan']) + " is: %i" % max_val.total_n_hits)
@@ -361,7 +365,8 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
     return True
 
 
-def populate_tree(spectra,tree_findoppler,nframes,tdwidth,tsteps,fftlen,shoulder_size,roll=0,reverse=0):
+def populate_tree(spectra, tree_findoppler, nframes, tdwidth, tsteps, fftlen,
+                  shoulder_size, roll=0, reverse=0):
     """This script populates the findoppler tree with the spectra.
     It creates two "shoulders" (each region of tsteps*(shoulder_size/2) in size) to avoid "edge" issues.
     It uses np.roll() for drift-rate blocks higher than 1.
@@ -393,7 +398,7 @@ def populate_tree(spectra,tree_findoppler,nframes,tdwidth,tsteps,fftlen,shoulder
 
         ##EE copy spectra into tree_findoppler, leaving two regions in each side blanck (each region of tsteps*(shoulder_size/2) in size).
         # Copy spectra into tree_findoppler, with rolling.
-        np.copyto(tree_findoppler[sind: sind + cplen], np.roll(spectra[i],roll*i*direction))
+        np.copyto(tree_findoppler[sind: sind + cplen], np.roll(spectra[i], roll * i * direction))
 
 #         ##EE loads the end part of the current spectrum into the left hand side black region in tree_findoppler (comment below says "next spectra" but for that need i+1...bug?)
          #load end of current spectra into left hand side of next spectra
@@ -403,7 +408,7 @@ def populate_tree(spectra,tree_findoppler,nframes,tdwidth,tsteps,fftlen,shoulder
     return tree_findoppler
 
 
-def hitsearch(spectrum, specstart, specend, hitthresh, drift_rate, header, fftlen, tdwidth, max_val, reverse):
+def hitsearch(spectrum, specstart, specend, hitthresh, drift_rate, header, tdwidth, max_val, reverse):
     """Searches for hits at given drift rate. A hit occurs in each channel if > hitthresh.
 
     Args:
@@ -413,7 +418,6 @@ def hitsearch(spectrum, specstart, specend, hitthresh, drift_rate, header, fftle
       hitthresh: float,              signal to noise ratio used as threshold for determining hits
       drift_rate: float,              drift rate at which we are searching for hits
       header: dict,               header in fits header format. See data_handler.py's DATAH5 class header
-      fftlen: int,                UNUSED
       tdwidth: int,
       max_val: max_vals,           object to be filled with max values from this search and then returned
       reverse: int(boolean),       used to flag whether fine channel should be reversed
@@ -426,11 +430,11 @@ def hitsearch(spectrum, specstart, specend, hitthresh, drift_rate, header, fftle
     logger.debug('Start searching for hits at drift rate: %f'%drift_rate)
     j = 0
     for i in (spectrum[specstart:specend] > hitthresh).nonzero()[0] + specstart:
-        k =  (tdwidth - 1 - i) if reverse else i
-        info_str = 'Hit found at SNR %f! %s\t'%(spectrum[i], '(reverse)' if reverse else '')
-        info_str += 'Spectrum index: %d, Drift rate: %f\t'%(i, drift_rate)
-        info_str += 'Uncorrected frequency: %f\t'%chan_freq(header,  k, tdwidth, 0)
-        info_str += 'Corrected frequency: %f'%chan_freq(header, k, tdwidth, 1)
+        k = (tdwidth - 1 - i) if reverse else i
+        info_str = 'Hit found at SNR %f! %s\t' % (spectrum[i], '(reverse)' if reverse else '')
+        info_str += 'Spectrum index: %d, Drift rate: %f\t' % (i, drift_rate)
+        info_str += 'Uncorrected frequency: %f\t' % chan_freq(header, k, tdwidth, 0)
+        info_str += 'Corrected frequency: %f' % chan_freq(header, k, tdwidth, 1)
         logger.debug(info_str)
         j += 1
         used_id = j
@@ -442,20 +446,19 @@ def hitsearch(spectrum, specstart, specend, hitthresh, drift_rate, header, fftle
     return j, max_val
 
 
-def tophitsearch(tree_findoppler_original, max_val, tsteps, nframes, header, tdwidth, fftlen,max_drift,obs_length, out_dir='', logwriter=None, filewriter=None,obs_info=None):
+def tophitsearch(tree_findoppler_original, max_val, tsteps, header, tdwidth, fftlen,
+                 max_drift, obs_length, logwriter=None, filewriter=None, obs_info=None):
     """This finds the hits with largest SNR within 2*tsteps frequency channels.
 
     Args:
       tree_findoppler_original: ndarray,        spectra-populated findoppler tree
       max_val: max_vals,       contains max values from hitsearch
       tsteps: int,
-      nframes: int,            UNUSED
       header: dict,           header in fits header format. See data_handler.py's DATAH5 class header. Used to report tophit in filewriter
       tdwidth: int,
       fftlen: int,            length of fast fourier transform (fft) matrix
       max_drift: float,          Max drift rate in Hz/second
       obs_length: float,
-      out_dir: string,         UNUSED (Default value = '')
       logwriter: LogWriter       logwriter to which we should write if we find a top hit (Default value = None)
       filewriter: FileWriter      filewriter corresponding to file to which we should save the
     local maximum of tophit. See report_tophit in filewriters.py (Default value = None)
@@ -487,13 +490,8 @@ def tophitsearch(tree_findoppler_original, max_val, tsteps, nframes, header, tdw
             logger.info(info_str)
             if logwriter:
                 logwriter.info(info_str)
-                #logwriter.report_tophit(max_val, i, header)
-#EE            logger.debug("slice of spectrum...size: %s"%str(tree_orig[0:nframes, lbound:ubound].shape))
             if filewriter:
-                filewriter = filewriter.report_tophit(max_val, i, (lbound, ubound), tdwidth, fftlen, header,max_val.total_n_hits,obs_info=obs_info)
-#EE: not passing array cut, since not saving in .dat file                filewriter = filewriter.report_tophit(max_val, i, (lbound, ubound), tree_orig[0:nframes, lbound:ubound], header)
-
-##EE : Uncomment if want to save each blob              np.save(out_dir + '/spec_drift_%.4f_id_%d.npy'%(max_val.maxdrift[i],i), tree_orig[0:nframes, lbound:ubound])
+                filewriter = filewriter.report_tophit(max_val, i, (lbound, ubound), tdwidth, fftlen, header,max_val.total_n_hits, obs_info=obs_info)
             else:
                 logger.error('Not have filewriter? tell me why.')
 

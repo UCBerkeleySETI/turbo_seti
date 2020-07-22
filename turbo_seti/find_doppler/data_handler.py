@@ -54,7 +54,7 @@ class DATAHandle:
             self.filesize = self.filestat.st_size/(1024.0**2)
 
             # Grab header from DATAH5
-            dobj_master = DATAH5(filename)
+            dobj_master = DATAH5(filename, n_coarse_chan=n_coarse_chan)
             self.header = dobj_master.header
             dobj_master.close()
 
@@ -157,7 +157,7 @@ class DATAH5:
     """
 
     def __init__(self, filename, size_limit=SIZE_LIM, f_start=None, f_stop=None, t_start=None, t_stop=None,
-                 coarse_chan=1, tn_coarse_chan=None):
+                 coarse_chan=1, n_coarse_chan=None):
         """
         :param filename:        string      name of file
         :param size_limit:      float       maximum size in MB that the file is allowed to be
@@ -166,7 +166,7 @@ class DATAH5:
         :param t_start:         int         start integration ID
         :param t_stop:          int         stop integration ID
         :param coarse_chan:     int
-        :param tn_coarse_chan:  int
+        :param n_coarse_chan:  int
         """
 
         self.filename = filename
@@ -175,7 +175,7 @@ class DATAH5:
         self.f_stop = f_stop
         self.t_start = t_start
         self.t_stop = t_stop
-        self.tn_coarse_chan = tn_coarse_chan
+        self.n_coarse_chan = n_coarse_chan
 
         #Instancing file.
         try:
@@ -186,7 +186,7 @@ class DATAH5:
 
         #Getting header
         try:
-            if self.tn_coarse_chan:
+            if self.n_coarse_chan:
                 header = self.__make_data_header(self.fil_file.header,coarse=True)
             else:
                 header = self.__make_data_header(self.fil_file.header)
@@ -214,7 +214,7 @@ class DATAH5:
         self.shoulder_size = 0
         self.tdwidth = self.fftlen + self.shoulder_size*self.tsteps
 
-    def load_data(self,):
+    def load_data(self):
         """Read the spectra and drift indices from file.
         :return:    ndarray, ndarray        spectra, drift indices
 
@@ -226,7 +226,10 @@ class DATAH5:
         self.fil_file.read_data(f_start=self.f_start, f_stop=self.f_stop)
 
         #Blanking DC bin.
-        n_coarse_chan = int(self.fil_file.calc_n_coarse_chan())
+        if self.n_coarse_chan is not None:
+            n_coarse_chan = self.n_coarse_chan
+        else:
+            n_coarse_chan = int(self.fil_file.calc_n_coarse_chan())
         if n_coarse_chan != self.fil_file.calc_n_coarse_chan():
             logger.warning('The file/selection is not an integer number of coarse channels. This could have unexpected consequences. Let op!')
         self.fil_file.blank_dc(n_coarse_chan)
@@ -289,7 +292,7 @@ class DATAH5:
 
         #used by helper_functions.py
         if coarse:
-            base_header['NAXIS1'] = int(header['nchans']/self.tn_coarse_chan)
+            base_header['NAXIS1'] = int(header['nchans'] / self.n_coarse_chan)
             base_header['FCNTR'] = np.abs(self.f_stop - self.f_start)/2. + np.fmin(self.f_start, self.f_stop)
         else:
             base_header['NAXIS1'] = int(header['nchans'])

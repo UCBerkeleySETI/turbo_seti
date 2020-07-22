@@ -136,7 +136,7 @@ class FindDoppler:
         d = data_dict
         logger.info("Start searching for coarse channel: %s" % d['coarse_chan'])
         data_obj = DATAH5(d['filename'], f_start=d['f_start'], f_stop=d['f_stop'],
-                          coarse_chan=d['coarse_chan'], tn_coarse_chan=d['tn_coarse_chan'])
+                          coarse_chan=d['coarse_chan'], n_coarse_chan=d['tn_coarse_chan'])
 
         self.logwriter.info("Start searching for %s ; coarse channel: %i " % (d['filename'], d['coarse_chan']))
         spectra, drift_indices = data_obj.load_data()

@@ -149,10 +149,8 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
         find_doppler_instance (FindDoppler): Instance of FindDoppler class (needed to access search params)
         logwriter (LogWriter): A LogWriter to write log output into. If None, one will be created.
         filewriter (FileWriter): A FileWriter to use to write the dat file. If None, one will be created.
-
     Returns:
         Success (bool): Returns True if successful (needed for dask).
-
     """
     d = data_dict
     fd = find_doppler_instance

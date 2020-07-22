@@ -149,7 +149,6 @@ class DATAH5:
     This class is where the waterfall data is loaded, as well as the header info.
     It creates other attributes related to the dedoppler search (load_drift_indexes).
     """
-
     def __init__(self, filename, f_start=None, f_stop=None, t_start=None, t_stop=None,
                  coarse_chan=1, n_coarse_chan=None):
         """
@@ -223,7 +222,10 @@ class DATAH5:
         self.fil_file.read_data(f_start=self.f_start, f_stop=self.f_stop)
 
         #Blanking DC bin.
-        n_coarse_chan = int(self.fil_file.calc_n_coarse_chan())
+        if self.n_coarse_chan is not None:
+            n_coarse_chan = self.n_coarse_chan
+        else:
+            n_coarse_chan = int(self.fil_file.calc_n_coarse_chan())
         if n_coarse_chan != self.fil_file.calc_n_coarse_chan():
             logger.warning('The file/selection is not an integer number of coarse channels. This could have unexpected consequences. Let op!')
         self.fil_file.blank_dc(n_coarse_chan)

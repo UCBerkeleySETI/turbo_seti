@@ -78,12 +78,14 @@ Usage (beta):
                                 showing original position).
 
 author: 
-    Version 2.0 - Sofia Sheikh (ssheikhmsa@gmail.com)
+    Version 2.0 - Sofia Sheikh (ssheikhmsa@gmail.com) and Karen Perez (kip2105@columbia.edu)
     Version 1.0 - Emilio Enriquez (jeenriquez@gmail.com)
     
-Last updated: 05/24/2020
+Last updated: 07/22/2020
 
 '''
+import matplotlib	
+matplotlib.use('agg')
 
 #General packages import
 import numpy as np
@@ -119,7 +121,7 @@ def overlay_drift(f_event, f_start, f_stop, drift_rate, t_duration, offset=0):
                  lw=2)
     
     #plots drift overlay line, with offset if desired
-    plt.plot((f_event - offset, f_event + drift_rate/1e6 * t_duration - offset), 
+    plt.plot((f_event + offset, f_event + drift_rate/1e6 * t_duration + offset), 
              (0, t_duration), 
              c='#cc0000', 
              ls='dashed', lw=2)
@@ -283,7 +285,8 @@ def make_waterfall_plots(fil_file_list,
             
         #Title the full plot
         if i == 0:
-            plot_title = "%s \n $\dot{\\nu}$ = %2.3f Hz/s" % (on_source_name, drift_rate)
+            plot_title = "%s \n $\dot{\\nu}$ = %2.3f Hz/s , MJD:%5.5f" % (on_source_name, drift_rate, t0)
+            
             plt.title(plot_title)
         #Format full plot
         if i < len(fil_file_list)-1:
@@ -305,7 +308,7 @@ def make_waterfall_plots(fil_file_list,
     
     #Add colorbar
     cax = fig[0].add_axes([0.94, 0.11, 0.03, 0.77])
-    fig[0].colorbar(this_plot,cax=cax,label='Normalized Power')
+    fig[0].colorbar(this_plot,cax=cax,label='Normalized Power (Arbitrary Units)')
     
     #Adjust plots
     plt.subplots_adjust(hspace=0,wspace=0)

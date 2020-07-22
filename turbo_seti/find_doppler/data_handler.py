@@ -137,7 +137,7 @@ class DATAHandle:
                         'f_start': f_start,
                         'f_stop': f_stop,
                         'coarse_chan': chan,
-                        'tn_coarse_chan': n_coarse_chan}
+                        'n_coarse_chan': n_coarse_chan}
 
             #This appends to a list of all data instance selections. So that all get processed later.
             data_list.append(data_obj)
@@ -151,7 +151,7 @@ class DATAH5:
     """
 
     def __init__(self, filename, f_start=None, f_stop=None, t_start=None, t_stop=None,
-                 coarse_chan=1, tn_coarse_chan=None):
+                 coarse_chan=1, n_coarse_chan=None):
         """
         :param filename:        string      name of file
         :param f_start:         float       start frequency in MHz
@@ -159,7 +159,7 @@ class DATAH5:
         :param t_start:         int         start integration ID
         :param t_stop:          int         stop integration ID
         :param coarse_chan:     int
-        :param tn_coarse_chan:  int
+        :param n_coarse_chan:  int
         """
 
         self.filename = filename
@@ -168,7 +168,7 @@ class DATAH5:
         self.f_stop = f_stop
         self.t_start = t_start
         self.t_stop = t_stop
-        self.tn_coarse_chan = tn_coarse_chan
+        self.n_coarse_chan = n_coarse_chan
 
         #Instancing file.
         try:
@@ -181,7 +181,7 @@ class DATAH5:
 
         #Getting header
         try:
-            if self.tn_coarse_chan:
+            if self.n_coarse_chan:
                 header = self.__make_data_header(self.fil_file.header, coarse=True)
             else:
                 header = self.__make_data_header(self.fil_file.header)
@@ -292,7 +292,7 @@ class DATAH5:
 
         #used by helper_functions.py
         if coarse:
-            base_header['NAXIS1'] = int(header['nchans']/self.tn_coarse_chan)
+            base_header['NAXIS1'] = int(header['nchans']/self.n_coarse_chan)
             base_header['FCNTR'] = np.abs(self.f_stop - self.f_start) / 2. + np.fmin(self.f_start, self.f_stop)
         else:
             base_header['NAXIS1'] = int(header['nchans'])

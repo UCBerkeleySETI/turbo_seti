@@ -54,7 +54,7 @@ class DATAHandle:
             self.filesize = self.filestat.st_size/(1024.0**2)
 
             # Grab header from DATAH5
-            dobj_master = DATAH5(filename, n_coarse_chan=n_coarse_chan)
+            dobj_master = DATAH5(filename)
             self.header = dobj_master.header
             dobj_master.close()
 

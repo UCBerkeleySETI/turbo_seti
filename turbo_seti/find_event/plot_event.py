@@ -259,6 +259,8 @@ def make_waterfall_plots(fil_file_list,
         
         if plot_snr_list != False:
             plot_snr = plot_snr_list[i]
+        else:
+            plot_snr = False
         
         #read in data
         fil = bl.Waterfall(filename, f_start=f_start, f_stop=f_stop)

@@ -9,6 +9,7 @@ import pylab as plt
 import numpy as np
 import pytest
 
+from blimpy import Waterfall
 from turbo_seti import FindDoppler, seti_event
 from turbo_seti import find_event, plot_event
 from turbo_seti.find_doppler import data_handler
@@ -45,6 +46,37 @@ def find_doppler(filename_fil):
     print("Time taken: %2.2fs" % t_taken)
 
 
+def plot_hit(fil_filename, dat_filename, hit_id, bw=None, offset=0):
+    """Plot a candidate from a .dat file
+
+    Args:
+      fil_filename(str): Path to filterbank file to plot
+      dat_filename(str): Path to turbosSETI generated .dat output file of events
+      hit_id(int): ID of hit in the dat file to plot (TopHitNum)
+      offset(float, optional): Offset drift line on plot. Default 0.
+      bw:  (Default value = None)
+
+    Returns:
+
+    """
+    # Load hit details
+    dat = find_event.make_table(dat_filename)
+    hit = dat.iloc[hit_id]
+
+    f0 = hit['Freq']
+
+    if bw is None:
+        bw_mhz = np.abs(hit['FreqStart'] - hit['FreqEnd'])
+    else:
+        bw_mhz = bw * 1e-6
+
+    fil = Waterfall(fil_filename, f_start=f0 - bw_mhz / 2, f_stop=f0 + bw_mhz / 2)
+    t_duration = (fil.n_ints_in_file - 1) * fil.header['tsamp']
+
+    fil.plot_waterfall()
+    plot_event.overlay_drift(f0, f0, f0, hit['DriftRate'], t_duration, offset)
+
+
 def plot_hits(filename_fil, filename_dat):
     """ Plot the hits in a .dat file. """
     print("\n===== plot_hits =====")
@@ -59,10 +91,9 @@ def plot_hits(filename_fil, filename_dat):
 
     for ii in range(N_hit):
         plt.subplot(N_hit, 1, ii+1)
-        plot_event.plot_hit(filename_fil, filename_dat, ii)
+        plot_hit(filename_fil, filename_dat, ii)
     plt.tight_layout()
     plt.savefig(filename_dat.replace('.dat', '.png'))
-    plt.show()
 
 
 def validate_voyager_hits(filename_dat):
@@ -167,20 +198,27 @@ def _NOT_YET_test_plotting(): # see issue #52
     # Test make_waterfall_plots -- needs 6x files
     filenames_list = [filename_fil] * 6
     target  = 'Voyager'
-    drates  = [-0.392226]
-    fvals   = [8419.274785]
+    drate   = -0.392226
+    fmid   =  8419.274785
     f_start = 8419.274374 - 600e-6
     f_stop  = 8419.274374 + 600e-6
-    node_string = 'test'
+    source_name_list = ['test'] * 6
     filter_level = 1
-    plot_event.make_waterfall_plots(filenames_list, target, drates, fvals, f_start, f_stop, node_string, filter_level)
-    plt.show()
+    plot_event.make_waterfall_plots(filenames_list, 
+                                    target, 
+                                    f_start, 
+                                    f_stop, 
+                                    drate,
+                                    fmid,
+                                    filter_level,
+                                    source_name_list)
+
 
 def test_data_handler():
     """ Basic data handler test """
     print("\n===== test_data_handler =====")
     with pytest.raises(OSError): # not AttributeError
-        fh = data_handler.DATAHandle(filename='made_up_not_existing_file.h5')
+        data_handler.DATAHandle(filename='made_up_not_existing_file.h5')
 
 def test_dask():
     """ Test dask capability on Voyager data """

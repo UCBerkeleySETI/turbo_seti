@@ -37,8 +37,8 @@ def main(args=None):
                    help='Number of coarse channels in file.')
     p.add_argument('-p', '--n_parallel', dest='n_parallel', type=int, default=1,
                    help='Number of partitions to run in parallel. Default to 1 (single partition)')
-    p.add_argument('-b', '--progress_bar', dest='flag_progress_bar', type=bool, default=True,
-                   help='Use a progress bar? (True/False)')
+    p.add_argument('-b', '--progress_bar', dest='flag_progress_bar', type=str, default='y',
+                   help='Use a progress bar? (y/n)')
 
     if args is None:
         args = p.parse_args()

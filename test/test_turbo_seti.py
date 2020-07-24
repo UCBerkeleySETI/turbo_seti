@@ -228,6 +228,8 @@ def test_dask():
     FD.search()
     print("===== test_dask ===== n_partitions=2")
     FD.search(n_partitions=2)
+    print("===== test_dask ===== n_partitions=2, progress_bar='n'")
+    FD.search(n_partitions=2, progress_bar='n')
     print("===== test_dask ===== End")
 
 if __name__ == "__main__":

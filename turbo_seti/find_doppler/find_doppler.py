@@ -105,7 +105,7 @@ class FindDoppler:
         info_str = "File: %s\n drift rates (min, max): (%f, %f)\n SNR: %f\n"%(self.data_handle.filename, self.min_drift, self.max_drift, self.snr)
         return info_str
 
-    def search(self, n_partitions=1, progress_bar=True):
+    def search(self, n_partitions=1, progress_bar='y'):
         """ Top level search routine
 
         Uses dask to launch multiple drift searches in parallel
@@ -133,7 +133,7 @@ class FindDoppler:
         # Run Parallel version via dask
         else:
             b = db.from_sequence(self.data_handle.data_list, npartitions=n_partitions)
-            if progress_bar:
+            if progress_bar == 'y':
                 with ProgressBar():
                     b.map(search_coarse_channel, self).compute()
             else:

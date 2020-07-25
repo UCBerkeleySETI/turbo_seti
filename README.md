@@ -29,9 +29,12 @@ It was originally based on `dedoppler` [dedoppler](http://github.com/cs150bf/gbt
 
 ### Dependencies
 
+- Python 3.6+
 - astropy
 - cython
 - numpy
+- dask
+- dask[bag]
 - blimpy (Breakthrough Listen I/O Methods for Python :  https://github.com/UCBerkeleySETI/blimpy)
 
 &nbsp;

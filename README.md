@@ -1,11 +1,11 @@
+[![Build Status](https://travis-ci.org/UCBerkeleySETI/turbo_seti.svg?branch=master)](https://travis-ci.org/UCBerkeleySETI/turbo_seti)
+[![Documentation Status](https://readthedocs.org/projects/turbo-seti/badge/?version=latest)](https://turbo-seti.readthedocs.io/en/latest/?badge=latest)
+[![codecov](https://codecov.io/gh/UCBerkeleySETI/turbo_seti/branch/master/graph/badge.svg)](https://codecov.io/gh/UCBerkeleySETI/turbo_seti)
+
+
+
 TURBO_SETI
 =============================
-
-&nbsp;
-
-
-## Summary
-
 
 ***turbo*SETI** is an analysis tool for the search of narrow band drifting signals in filterbank data (frequency vs. time).
 The main purpose of the code is to hopefully one day find signals of extraterrestrial origin!!
@@ -107,6 +107,3 @@ See `/datax/eenriquez/voyager_test/*/*.log`, `/datax/eenriquez/voyager_test/*.da
 
 &nbsp;
 --------------------------
-
-[![Build Status](https://travis-ci.org/UCBerkeleySETI/turbo_seti.svg?branch=master)](https://travis-ci.org/UCBerkeleySETI/turbo_seti)
-[![Documentation Status](https://readthedocs.org/projects/turbo-seti/badge/?version=latest)](https://turbo-seti.readthedocs.io/en/latest/?badge=latest)

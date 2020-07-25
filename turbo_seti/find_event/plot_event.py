@@ -292,7 +292,7 @@ def make_waterfall_plots(fil_file_list,
             plt.title(plot_title)
         #Format full plot
         if i < len(fil_file_list)-1:
-            plt.xticks(np.arange(f_start, f_stop, delta_f/4.), ['','','',''])
+            plt.xticks(np.linspace(f_start, f_stop, num=4), ['','','',''])
 
     #More overall plot formatting, axis labelling
     factor = 1e6

@@ -111,10 +111,6 @@ except:
 
 import pandas as pd
 
-#required for find_event
-import time
-import numpy as np
-
 def find_event_pipeline(dat_file_list_str,
                         SNR_cut=10, 
                         check_zero_drift=False, 
@@ -143,11 +139,11 @@ def find_event_pipeline(dat_file_list_str,
     print("************   BEGINNING FIND_EVENT PIPELINE   **************")
     print()
     
-    if on_source_complex_cadence == False:
+    if not on_source_complex_cadence:
         print("Assuming the first observation is an " + on_off_first)
         complex_cadence = on_source_complex_cadence
         
-    if on_source_complex_cadence != False:
+    if on_source_complex_cadence:
         print("Assuming a complex cadence for the following on source: " + on_source_complex_cadence)
         
     #Opening list of files
@@ -162,7 +158,7 @@ def find_event_pipeline(dat_file_list_str,
         source_name = dat.split('_')[5] 
         source_name_list.append(source_name)
         
-    if on_source_complex_cadence != False:
+    if on_source_complex_cadence:
         complex_cadence = []
         for i in range(0, len(source_name_list)):
             source = source_name_list[i]
@@ -183,31 +179,31 @@ def find_event_pipeline(dat_file_list_str,
     if filter_threshold == 3:
         print("Present in all A sources with RFI rejection from the off-sources")
     
-    if check_zero_drift == False:
+    if not check_zero_drift:
         print("not including signals with zero drift")
-    if check_zero_drift == True:
+    else:
         print("including signals with zero drift")
-    if saving == False:
+    if not saving:
         print("not saving the output files")
-    if saving == True:
+    else:
         print("saving the output files")    
     
-    if user_validation == True:
+    if user_validation:
         question = "Do you wish to proceed with these settings?"
         while "the answer is invalid":
             reply = str(input(question+' (y/n): ')).lower().strip()
             if reply == '':
-                return
+                return None
             if reply[0] == 'y':
                 break
             if reply[0] == 'n':
-                return
+                return None
         
         #Looping over number_in_cadence chunks.
         candidate_list = []
         for i in range((int(n_files/number_in_cadence))):
             file_sublist = dat_file_list[number_in_cadence*i:((i*number_in_cadence)+(number_in_cadence))]
-            if complex_cadence == False:
+            if not complex_cadence:
                 if on_off_first == 'ON':
                     name = file_sublist[0].split('_')[5]  
                     id_num = (file_sublist[0].split('_')[6]).split('.')[0]
@@ -235,13 +231,13 @@ def find_event_pipeline(dat_file_list_str,
         if len(candidate_list) > 0:
             find_event_output_dataframe = pd.concat(candidate_list)
         else:
-            "Sorry, no potential candidates with your given parameters :("
+            print("Sorry, no potential candidates with your given parameters :(")
             find_event_output_dataframe = []
     
         print("************  ENDING FIND_EVENT PIPELINE   **************")
     
-    if saving == True:
-        if check_zero_drift == True:
+    if saving:
+        if check_zero_drift:
             filestring = name + '_' + id_num + '_f' + str(filter_threshold) + '_snr' + str(SNR_cut) + '_zero' + '.csv'
         else:
             filestring = name + '_' + id_num + '_f' + str(filter_threshold) + '_snr' + str(SNR_cut) + '.csv'            
@@ -250,6 +246,4 @@ def find_event_pipeline(dat_file_list_str,
         else:
             print("Sorry, no events to save :(")
 
-    return(find_event_output_dataframe)
-
-
+    return find_event_output_dataframe

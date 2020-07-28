@@ -158,6 +158,10 @@ def plot_waterfall(fil,
         dec_fac_y =  int(np.ceil(plot_data.shape[1] /  MAX_IMSHOW_POINTS[1]))
     plot_data = rebin(plot_data, dec_fac_x, dec_fac_y)
 
+    #fix case where frequencies are reversed by fil.grab_data() # Shane Smith PR #82
+	if plot_f[-1] < plot_f[0]:
+		plot_f = plot_f[::-1]
+
     #determine extent of the plotting panel for imshow
     extent=(plot_f[0], plot_f[-1], (fil.timestamps[-1]-fil.timestamps[0])*24.*60.*60, 0.0)
 

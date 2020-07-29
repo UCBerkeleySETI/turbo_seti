@@ -3,3 +3,4 @@ pytest-cov
 pytest-runner
 codecov
 coverage
+wget

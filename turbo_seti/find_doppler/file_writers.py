@@ -84,18 +84,6 @@ class GeneralWriter:
         else:
             self.filehandle.write(info_str)
 
-    def start_over(self):
-        """Wipes the given file and then opens it in append mode. Note that opening a file in write mode wipes it, so we
-        don't have to actually write an empty string to it.
-
-        Args:
-
-        Returns:
-
-        """
-        self.open('w')
-        self.write('')
-        self.open('a')
 
 class FileWriter(GeneralWriter):
     """Used to write information to turboSETI output files."""
@@ -112,28 +100,6 @@ class FileWriter(GeneralWriter):
         self.report_header(header)
 
         self.tophit_count = 0
-
-    def report_coarse_channel(self, header,total_n_candi):
-        """This function does nothing due to the first line, which returns before the rest of the code can run.
-        It was supposed to write info to file if coarse channel option was entered in the commandline
-        arguments, but is no longer in use. According to previous documentation, it is supposed to:
-        Write header information per given obs.
-
-        Args:
-          header: dict
-          total_n_candi: int
-
-        Returns:
-          
-
-        """
-
-        return None
-        
-        ########################################## Unreachable code follows
-        self.write('# Coarse Channel Number: %i \n' % header['coarse_chan'])
-        info_str = '# Number of hits: %i \n'%total_n_candi
-        self.write(info_str)
 
     def report_header(self, header):
         """Write header information per given obs.

@@ -12,7 +12,11 @@ import pytest
 from blimpy import Waterfall
 from turbo_seti import FindDoppler, seti_event
 from turbo_seti import find_event, plot_event
-from turbo_seti.find_doppler import data_handler
+
+import pyximport
+pyximport.install(setup_args={"include_dirs":np.get_include()}, reload_support=True)
+
+from turbo_seti.find_doppler import data_handler, helper_functions, taylor_tree
 
 HERE = os.path.split(os.path.abspath(__file__))[0]
 VOYAH5 = 'Voyager1.single_coarse.fine_res.h5'
@@ -232,6 +236,19 @@ def test_dask():
     FD.search(n_partitions=2, progress_bar='n')
     print("===== test_dask ===== End")
 
+
+def test_bitrev():
+    before = 32769
+    nbits = 7
+    out_c = taylor_tree.bitrev(before, nbits)
+    out_p = helper_functions.bitrev(before, nbits)
+    assert out_c == out_p
+    before = 32770
+    out_c = taylor_tree.bitrev(before, nbits)
+    out_p = helper_functions.bitrev(before, nbits)
+    assert out_c == out_p
+
+
 if __name__ == "__main__":
 
     test_turboSETI_entry_point()
@@ -240,3 +257,5 @@ if __name__ == "__main__":
     #test_plotting() # see issue #52
     test_find_doppler_voyager_filterbank()
     test_data_handler()
+    test_dask()
+    test_bitrev()

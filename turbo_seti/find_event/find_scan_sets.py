@@ -8,7 +8,6 @@ This module is very BL-GBT oriented. Will transfer to different repo.
 
 import pandas as pd
 from argparse import ArgumentParser
-import matplotlib.pylab as plt
 import socket
 import numpy as np
 
@@ -315,12 +314,11 @@ def main():
 
     if args.band not in ok_bands:
         raise ValueError('Please probide one of the available bands:' + ok_bands)
-    else:
-        band = args.band
+    band = args.band
 
     filename = args.filename
 
-    find_scan_sets(filename,band,ok_band=ok_bands)
+    find_scan_sets(filename,band,ok_bands=ok_bands)
 
 if __name__ == "__main__":
     main()

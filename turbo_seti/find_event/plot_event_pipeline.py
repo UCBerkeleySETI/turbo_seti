@@ -67,7 +67,12 @@ def plot_event_pipeline(event_csv_string,
                         offset=0):
 
     #reading in the .csv containing the events
-    candidate_event_dataframe = pandas.read_csv(event_csv_string, comment='#')
+    try:
+        candidate_event_dataframe = pandas.read_csv(event_csv_string, comment='#')
+        print("plot_event_pipeline: Opened file {}".format(event_csv_string))
+    except:
+        print("*** plot_event_pipeline: Oops, cannot access file {}".format(event_csv_string))
+        return
 
     with open(event_csv_string, "r") as file:
         distances = file.readline()
@@ -87,6 +92,7 @@ def plot_event_pipeline(event_csv_string,
     for fil in fil_file_list:
         source_name = fil.split('_')[5]
         source_name_list.append(source_name)
+        print("plot_event_pipeline: source_name={}".format(source_name))
 
     #get rid of bytestring "B'"s if they're there (early versions of
     #seti_event.py added "B'"s to all of the source names)

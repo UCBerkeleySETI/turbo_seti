@@ -247,6 +247,7 @@ def find_event_pipeline(dat_file_list_str,
             filestring = csv_name
         if not isinstance(find_event_output_dataframe, list):
             find_event_output_dataframe.to_csv(filestring)
+            print("find_event_pipeline: Saved CSV file to {}".format(filestring))
         else:
             print("Sorry, no events to save :(")
 

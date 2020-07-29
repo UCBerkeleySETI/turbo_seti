@@ -119,6 +119,7 @@ def find_event_pipeline(dat_file_list_str,
                         number_in_cadence=6, 
                         on_source_complex_cadence=False,
                         saving=True, 
+                        csv_name=None,
                         user_validation=False): 
     """
 
@@ -199,48 +200,51 @@ def find_event_pipeline(dat_file_list_str,
             if reply[0] == 'n':
                 return None
         
-        #Looping over number_in_cadence chunks.
-        candidate_list = []
-        for i in range((int(n_files/number_in_cadence))):
-            file_sublist = dat_file_list[number_in_cadence*i:((i*number_in_cadence)+(number_in_cadence))]
-            if not complex_cadence:
-                if on_off_first == 'ON':
-                    name = file_sublist[0].split('_')[5]  
-                    id_num = (file_sublist[0].split('_')[6]).split('.')[0]
-                if on_off_first == 'OFF':
-                    name = file_sublist[1].split('_')[5] 
-                    id_num = (file_sublist[1].split('_')[6]).split('.')[0]
-            else:
-                name = file_sublist[complex_cadence.index(1)].split('_')[5]  
-                id_num = file_sublist[complex_cadence.index(1)].split('_')[6].split('.')[0]
-                
-            print()
-            print("***       " + name + "       ***")
-            print()
-            cand = find_event.find_events(file_sublist, 
-                                          SNR_cut=SNR_cut, 
-                                          check_zero_drift=check_zero_drift, 
-                                          filter_threshold=filter_threshold, 
-                                          on_off_first=on_off_first,
-                                          complex_cadence=complex_cadence)
-            cand_len = 1
-            if cand is None:
-                cand_len = 0
-            if cand_len != 0:
-                candidate_list.append(cand)
-        if len(candidate_list) > 0:
-            find_event_output_dataframe = pd.concat(candidate_list)
+    #Looping over number_in_cadence chunks.
+    candidate_list = []
+    for i in range((int(n_files/number_in_cadence))):
+        file_sublist = dat_file_list[number_in_cadence*i:((i*number_in_cadence)+(number_in_cadence))]
+        if not complex_cadence:
+            if on_off_first == 'ON':
+                name = file_sublist[0].split('_')[5]  
+                id_num = (file_sublist[0].split('_')[6]).split('.')[0]
+            if on_off_first == 'OFF':
+                name = file_sublist[1].split('_')[5] 
+                id_num = (file_sublist[1].split('_')[6]).split('.')[0]
         else:
-            print("Sorry, no potential candidates with your given parameters :(")
-            find_event_output_dataframe = []
-    
-        print("************  ENDING FIND_EVENT PIPELINE   **************")
+            name = file_sublist[complex_cadence.index(1)].split('_')[5]  
+            id_num = file_sublist[complex_cadence.index(1)].split('_')[6].split('.')[0]
+            
+        print()
+        print("***       " + name + "       ***")
+        print()
+        cand = find_event.find_events(file_sublist, 
+                                      SNR_cut=SNR_cut, 
+                                      check_zero_drift=check_zero_drift, 
+                                      filter_threshold=filter_threshold, 
+                                      on_off_first=on_off_first,
+                                      complex_cadence=complex_cadence)
+        cand_len = 1
+        if cand is None:
+            cand_len = 0
+        if cand_len != 0:
+            candidate_list.append(cand)
+    if len(candidate_list) > 0:
+        find_event_output_dataframe = pd.concat(candidate_list)
+    else:
+        print("Sorry, no potential candidates with your given parameters :(")
+        find_event_output_dataframe = []
+
+    print("*** find_event_output_dataframe is complete ***")
     
     if saving:
-        if check_zero_drift:
-            filestring = name + '_' + id_num + '_f' + str(filter_threshold) + '_snr' + str(SNR_cut) + '_zero' + '.csv'
+        if csv_name is None:
+            if check_zero_drift:
+                filestring = name + '_' + id_num + '_f' + str(filter_threshold) + '_snr' + str(SNR_cut) + '_zero' + '.csv'
+            else:
+                filestring = name + '_' + id_num + '_f' + str(filter_threshold) + '_snr' + str(SNR_cut) + '.csv'            
         else:
-            filestring = name + '_' + id_num + '_f' + str(filter_threshold) + '_snr' + str(SNR_cut) + '.csv'            
+            filestring = csv_name
         if not isinstance(find_event_output_dataframe, list):
             find_event_output_dataframe.to_csv(filestring)
         else:

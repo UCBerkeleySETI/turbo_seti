@@ -159,8 +159,8 @@ def plot_waterfall(fil,
     plot_data = rebin(plot_data, dec_fac_x, dec_fac_y)
 
     #fix case where frequencies are reversed by fil.grab_data() # Shane Smith PR #82
-	if plot_f[-1] < plot_f[0]:
-		plot_f = plot_f[::-1]
+    if plot_f[-1] < plot_f[0]:
+        plot_f = plot_f[::-1]
 
     #determine extent of the plotting panel for imshow
     extent=(plot_f[0], plot_f[-1], (fil.timestamps[-1]-fil.timestamps[0])*24.*60.*60, 0.0)
@@ -207,7 +207,6 @@ def make_waterfall_plots(fil_file_list,
                          filter_level,
                          source_name_list,
                          offset=0,
-                         plot_snr_list=False,
                          **kwargs):
 
     ''' Makes waterfall plots of an event for an entire on-off cadence
@@ -256,11 +255,6 @@ def make_waterfall_plots(fil_file_list,
         subplot = plt.subplot(n_plots,1,i+1)
         subplots.append(subplot)
 
-        if plot_snr_list != False:
-            plot_snr = plot_snr_list[i]
-        else:
-            plot_snr = False
-
         #read in data
         fil = bl.Waterfall(filename, f_start=f_start, f_stop=f_stop)
         #make plot with plot_waterfall
@@ -269,8 +263,6 @@ def make_waterfall_plots(fil_file_list,
                                    source_name,
                                    f_start=f_start,
                                    f_stop=f_stop,
-                                   drift_rate=drift_rate,
-                                   plot_snr=plot_snr,
                                    **kwargs)
 
         #calculate parameters for estimated drift line

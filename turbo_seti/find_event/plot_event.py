@@ -137,8 +137,6 @@ def plot_waterfall(fil,
         source_name (str): name of the target
         f_start (float): start frequency, in MHz
         f_stop (float): stop frequency, in MHz
-        drift_rate (float) = drift rate in Hz/s
-        logged (bool): Plot in linear (False) or dB units (True),
         kwargs: keyword args to be passed to matplotlib imshow()
     """
 
@@ -361,5 +359,4 @@ def plot_candidate_events(candidate_event_dataframe,
                              filter_level,
                              source_name_list,
                              offset=offset,
-                             plot_snr_list=plot_snr_list,
                              **kwargs)

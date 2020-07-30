@@ -309,8 +309,11 @@ def make_waterfall_plots(fil_file_list,
     plt.subplots_adjust(hspace=0,wspace=0)
 
     #save the figures
+    #Somehow, some way, "testing" is inserted between dirpath and the actual file name.  How?????
     plt.savefig(dirpath + filter_level + '_' + on_source_name + '_dr_' + "{:0.2f}".format(drift_rate) + '_freq_' "{:0.6f}".format(f_start) + ".png",
                 bbox_inches='tight')
+
+    plt.clf()
 
     return subplots
 
@@ -367,3 +370,4 @@ def plot_candidate_events(candidate_event_dataframe,
                              source_name_list,
                              offset=offset,
                              **kwargs)
+ 

@@ -171,6 +171,8 @@ def test_plotting(arg_bar=False):
                         user_validation=False)
 
     main_time_stop = time()
+    rmtree(TESTDIR, ignore_errors=True)
+    
     print('test_plotting: End, et = {:.1f} seconds'
           .format(main_time_stop - main_time_start))
 

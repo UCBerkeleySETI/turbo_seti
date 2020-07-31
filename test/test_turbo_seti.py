@@ -191,7 +191,7 @@ def test_turboSETI_entry_point():
     args = [filename_fil, ]
     seti_event.main(args)
 
-def _NOT_YET_test_plotting(): # see issue #52
+def test_make_waterfall_plots():
     """ Some basic plotting tests
 
     TODO: Improve these tests (and the functions for that matter!
@@ -206,8 +206,8 @@ def _NOT_YET_test_plotting(): # see issue #52
     fmid   =  8419.274785
     f_start = 8419.274374 - 600e-6
     f_stop  = 8419.274374 + 600e-6
-    source_name_list = ['test'] * 6
-    filter_level = 1
+    source_name_list = ['test_make_waterfall_plots'] * 6
+    filter_level = "1"
     plot_event.make_waterfall_plots(filenames_list, 
                                     target, 
                                     f_start, 
@@ -251,10 +251,10 @@ def test_bitrev():
 
 if __name__ == "__main__":
 
+    test_make_waterfall_plots()
     test_turboSETI_entry_point()
     test_find_doppler_voyager()
     test_find_doppler_voyager_flipped()
-    #test_plotting() # see issue #52
     test_find_doppler_voyager_filterbank()
     test_data_handler()
     test_dask()

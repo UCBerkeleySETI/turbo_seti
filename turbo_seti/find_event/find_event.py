@@ -361,7 +361,7 @@ def find_events(dat_file_list,  SNR_cut=10, check_zero_drift=False, filter_thres
     
             #Grouping all of the on hits into one table
             on_table_list.append(on_table_i)
-            off_count+=1
+            on_count+=1
                     
     #If there are no hits on any on target, end the program
     if not len(on_table_list):

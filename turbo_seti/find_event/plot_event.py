@@ -84,6 +84,8 @@ author:
 Last updated: 07/22/2020
 
 '''
+from os.path import dirname
+
 import matplotlib
 matplotlib.use('agg')
 
@@ -227,8 +229,12 @@ def make_waterfall_plots(fil_file_list,
     #set up the sub-plots
     n_plots = len(fil_file_list)
     fig = plt.subplots(n_plots, sharex=True, sharey=True,figsize=(10, 2*n_plots))
+    
+    #get directory path for storing PNG files
+    dirpath = dirname(fil_file_list[0]) + '/'
 
     #read in data for the first panel
+    print('make_waterfall_plots first_file in list: {}'.format(fil_file_list[0]))
     fil1 = bl.Waterfall(fil_file_list[0], f_start=f_start, f_stop=f_stop)
     t0 = fil1.header['tstart']
     dummy, plot_data1 = fil1.grab_data()
@@ -249,6 +255,7 @@ def make_waterfall_plots(fil_file_list,
 
     #Fill in each subplot for the full plot
     for i,filename in enumerate(fil_file_list):
+        print('make_waterfall_plots file {} in list: {}'.format(i, filename))
         #identify panel
         subplot = plt.subplot(n_plots,1,i+1)
         subplots.append(subplot)
@@ -302,8 +309,11 @@ def make_waterfall_plots(fil_file_list,
     plt.subplots_adjust(hspace=0,wspace=0)
 
     #save the figures
-    plt.savefig(filter_level + '_' + on_source_name + '_dr_' + "{:0.2f}".format(drift_rate) + '_freq_' "{:0.6f}".format(f_start) + ".png",
-               bbox_inches='tight')
+    #Somehow, some way, "testing" is inserted between dirpath and the actual file name.  How?????
+    plt.savefig(dirpath + filter_level + '_' + on_source_name + '_dr_' + "{:0.2f}".format(drift_rate) + '_freq_' "{:0.6f}".format(f_start) + ".png",
+                bbox_inches='tight')
+
+    plt.clf()
 
     return subplots
 
@@ -360,3 +370,4 @@ def plot_candidate_events(candidate_event_dataframe,
                              source_name_list,
                              offset=offset,
                              **kwargs)
+ 

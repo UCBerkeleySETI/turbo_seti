@@ -1,16 +1,19 @@
 '''
 Package turbo_seti
-test_plotting.py - Expand coverage for individual files in the
-                   turbo_seti/find_event folder, especially plotting.
+test_pipelines.py - Expand coverage for individual files in the
+                    turbo_seti/find_event folder, especially pipelines.
 
 Date         Who            Description
 ----------   -------------  --------------------------------------------
-2020-07-30   R. Elkins      Initial version
+2020-07-30   R. Elkins      Initial version as "test_plotting.py"
+2020-08-01   R. Elkins      Renamed to "test_pipelines.py"
+2020-08-01   R. Elkins      Expand filter threshold coverage to 1, 2, & 3
 '''
 
 from time import time
 from shutil import rmtree
-from os import mkdir
+from pathlib import Path
+from os import mkdir, remove
 from tempfile import gettempdir
 import sys
 from urllib.error import HTTPError
@@ -21,24 +24,20 @@ from turbo_seti.find_event.find_event_pipeline import find_event_pipeline
 from turbo_seti.find_event.plot_event_pipeline import plot_event_pipeline
 
 
-FLAG_INIT = True
-FLAG_WGETTER = True
-FLAG_MAKE_ALL_DAT_FILES = True
-FLAG_PROGRESS_BAR = wget.bar_adaptive   # for a progress bar
-FLAG_PROGRESS_BAR = False               # for a quiet run
-
-
-URL_DIR = 'http://blpd0.ssl.berkeley.edu/parkes_testing/'
-FILE_LIST = ['diced_Parkes_57941_12846_HIP33499_S_fine.h5',
-             'diced_Parkes_57941_13194_HIP33499_R_fine.h5',
-             'diced_Parkes_57941_13542_HIP33499_S_fine.h5',
-             'diced_Parkes_57941_13884_HIP33499_R_fine.h5',
-             'diced_Parkes_57941_14233_HIP33499_S_fine.h5',
-             'diced_Parkes_57941_14584_HIP33499_R_fine.h5']
 TESTDIR = gettempdir() + '/turbo_seti_testing/'
+PNGDIR = TESTDIR + '/testing/'
 PATH_DAT_LIST_FILE = TESTDIR + 'dat_files.lst'
 PATH_H5_LIST_FILE = TESTDIR + 'h5_files.lst'
 PATH_CSVF = TESTDIR + 'found_event_table.csv'
+
+
+URL_DIR = 'http://blpd0.ssl.berkeley.edu/parkes_testing/'
+H5_FILE_LIST = ['diced_Parkes_57941_12846_HIP33499_S_fine.h5',
+                'diced_Parkes_57941_13194_HIP33499_R_fine.h5',
+                'diced_Parkes_57941_13542_HIP33499_S_fine.h5',
+                'diced_Parkes_57941_13884_HIP33499_R_fine.h5',
+                'diced_Parkes_57941_14233_HIP33499_S_fine.h5',
+                'diced_Parkes_57941_14584_HIP33499_R_fine.h5']
 
 
 def oops(arg_text):
@@ -51,33 +50,29 @@ def oops(arg_text):
 
 def initialize():
     '''
-    Initialize:
-    * Recreate working directory, TESTDIR.
-    * Download the H5 file to it.
+    Recreate working directory, TESTDIR.
     '''
     rmtree(TESTDIR, ignore_errors=True)
     mkdir(TESTDIR)
-    # Somehow, some way, "testing" is inserted between dirpath
-    # and the actual file name.  How?????
-    mkdir(TESTDIR + '/testing')
-    print('test_plotting: initialized')
+    mkdir(PNGDIR)
+    print('test_plotting: Initialized')
 
-def wgetter(arg_h5_name, arg_bar=False):
+
+def wgetter(arg_h5_name):
     '''
     wget an HDF5 file from the Internet repository.
     arg_h5_name:  HDF5 file name
     '''
-    print('test_plotting: wget begin ({}) ...'.format(arg_h5_name))
     url_h5 = URL_DIR + arg_h5_name
     path_h5 = TESTDIR + arg_h5_name
     print('test_plotting: Begin wget {} -> {} .....'.format(url_h5, path_h5))
     time_start = time()
     try:
-        wget.download(url_h5, path_h5, bar=arg_bar)
+        wget.download(url_h5, path_h5, bar=False)
     except HTTPError as ex:
         oops('test_plotting: wget {}, failed: {}'.format(url_h5, repr(ex)))
     time_stop = time()
-    print('test_plotting: wget ({}) complete, et = {:.1f} seconds'
+    print('test_plotting: End wget ({}), et = {:.1f} seconds'
           .format(arg_h5_name, time_stop - time_start))
 
 
@@ -119,48 +114,65 @@ def make_all_dat_files():
     * Add its name to the list of DAT files.
     '''
     with open(PATH_DAT_LIST_FILE, 'w') as file_handle:
-        for filename_h5 in FILE_LIST:
+        for filename_h5 in H5_FILE_LIST:
             make_one_dat_file(filename_h5)
             filename_dat = filename_h5.replace('.h5', '.dat')
             file_handle.write('{}\n'.format(TESTDIR + filename_dat))
 
 
-def test_plotting(arg_bar=False):
+def find_plot_pipelines(need_init=True, filter_threshold=2):
     '''
-    Main procedure
+    Exercise find_event_pipeline() and plot_event_pipeline()
     '''
 
     main_time_start = time()
 
     # If configured to do so, initialize temp directory.
-    if FLAG_INIT:
+    if need_init:
         initialize()
 
     # If configured to do so, fetch all of the HDF5 files from the Internet.
-    if FLAG_WGETTER:
-        for filename_h5 in FILE_LIST:
-            wgetter(filename_h5, arg_bar)
+    if need_init:
+        for filename_h5 in H5_FILE_LIST:
+            wgetter(filename_h5)
 
     # If configured to do so, make all of the DAT files.
-    if FLAG_MAKE_ALL_DAT_FILES:
+    if need_init:
         make_all_dat_files()
 
     # Create the CSV file used by plot_event_pipeline.
+    print('test_plotting: Filter threshold = ', filter_threshold)
+    number_in_cadence = len(H5_FILE_LIST)
+    print('test_plotting: Cadence length = ', number_in_cadence)
     print('test_plotting: find_event_pipeline({}) ...'
           .format(PATH_DAT_LIST_FILE))
+
+    # If CSV exists from a previous execution, remove it.
+    try:
+        remove(PATH_CSVF)
+    except:
+        pass
+    
     df_event = find_event_pipeline(PATH_DAT_LIST_FILE,
-                                   filter_threshold=2,
-                                   number_in_cadence=6,
+                                   filter_threshold=filter_threshold,
+                                   number_in_cadence=number_in_cadence,
                                    user_validation=False,
                                    saving=True,
                                    csv_name=PATH_CSVF)
-    print('test_plotting: make_all_dat_files() df_event:\n{}'.format(df_event))
+
+    # CSV created?
+    if not Path(PATH_CSVF).exists():
+        print('*** test_plotting: No CSV of events created')
+        return
+
+    # An event CSV was created.
+    print('test_plotting: find_event_pipeline() returned dataframe:\n{}'.format(df_event))
 
     # Make a list of the HDF5 files.
     print('test_plotting: making a list of HDF5 files in ({}) ...'
           .format(PATH_DAT_LIST_FILE))
     with open(PATH_H5_LIST_FILE, 'w') as file_handle:
-        for filename_h5 in FILE_LIST:
+        for filename_h5 in H5_FILE_LIST:
             file_handle.write('{}\n'.format(TESTDIR + filename_h5))
 
     # Do the plots for all of the HDF5/DAT file pairs.
@@ -171,11 +183,26 @@ def test_plotting(arg_bar=False):
                         user_validation=False)
 
     main_time_stop = time()
-    rmtree(TESTDIR, ignore_errors=True)
     
     print('test_plotting: End, et = {:.1f} seconds'
           .format(main_time_stop - main_time_start))
 
 
+def test_pipelines(need_init=True, cleanup=True):
+    '''
+    Main testing procedure:
+    Test each filter threshold in find_event/find_events().
+    By default (unattended testing):
+    * Initialization is done only once.
+    * Cleanup is performed at end.
+    '''
+    find_plot_pipelines(need_init=need_init, filter_threshold=1)
+    find_plot_pipelines(need_init=False, filter_threshold=2)
+    find_plot_pipelines(need_init=False, filter_threshold=3)
+    if cleanup:
+        rmtree(TESTDIR, ignore_errors=True)
+
+
 if __name__ == '__main__':
-    test_plotting(FLAG_PROGRESS_BAR)
+    # When run manually, no initialization nor cleanup is performed.
+    test_pipelines(need_init=False, cleanup=False)

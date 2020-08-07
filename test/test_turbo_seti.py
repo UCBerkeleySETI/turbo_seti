@@ -234,7 +234,8 @@ def test_data_handler():
     with pytest.raises(IOError):
         data_handler.DATAHandle(filename=os.path.abspath(__file__))
     filename_fil = os.path.join(HERE, VOYAFIL)
-    dh = data_handler.DATAHandle(filename=filename_fil, 
+    dh = data_handler.DATAHandle(filename=filename_fil,
+                                 out_dir=os.path.join(tempfile.mkdtemp()),
                                  n_coarse_chan=42, 
                                  coarse_chans=None)
     assert dh.status
@@ -305,5 +306,6 @@ if __name__ == "__main__":
     test_find_doppler_voyager_flipped()
     test_find_doppler_voyager_filterbank()
     test_data_handler()
+    test_file_writers()
     test_dask()
     test_bitrev()

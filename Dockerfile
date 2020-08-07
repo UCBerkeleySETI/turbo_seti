@@ -30,6 +30,7 @@ RUN python3 -m pip install numpy
 RUN python3 -m pip install pandas cython astropy matplotlib
 RUN python3 -m pip install --only-binary=scipy scipy
 RUN python3 -m pip install pytest
+RUN python3 -m pip install git+https://github.com/ucberkeleyseti/blimpy
 
 ######
 # HDF5 fixup

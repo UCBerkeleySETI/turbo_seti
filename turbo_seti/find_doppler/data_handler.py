@@ -45,12 +45,18 @@ class DATAHandle:
 
             if not h5py.is_hdf5(filename):
                 if not sigproc.is_filterbank(filename):
-                    raise IOError('Not a filterbank file: {}'.format(filename))
+                    self.status = False
+                    errmsg = 'Not a filterbank file: {}'.format(filename)
+                    logger.error(errmsg)
+                    raise IOError(errmsg)
                 logger.info("Filterbank file detected. Attempting to create .h5 file in current directory...")
                 try:
                     self.__make_h5_file()
                 except:
-                    raise IOError('Unable to create .h5 file from: {}.format(filename)')
+                    self.status = False
+                    errmsg = 'Unable to create .h5 file from: {}'.format(filename)
+                    logger.error(errmsg)
+                    raise IOError(errmsg)
 
             self.filestat = os.stat(filename)
             self.filesize = self.filestat.st_size/(1024.0**2)

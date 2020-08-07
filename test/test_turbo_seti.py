@@ -4,28 +4,28 @@ TODO: more description of actual coverage versus ideal coverage.
 """
 import os
 import time
+import tempfile
 
 import pylab as plt
 import numpy as np
 import pytest
 
 from blimpy import Waterfall
-from turbo_seti import FindDoppler, seti_event
-from turbo_seti import find_event, plot_event
-
+from turbo_seti import FindDoppler, seti_event, find_event, plot_event
+from turbo_seti.find_doppler.find_doppler import search_coarse_channel
 import pyximport
 pyximport.install(setup_args={"include_dirs":np.get_include()}, reload_support=True)
 
-from turbo_seti.find_doppler import data_handler, helper_functions, taylor_tree
+from turbo_seti.find_doppler import data_handler, helper_functions, taylor_tree, file_writers
 
 HERE = os.path.split(os.path.abspath(__file__))[0]
 VOYAH5 = 'Voyager1.single_coarse.fine_res.h5'
 VOYAH5FLIPPED = 'Voyager1.single_coarse.fine_res.flipped.h5'
+VOYAFIL = 'Voyager1.single_coarse.fine_res.fil'
 
 
 def find_doppler(filename_fil):
     """ Run turboseti doppler search on filename with default params """
-    t0 = time.time()
     print("\n===== find_doppler =====")
     print("Searching %s" % filename_fil)
     filename_dat = filename_fil.replace('.h5', '.dat')
@@ -45,9 +45,17 @@ def find_doppler(filename_fil):
 
     find_seti_event = FindDoppler(filename_fil, max_drift=max_drift, snr=snr, out_dir=HERE,
                                   coarse_chans=coarse_chans, obs_info=obs_info, n_coarse_chan=n_coarse_chan)
+    t0 = time.time()
     find_seti_event.search()
     t_taken = time.time() - t0
-    print("Time taken: %2.2fs" % t_taken)
+    print("Time taken for find_seti_event.search() [without flagging]: %2.2fs" % t_taken)
+
+    find_seti_event.flagging = True
+    t0 = time.time()
+    for dummy, data_dict in enumerate(find_seti_event.data_handle.data_list):
+        search_coarse_channel(data_dict, find_seti_event, filewriter=None, logwriter=None)
+    t_taken = time.time() - t0
+    print("Time taken for search_coarse_channe() [with flagging]: %2.2fs" % t_taken)
 
 
 def plot_hit(fil_filename, dat_filename, hit_id, bw=None, offset=0):
@@ -221,13 +229,53 @@ def test_make_waterfall_plots():
 def test_data_handler():
     """ Basic data handler test """
     print("\n===== test_data_handler =====")
-    with pytest.raises(OSError): # not AttributeError
+    with pytest.raises(IOError):
         data_handler.DATAHandle(filename='made_up_not_existing_file.h5')
+    with pytest.raises(IOError):
+        data_handler.DATAHandle(filename=os.path.abspath(__file__))
+    filename_fil = os.path.join(HERE, VOYAFIL)
+    dh = data_handler.DATAHandle(filename=filename_fil, 
+                                 n_coarse_chan=42, 
+                                 coarse_chans=None)
+    assert dh.status
+    filename_h5 = os.path.join(HERE, VOYAH5)
+    dh = data_handler.DATAHandle(filename=filename_h5, 
+                                 n_coarse_chan=42, 
+                                 coarse_chans=(8300, 8400))
+    assert dh.status
+
+
+def test_file_writers():
+    """ Basic file writers test """
+    print("\n===== test_file_writers =====")
+    temporary = os.path.join(tempfile.mkdtemp(), 'rubbish')
+    print("Temporary file path:", temporary)
+    gw = file_writers.GeneralWriter(temporary)
+    assert not gw.is_open()
+    gw.close()
+    assert not gw.is_open()
+    gw.open(mode='w')
+    assert not gw.is_open()
+    gw.open()
+    assert not gw.is_open()
+    gw.write("Line 1\n", mode='w')
+    assert not gw.writable()
+    gw.write("Line 2\n", mode='rubbish')
+    assert not gw.is_open()
+    gw.write("Line 3\n", mode='a')
+    assert not gw.writable()
+    gw.close()
+    assert not gw.writable()
+    assert not gw.is_open()
+    with open(temporary, 'r') as fh:
+        lines = [line.rstrip() for line in fh]
+    print("Temporary file line count:", len(lines))
+    assert len(lines) == 3
 
 def test_dask():
     """ Test dask capability on Voyager data """
-    filename_fil = os.path.join(HERE, VOYAH5)
-    FD = FindDoppler(datafile=filename_fil, max_drift=2, out_dir=HERE)
+    filename_h5 = os.path.join(HERE, VOYAH5)
+    FD = FindDoppler(datafile=filename_h5, max_drift=2, out_dir=HERE)
     print("===== test_dask ===== n_partitions=None")
     FD.search()
     print("===== test_dask ===== n_partitions=2")

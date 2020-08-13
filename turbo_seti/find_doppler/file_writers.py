@@ -1,14 +1,27 @@
 #!/usr/bin/env python
 
 import numpy as np
-from .helper_functions import chan_freq
+from turbo_seti.find_doppler.helper_functions import chan_freq
 
 
 class GeneralWriter:
-    """Wrapper class for file operations."""
-    def __init__(self, filename='', mode='a'):
+    """
+    Generic wrapper class for file operations.
+    1) DAT files
+    2) LOG files
+    """
+
+
+    def os_error(self, function, ose):
+        msg = "{} failed [{}], errno={}, strerror:\n{}".format(function, self.filename, ose.errno, ose.strerror)
+        raise OSError(msg)
+
+
+    def __init__(self, filename=None, mode='a'):
         """
-        Initializes GeneralWriter object. Opens given file with given mode, sets new object's filehandle to the file
+        Initializes GeneralWriter object. 
+        Opens given file with given mode.
+        Sets new object's filehandle to the file
         object, sets the new object's filename to the file's name, then closes the file.
 
         Args:
@@ -16,54 +29,57 @@ class GeneralWriter:
             mode:        string,     mode which we want to use to open file, same modes as the built-in python
                                       built-in open function: r - read, a - append, w -write, x - create
         """
-        with open(filename, mode) as myfile:
-            self.filehandle = myfile
-            self.filename = filename
+        assert filename is not None
+
+        self.filename = filename
+        self.filehandle = -1
+        self.closed = True
+        try:
+            self.filehandle = open(filename, mode)
+            self.closed = False
+        except OSError as ose:
+            self.os_error('GeneralWriter __init__ open', ose) 
+
+
+    def __del__(self):
+        """ Close the file wwhen this object is being disposed of """
+        self.close()
+
 
     def close(self):
-        """Closes file object if it is open.
         """
-        if self.filehandle.closed:
-            pass
-        else:
-            self.filehandle.close()
-
-    def open(self, mode='a'):
-        """Opens the file with the inputted mode, then closes it. Does not actually leave the file opened, only used for
-        changing mode.
-
-        Args:
-          mode: string,     mode which we want to assign to this file, same modes as the built-in python
-        built-in open function: r - read, a - append, w -write, x - create (Default value = 'a')
+        Close an open file if it is open.
         """
-        if self.filehandle.closed:
-            with open(self.filename, mode) as myfile:
-                self.filehandle = myfile
-        elif self.filehandle.mode == mode:
+        if self.closed:
             return
-        else:
-            self.close()
-            with open(self.filename, mode) as myfile:
-                self.filehandle = myfile
+        try:
+            self.filehandle.close()
+            self.closed = True
+        except OSError as ose:
+            self.os_error('GeneralWriter close', ose) 
+
 
     def is_open(self):
-        """Checks if file is open.
+        """
+        Checks to see if the file is still open.
+        
         Returns:  boolean,    true if file is open, false otherwise
         """
-        return not self.filehandle.closed
+        return not self.closed
+
 
     def writable(self):
-        """Checks if file is open, and if it is, checks that mode is either write or append.
-        :return:    boolean,    true if file is open and writeable, false otherwise
-
-        Args:
-
-        Returns:
-
         """
-        return self.is_open() and (('w' in self.filehandle.mode) or ('a' in self.filehandle.mode))
+        Checks if file is open, and if it is, checks that mode is either write or append.
 
-    def write(self, info_str, mode='a'):
+        Args: None
+
+        Returns: True if the file is currently open for writing
+        """
+        return self.is_open() and (self.filehandle.mode in ['w', 'a'])
+
+
+    def write(self, info_str):
         """Sets file mode to a writeable mode and opens it if it is not already open in a writeable mode, writes info_str
         to it, and then closes it. If the file was not previously open when this is called, the file is closed after
         writing in order to maintain the state the filewriter was in before.
@@ -75,18 +91,17 @@ class GeneralWriter:
         Returns:
 
         """
-        if mode not in ('a', 'w'):
-            mode = 'a'
-        if not self.writable():
-            with open(self.filename, mode) as myfile:
-                myfile.write(info_str)
-                self.filehandle = myfile
-        else:
+        assert self.writable()
+        try:
             self.filehandle.write(info_str)
+        except OSError as ose:
+            self.os_error('GeneralWriter write', ose) 
 
 
 class FileWriter(GeneralWriter):
     """Used to write information to turboSETI output files."""
+
+
     def __init__(self, filename, header):
         """ Initializes FileWriter object and writes its header.
 
@@ -100,6 +115,7 @@ class FileWriter(GeneralWriter):
         self.report_header(header)
 
         self.tophit_count = 0
+
 
     def report_header(self, header):
         """Write header information per given obs.
@@ -132,6 +148,7 @@ class FileWriter(GeneralWriter):
         info_str +='\n'
         self.write(info_str)
         self.write('# --------------------------\n')
+
 
     def report_tophit(self, max_val, ind, ind_tuple, tdwidth, fftlen, header, total_n_candi, obs_info=None):
         """This function looks into the top hit in a region, basically finds the local maximum and saves that.
@@ -187,8 +204,11 @@ class FileWriter(GeneralWriter):
 
         return self
 
+
 class LogWriter(GeneralWriter):
     """Used to write data to log."""
+
+
     def info(self, info_str):
         """Writes info_str to file.
 

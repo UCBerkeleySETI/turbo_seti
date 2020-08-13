@@ -139,9 +139,8 @@ class FindDoppler:
                     b.map(search_coarse_channel, self).compute()
             else:
                 b.map(search_coarse_channel, self).compute()
-                merge_dats_logs(self.out_dir, 'dat', cleanup='y')
-                merge_dats_logs(self.out_dir, 'log', cleanup='y')
-
+            merge_dats_logs(self.out_dir, 'dat', cleanup='y')
+            merge_dats_logs(self.out_dir, 'log', cleanup='y')
 
 
 def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, filewriter=None):

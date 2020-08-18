@@ -262,8 +262,15 @@ def test_dask():
     FD.search(n_partitions=2)
     print("===== test_dask ===== n_partitions=2, progress_bar='n'")
     FD.search(n_partitions=2, progress_bar='n')
+    print("===== test_dask ===== merge resulted in a DAT for both flipped and unflipped H5")
+    unflipped_dat = filename_h5.replace('.h5', '.dat')
+    filename_h5 = os.path.join(HERE, VOYAH5FLIPPED)
+    FD = FindDoppler(datafile=filename_h5, max_drift=2, out_dir=HERE)
+    FD.search(n_partitions=2)
+    flipped_dat = filename_h5.replace('.h5', '.dat')
+    assert os.path.exists(unflipped_dat)
+    assert os.path.exists(flipped_dat)
     print("===== test_dask ===== End")
-
 
 def test_bitrev():
     before = 32769

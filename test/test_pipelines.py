@@ -8,6 +8,8 @@ Date         Who            Description
 2020-07-30   R. Elkins      Initial version as "test_pipelines.py"
 2020-08-01   R. Elkins      Renamed to "test_pipelines.py"
 2020-08-01   R. Elkins      Expand filter threshold coverage to 1, 2, & 3
+2020-08-18   R. Elkins      Fix test_pipelines execution to re-clean-up
+                            between find_plot_pipelines() executions.
 '''
 
 from time import time
@@ -157,6 +159,7 @@ def find_plot_pipelines(need_init=True, filter_threshold=2):
     except:
         pass
     
+    # With the list of DAT files, do find_event_pipeline()
     df_event = find_event_pipeline(PATH_DAT_LIST_FILE,
                                    filter_threshold=filter_threshold,
                                    number_in_cadence=number_in_cadence,
@@ -192,6 +195,13 @@ def find_plot_pipelines(need_init=True, filter_threshold=2):
           .format(main_time_stop - main_time_start))
 
 
+def re_clean():
+    for x_file in sorted(listdir(TESTDIR)):
+        x_type = x_file.split('.')[-1]
+        if x_type != 'h5':
+            os.remove(TESTDIR + x_file)
+
+
 def test_pipelines(need_init=True, cleanup=True):
     '''
     Main testing procedure:
@@ -200,17 +210,21 @@ def test_pipelines(need_init=True, cleanup=True):
     * Initialization is done only once.
     * Cleanup is performed at end.
     '''
+    print("\n===== test_pipelines: BEGIN =====")
+    
     find_plot_pipelines(need_init=need_init, filter_threshold=1)
+    re_clean()
     find_plot_pipelines(need_init=False, filter_threshold=2)
+    re_clean()
     find_plot_pipelines(need_init=False, filter_threshold=3)
+    
     if cleanup:
         rmtree(TESTDIR, ignore_errors=True)
+    
+    print("\n===== test_pipelines: END =====")
 
 
 if __name__ == '__main__':
     # When run manually, no initialization nor cleanup is performed.
-    for x_file in sorted(listdir(TESTDIR)):
-        x_type = x_file.split('.')[-1]
-        if x_type != 'h5':
-            os.remove(TESTDIR + x_file)
+    re_clean()
     test_pipelines(need_init=False, cleanup=False)

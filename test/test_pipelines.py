@@ -5,7 +5,7 @@ test_pipelines.py - Expand coverage for individual files in the
 
 Date         Who            Description
 ----------   -------------  --------------------------------------------
-2020-07-30   R. Elkins      Initial version as "test_plotting.py"
+2020-07-30   R. Elkins      Initial version as "test_pipelines.py"
 2020-08-01   R. Elkins      Renamed to "test_pipelines.py"
 2020-08-01   R. Elkins      Expand filter threshold coverage to 1, 2, & 3
 '''
@@ -13,9 +13,10 @@ Date         Who            Description
 from time import time
 from shutil import rmtree
 from pathlib import Path
-from os import mkdir, remove
+from os import mkdir, remove, listdir
 from tempfile import gettempdir
 import sys
+import os
 from urllib.error import HTTPError
 import wget
 
@@ -24,8 +25,7 @@ from turbo_seti.find_event.find_event_pipeline import find_event_pipeline
 from turbo_seti.find_event.plot_event_pipeline import plot_event_pipeline
 
 
-TESTDIR = gettempdir() + '/turbo_seti_testing/'
-PNGDIR = TESTDIR + '/testing/'
+TESTDIR = gettempdir() + '/pipeline_testing/'
 PATH_DAT_LIST_FILE = TESTDIR + 'dat_files.lst'
 PATH_H5_LIST_FILE = TESTDIR + 'h5_files.lst'
 PATH_CSVF = TESTDIR + 'found_event_table.csv'
@@ -54,8 +54,7 @@ def initialize():
     '''
     rmtree(TESTDIR, ignore_errors=True)
     mkdir(TESTDIR)
-    mkdir(PNGDIR)
-    print('test_plotting: Initialized')
+    print('test_pipelines: Initialized')
 
 
 def wgetter(arg_h5_name):
@@ -65,14 +64,14 @@ def wgetter(arg_h5_name):
     '''
     url_h5 = URL_DIR + arg_h5_name
     path_h5 = TESTDIR + arg_h5_name
-    print('test_plotting: Begin wget {} -> {} .....'.format(url_h5, path_h5))
+    print('test_pipelines: Begin wget {} -> {} .....'.format(url_h5, path_h5))
     time_start = time()
     try:
         wget.download(url_h5, path_h5, bar=False)
     except HTTPError as ex:
-        oops('test_plotting: wget {}, failed: {}'.format(url_h5, repr(ex)))
+        oops('test_pipelines: wget {}, failed: {}'.format(url_h5, repr(ex)))
     time_stop = time()
-    print('test_plotting: End wget ({}), et = {:.1f} seconds'
+    print('test_pipelines: End wget ({}), et = {:.1f} seconds'
           .format(arg_h5_name, time_stop - time_start))
 
 
@@ -86,7 +85,7 @@ def make_one_dat_file(arg_h5_name):
     Note that a max drift of 1 assumes a drift rate of +/- 1
     SNR threshold = 25
     '''
-    print('test_plotting: Begin FindDoppler({}) .....'.format(arg_h5_name))
+    print('make_one_dat_file: Begin FindDoppler({}) .....'.format(arg_h5_name))
     h5_path = TESTDIR + arg_h5_name
     time_start = time()
     doppler = FindDoppler(h5_path,
@@ -95,15 +94,21 @@ def make_one_dat_file(arg_h5_name):
                           snr=25,
                           out_dir=TESTDIR)
     time_stop = time()
-    print('test_plotting: End FindDoppler({}), et = {:.1f} seconds'
+    print('make_one_dat_file: End FindDoppler({}), et = {:.1f} seconds'
           .format(arg_h5_name, time_stop - time_start))
 
-    print('test_plotting: Begin Doppler search({}) .....'
+    print('make_one_dat_file: Begin Doppler search({}) .....'
           .format(arg_h5_name))
+    
+    # ----------------------------------------------------------------------------
+    # No more than 1 execution of this program because of dask methodology!
+    # To do multiple dask partitions, would cause initialization & cleanup chaos.
     time_start = time()
-    doppler.search()
+    doppler.search(n_partitions=1)
     time_stop = time()
-    print('test_plotting: End Doppler search({}), et = {:.1f} seconds'
+    # ----------------------------------------------------------------------------
+    
+    print('make_one_dat_file: End Doppler search({}), et = {:.1f} seconds'
           .format(arg_h5_name, time_stop - time_start))
 
 
@@ -136,15 +141,14 @@ def find_plot_pipelines(need_init=True, filter_threshold=2):
         for filename_h5 in H5_FILE_LIST:
             wgetter(filename_h5)
 
-    # If configured to do so, make all of the DAT files.
-    if need_init:
-        make_all_dat_files()
+    # Make all of the DAT files.
+    make_all_dat_files()
 
     # Create the CSV file used by plot_event_pipeline.
-    print('test_plotting: Filter threshold = ', filter_threshold)
+    print('find_plot_pipelines: Filter threshold = ', filter_threshold)
     number_in_cadence = len(H5_FILE_LIST)
-    print('test_plotting: Cadence length = ', number_in_cadence)
-    print('test_plotting: find_event_pipeline({}) ...'
+    print('find_plot_pipelines: Cadence length = ', number_in_cadence)
+    print('find_plot_pipelines: find_event_pipeline({}) ...'
           .format(PATH_DAT_LIST_FILE))
 
     # If CSV exists from a previous execution, remove it.
@@ -162,21 +166,21 @@ def find_plot_pipelines(need_init=True, filter_threshold=2):
 
     # CSV created?
     if not Path(PATH_CSVF).exists():
-        print('*** test_plotting: No CSV of events created')
+        print('*** find_plot_pipelines: No CSV of events created')
         return
 
     # An event CSV was created.
-    print('test_plotting: find_event_pipeline() returned dataframe:\n{}'.format(df_event))
+    print('find_plot_pipelines: find_event_pipeline() returned dataframe:\n{}'.format(df_event))
 
     # Make a list of the HDF5 files.
-    print('test_plotting: making a list of HDF5 files in ({}) ...'
+    print('find_plot_pipelines: making a list of HDF5 files in ({}) ...'
           .format(PATH_DAT_LIST_FILE))
     with open(PATH_H5_LIST_FILE, 'w') as file_handle:
         for filename_h5 in H5_FILE_LIST:
             file_handle.write('{}\n'.format(TESTDIR + filename_h5))
 
     # Do the plots for all of the HDF5/DAT file pairs.
-    print('test_plotting: plot_event_pipeline({}, {}) ...'
+    print('find_plot_pipelines: plot_event_pipeline({}, {}) ...'
           .format(PATH_CSVF, PATH_H5_LIST_FILE))
     plot_event_pipeline(PATH_CSVF,
                         PATH_H5_LIST_FILE,
@@ -184,7 +188,7 @@ def find_plot_pipelines(need_init=True, filter_threshold=2):
 
     main_time_stop = time()
     
-    print('test_plotting: End, et = {:.1f} seconds'
+    print('find_plot_pipelines: End, et = {:.1f} seconds'
           .format(main_time_stop - main_time_start))
 
 
@@ -205,4 +209,8 @@ def test_pipelines(need_init=True, cleanup=True):
 
 if __name__ == '__main__':
     # When run manually, no initialization nor cleanup is performed.
+    for x_file in sorted(listdir(TESTDIR)):
+        x_type = x_file.split('.')[-1]
+        if x_type != 'h5':
+            os.remove(TESTDIR + x_file)
     test_pipelines(need_init=False, cleanup=False)

@@ -252,33 +252,6 @@ def test_data_handler():
     assert dh.status
 
 
-def test_file_writers():
-    """ Basic file writers test """
-    print("\n===== test_file_writers =====")
-    temporary = os.path.join(tempfile.mkdtemp(), 'rubbish')
-    print("Temporary file path:", temporary)
-    gw = file_writers.GeneralWriter(temporary)
-    assert not gw.is_open()
-    gw.close()
-    assert not gw.is_open()
-    gw.open(mode='w')
-    assert not gw.is_open()
-    gw.open()
-    assert not gw.is_open()
-    gw.write("Line 1\n", mode='w')
-    assert not gw.writable()
-    gw.write("Line 2\n", mode='rubbish')
-    assert not gw.is_open()
-    gw.write("Line 3\n", mode='a')
-    assert not gw.writable()
-    gw.close()
-    assert not gw.writable()
-    assert not gw.is_open()
-    with open(temporary, 'r') as fh:
-        lines = [line.rstrip() for line in fh]
-    print("Temporary file line count:", len(lines))
-    assert len(lines) == 3
-
 def test_dask():
     """ Test dask capability on Voyager data """
     filename_h5 = os.path.join(HERE, VOYAH5)
@@ -289,8 +262,15 @@ def test_dask():
     FD.search(n_partitions=2)
     print("===== test_dask ===== n_partitions=2, progress_bar='n'")
     FD.search(n_partitions=2, progress_bar='n')
+    print("===== test_dask ===== merge resulted in a DAT for both flipped and unflipped H5")
+    unflipped_dat = filename_h5.replace('.h5', '.dat')
+    filename_h5 = os.path.join(HERE, VOYAH5FLIPPED)
+    FD = FindDoppler(datafile=filename_h5, max_drift=2, out_dir=HERE)
+    FD.search(n_partitions=2)
+    flipped_dat = filename_h5.replace('.h5', '.dat')
+    assert os.path.exists(unflipped_dat)
+    assert os.path.exists(flipped_dat)
     print("===== test_dask ===== End")
-
 
 def test_bitrev():
     before = 32769
@@ -312,6 +292,5 @@ if __name__ == "__main__":
     test_find_doppler_voyager_flipped()
     test_find_doppler_voyager_filterbank()
     test_data_handler()
-    test_file_writers()
     test_dask()
     test_bitrev()

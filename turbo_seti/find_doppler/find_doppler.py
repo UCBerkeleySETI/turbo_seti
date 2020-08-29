@@ -23,6 +23,7 @@ pyximport.install(setup_args={"include_dirs":np.get_include()}, reload_support=T
 from .data_handler import DATAHandle, DATAH5
 from .file_writers import FileWriter, LogWriter
 from .helper_functions import bitrev, chan_freq, comp_stats, FlipX
+from .merge_dats_logs import merge_dats_logs
 
 try:
     from . import taylor_tree as tt
@@ -138,6 +139,8 @@ class FindDoppler:
                     b.map(search_coarse_channel, self).compute()
             else:
                 b.map(search_coarse_channel, self).compute()
+            merge_dats_logs(filename_in, self.out_dir, 'dat', cleanup='y')
+            merge_dats_logs(filename_in, self.out_dir, 'log', cleanup='y')
 
 
 def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, filewriter=None):

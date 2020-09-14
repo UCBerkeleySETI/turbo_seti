@@ -34,7 +34,7 @@ except:
 
 logger = logging.getLogger(__name__)
 
-class max_vals:
+class MaxVals:
     """ Class used to initialize some maximums """
     def __init__(self):
         self.maxsnr = None
@@ -43,8 +43,19 @@ class max_vals:
         self.maxid = None
         self.total_n_hits = None
 
+    def init(self, tdwidth):
+        if self.maxsnr is None:
+            self.maxsnr = np.zeros(tdwidth, dtype=np.float64)
+        if self.maxdrift is None:
+            self.maxdrift = np.zeros(tdwidth, dtype=np.float64)
+        if self.maxsmooth is None:
+            self.maxsmooth = np.zeros(tdwidth, dtype='uint8')
+        if self.maxid is None:
+            self.maxid = np.zeros(tdwidth, dtype='uint32')
+        if self.total_n_hits is None:
+            self.total_n_hits = 0
 
-class hist_vals:
+class HistVals:
     """Temporary class that saved the normalized spectrum for all drift rates."""
     def __init__(self):
         self.histsnr = None
@@ -225,17 +236,9 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
         ibrev[i] = bitrev(i, int(np.log2(tsteps)))
 
     ##EE: should double check if tdwidth is really better than fftlen here.
-    max_val = max_vals()
-    if max_val.maxsnr is None:
-        max_val.maxsnr = np.zeros(tdwidth, dtype=np.float64)
-    if max_val.maxdrift is None:
-        max_val.maxdrift = np.zeros(tdwidth, dtype=np.float64)
-    if max_val.maxsmooth is None:
-        max_val.maxsmooth = np.zeros(tdwidth, dtype='uint8')
-    if max_val.maxid is None:
-        max_val.maxid = np.zeros(tdwidth, dtype='uint32')
-    if max_val.total_n_hits is None:
-        max_val.total_n_hits = 0
+    max_val = MaxVals()
+    max_val.init(tdwidth)
+
 
     # EE: Making "shoulders" to avoid "edge effects". Could do further testing.
     specstart = int(tsteps * shoulder_size / 2)
@@ -411,7 +414,8 @@ def populate_tree(spectra, tree_findoppler, nframes, tdwidth, tsteps, fftlen,
     return tree_findoppler
 
 
-def hitsearch(spectrum, specstart, specend, hitthresh, drift_rate, header, tdwidth, max_val, reverse):
+def hitsearch(spectrum, specstart, specend, hitthresh, drift_rate, header,
+              tdwidth, max_val, reverse, fscrunch=1):
     """Searches for hits at given drift rate. A hit occurs in each channel if > hitthresh.
 
     Args:
@@ -424,21 +428,27 @@ def hitsearch(spectrum, specstart, specend, hitthresh, drift_rate, header, tdwid
       tdwidth: int,
       max_val: max_vals,           object to be filled with max values from this search and then returned
       reverse: int(boolean),       used to flag whether fine channel should be reversed
-
+      fscrunch (int):       Apply frequency scrunch
     Returns:
       : int, max_vals,      j is the amount of hits.
 
     """
-
-    logger.debug('Start searching for hits at drift rate: %f'%drift_rate)
+    logger.setLevel(5)
+    print('Start searching for hits at drift rate: %f'%drift_rate)
     j = 0
+    if fscrunch > 1:
+        spectrum  = spectrum.reshape((len(spectrum) // fscrunch, fscrunch)).sum(axis=-1)
+        specstart = round(specstart / 2)
+        specend   = round(specend / 2)
+        print(spectrum.shape, specstart, specend)
+
     for i in (spectrum[specstart:specend] > hitthresh).nonzero()[0] + specstart:
         k = (tdwidth - 1 - i) if reverse else i
         info_str = 'Hit found at SNR %f! %s\t' % (spectrum[i], '(reverse)' if reverse else '')
         info_str += 'Spectrum index: %d, Drift rate: %f\t' % (i, drift_rate)
         info_str += 'Uncorrected frequency: %f\t' % chan_freq(header, k, tdwidth, 0)
         info_str += 'Corrected frequency: %f' % chan_freq(header, k, tdwidth, 1)
-        logger.debug(info_str)
+        print(info_str)
         j += 1
         used_id = j
         if spectrum[i] > max_val.maxsnr[k]:

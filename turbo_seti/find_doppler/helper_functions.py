@@ -6,13 +6,13 @@ logger_hf = logging.getLogger(__name__)
 
 
 def chan_freq(header, fine_channel, tdwidth, ref_frame):
-    """
+    """ Apply barycentric frequency correction
 
     Args:
       header: 
       fine_channel: 
       tdwidth: 
-      ref_frame: 
+      ref_frame (0 or 1): Barycentric (1) or Topocentric (0) frame
 
     Returns:
 

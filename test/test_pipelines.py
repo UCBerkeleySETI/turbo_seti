@@ -205,4 +205,4 @@ def test_pipelines(need_init=True, cleanup=True):
 
 if __name__ == '__main__':
     # When run manually, no initialization nor cleanup is performed.
-    test_pipelines(need_init=False, cleanup=False)
+    test_pipelines(need_init=True, cleanup=False)

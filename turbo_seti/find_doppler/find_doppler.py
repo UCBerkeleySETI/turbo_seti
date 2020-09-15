@@ -256,11 +256,11 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
     for drift_block in range(-1 * drift_rate_nblock, drift_rate_nblock + 1):
         logger.debug("Drift_block %i" % drift_block)
 
+        # Populates the find_doppler tree with the spectra
         if drift_block <= 0:
             populate_tree(spectra_flipped, tree_findoppler, nframes, tdwidth, tsteps, fftlen, shoulder_size,
                           roll=drift_block, reverse=0)
         else:
-            # Populates the find_doppler tree with the spectra
             populate_tree(spectra, tree_findoppler, nframes, tdwidth, tsteps, fftlen, shoulder_size,
                           roll=drift_block, reverse=1)
 
@@ -268,13 +268,10 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
         np.copyto(tree_findoppler_original, tree_findoppler)
 
         if drift_block <= 0:
-            # populate neg doppler array
-            np.copyto(tree_findoppler_flip, tree_findoppler)
-            # Flip matrix across X dimension to search negative doppler drift rates
-            #print("FlipX")
-            #FlipX(tree_findoppler_flip, tdwidth, tsteps)
             logger.info("Doppler correcting reverse...")
+            np.copyto(tree_findoppler_flip, tree_findoppler)
             tt.taylor_flt(tree_findoppler_flip, tsteps * tdwidth, tsteps)
+            tree_findoppler_flipx2 = tree_findoppler_flip[::-1]
             logger.debug("done...")
         else:
             logger.info("Doppler correcting forward...")
@@ -285,15 +282,13 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
             complete_drift_range = data_obj.drift_rate_resolution * np.array(
                 range(-1 * tsteps_valid * (np.abs(drift_block) + 1) + 1,
                       -1 * tsteps_valid * (np.abs(drift_block)) + 1))
-            sub_range = complete_drift_range[(complete_drift_range < min_drift) & (
-                complete_drift_range >= -1 * max_drift)]
+            sub_range = complete_drift_range[(complete_drift_range < min_drift) &
+                                             (complete_drift_range >= -1 * max_drift)]
         else:
             complete_drift_range = data_obj.drift_rate_resolution * np.array(
                 range(tsteps_valid * drift_block, tsteps_valid * (drift_block + 1)))
-            sub_range = complete_drift_range[(complete_drift_range >= min_drift) & (complete_drift_range <= max_drift)]
-
-        if drift_block <= 0:
-            tree_findoppler_flipx2 = tree_findoppler_flip[::-1]
+            sub_range = complete_drift_range[(complete_drift_range >= min_drift) &
+                                             (complete_drift_range <= max_drift)]
 
         for k, drift_rate in enumerate(sub_range):
 
@@ -301,18 +296,10 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
             if data_obj.header['DELTAF'] < 0:
                 drift_rate *= -1
 
-            #if drift_block <= 0:
-            #    indx = ibrev[drift_indices[::-1][
-            #        (complete_drift_range < min_drift)
-            #        & (complete_drift_range >= -1 * max_drift)][k]] * tdwidth
-            #else:
-            #    indx = ibrev[drift_indices[k]] * tdwidth
             indx = ibrev[drift_indices[k]] * tdwidth
 
             if drift_block <= 0:
                 spectrum = tree_findoppler_flipx2[indx: indx + tdwidth]
-                #spectrum = spectrum[::-1]
-                ##print("FlipBack")
             else:
                 spectrum = tree_findoppler[indx: indx + tdwidth]
 

@@ -8,6 +8,7 @@ turbo_seti.find_doppler.find_doppler.logger.level = logbook.DEBUG
 
 def test_hitsearch_fscrunch():
     """ Test fscrunch for hitsearch"""
+    print("\n===== test_hitsearch_fscrunch =====")
     fscrunch = 16
 
     # Make a fake spectrum with some nonzero values

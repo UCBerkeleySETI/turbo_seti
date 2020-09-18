@@ -129,6 +129,7 @@ class FileWriter(GeneralWriter):
         info_str += 'SEFD_freq \t'
         info_str += 'Coarse_Channel_Number \t'
         info_str += 'Full_number_of_hits \t'
+        info_str += 'Fscrunch_level \t'
         info_str +='\n'
         self.write(info_str)
         self.write('# --------------------------\n')

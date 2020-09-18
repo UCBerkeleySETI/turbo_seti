@@ -13,6 +13,7 @@ import dask.bag as db
 from dask.diagnostics import ProgressBar
 
 import numpy as np
+import copy
 
 #For importing cython code
 import pyximport
@@ -67,7 +68,7 @@ class HistVals:
 class FindDoppler:
     """ """
     def __init__(self, datafile, max_drift, min_drift=0, snr=25.0, out_dir='./', coarse_chans=None,
-                 obs_info=None, flagging=None, n_coarse_chan=None):
+                 obs_info=None, flagging=None, n_coarse_chan=None, fscrunch=1):
         """
         Initializes FindDoppler object
 
@@ -87,6 +88,7 @@ class FindDoppler:
         self.max_drift = max_drift
         self.snr = snr
         self.out_dir = out_dir
+        self.fscrunch = fscrunch
 
         self.data_handle = DATAHandle(datafile, out_dir=out_dir, n_coarse_chan=n_coarse_chan, coarse_chans=coarse_chans)
         if (self.data_handle is None) or (self.data_handle.status is False):
@@ -141,15 +143,15 @@ class FindDoppler:
         # Run serial version
         if n_partitions == 1:
             for ii, data_dict in enumerate(self.data_handle.data_list):
-                search_coarse_channel(data_dict, self, filewriter=filewriter, logwriter=logwriter)
+                search_coarse_channel(data_dict, self, fscrunch=self.fscrunch, filewriter=filewriter, logwriter=logwriter)
         # Run Parallel version via dask
         else:
             b = db.from_sequence(self.data_handle.data_list, npartitions=n_partitions)
             if progress_bar == 'y':
                 with ProgressBar():
-                    b.map(search_coarse_channel, self).compute()
+                    b.map(search_coarse_channel, self, fscrunch=self.fscrunch).compute()
             else:
-                b.map(search_coarse_channel, self).compute()
+                b.map(search_coarse_channel, self, fscrunch=self.fscrunch).compute()
 
 
 def search_coarse_channel(data_dict, find_doppler_instance, fscrunch=1, logwriter=None, filewriter=None):
@@ -386,6 +388,9 @@ def hitsearch(spectrum, specstart, specend, hitthresh, drift_rate, header,
     fs = 1
     d_n_hits = {}
 
+    # Make sure we don't modify header outside this method!
+    header = copy.deepcopy(header)
+
     while fs <= fscrunch:
         max_val = d_max_val[fs]
 
@@ -393,14 +398,12 @@ def hitsearch(spectrum, specstart, specend, hitthresh, drift_rate, header,
         logger.debug(logstr)
 
         j = 0
-
         if fs > 1:
             spectrum  = spectrum.reshape((-1, 2)).sum(axis=-1)
             specstart = round(specstart / 2)
             specend   = round(specend / 2)
             tdwidth   = tdwidth // 2
-            hitthresh *= np.sqrt(2)
-            #print("New hitthresh: ", hitthresh)
+            hitthresh *= np.sqrt(2)  # To avoid recomputing SNR/STDEV of data, scale threshold
             header['NAXIS1'] = header['NAXIS1'] // 2
             header['DELTAF'] = header['DELTAF'] * 2
             #logger.debug(spectrum.shape, specstart, specend)

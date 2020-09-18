@@ -39,6 +39,8 @@ def main(args=None):
                    help='Number of partitions to run in parallel. Default to 1 (single partition)')
     p.add_argument('-b', '--progress_bar', dest='flag_progress_bar', type=str, default='y',
                    help='Use a progress bar? (y/n)')
+    p.add_argument('-f', '--fscrunch', dest='fscrunch', type=int, default=1,
+                   help='Number of channels to scrunch to (should be power 2).')
 
     if args is None:
         args = p.parse_args()
@@ -74,7 +76,7 @@ def main(args=None):
         find_seti_event = FindDoppler(args.filename, max_drift=args.max_drift,
                                       snr=args.snr, out_dir=args.out_dir,
                                       coarse_chans=coarse_chans, obs_info=None,
-                                      n_coarse_chan=args.n_coarse_chan)
+                                      n_coarse_chan=args.n_coarse_chan, fscrunch=args.fscrunch)
 
         find_seti_event.search(n_partitions=args.n_parallel,
                                progress_bar=args.flag_progress_bar)

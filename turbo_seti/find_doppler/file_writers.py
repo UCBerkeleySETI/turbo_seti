@@ -174,11 +174,11 @@ class FileWriter(GeneralWriter):
         info_str = '%03d\t'%(self.tophit_count)  #Top Hit number
         info_str += '%10.6f\t'%max_val.maxdrift[ind]  #Drift Rate
         info_str += '%10.6f\t'%max_val.maxsnr[ind]  #SNR
-        info_str += '%14.6f\t'%uncorr_freq #Uncorrected Frequency:
-        info_str += '%14.6f\t'%corr_freq #Corrected Frequency:
+        info_str += '%14.10f\t'%uncorr_freq #Uncorrected Frequency:
+        info_str += '%14.10f\t'%corr_freq #Corrected Frequency:
         info_str += '%d\t'%(ind - offset) #Index:
-        info_str += '%14.6f\t'%freq_start #freq_start:
-        info_str += '%14.6f\t'%freq_end #freq_end:
+        info_str += '%14.10f\t'%freq_start #freq_start:
+        info_str += '%14.10f\t'%freq_end #freq_end:
         info_str += '%s\t'%obs_info['SEFDs_val'][this_one] #SEFD:
         info_str += '%14.6f\t'%obs_info['SEFDs_freq'][this_one] #SEFD_mid_freq:
         info_str += '%i\t'%header['coarse_chan']

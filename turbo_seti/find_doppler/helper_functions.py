@@ -9,17 +9,20 @@ def chan_freq(header, fine_channel, tdwidth, ref_frame):
     """ Apply barycentric frequency correction
 
     Args:
-      header: 
-      fine_channel: 
-      tdwidth: 
+      header: header dict with 'NAXIS1', 'DELTAF', 'FCNTR' and 'baryv'
+      fine_channel: index of fine channel to lookup frequency for
+      tdwidth: normally just fft_len
       ref_frame (0 or 1): Barycentric (1) or Topocentric (0) frame
+      fscrunch (int): if searching scrunched frequency channels, pass this value
 
     Returns:
 
     """
     fftlen = header['NAXIS1']
+    deltaf = header['DELTAF']
+
     chan_index = fine_channel - (tdwidth-fftlen)/2
-    chanfreq = header['FCNTR'] + (chan_index - fftlen/2)*header['DELTAF']
+    chanfreq = header['FCNTR'] + (chan_index - fftlen/2)*deltaf
     #/* apply doppler correction */
     if ref_frame == 1:
         chanfreq = (1 - header['baryv']) * chanfreq

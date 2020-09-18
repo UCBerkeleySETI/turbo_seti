@@ -317,7 +317,7 @@ def search_coarse_channel(data_dict, find_doppler_instance, fscrunch=1, logwrite
                               logwriter=logwriter, filewriter=filewriter, obs_info=obs_info, fscrunch=fscrunch)
 
     logger.info("Total number of candidates for coarse channel " + str(
-        data_obj.header['coarse_chan']) + " is: %i" % max_val.total_n_hits)
+        data_obj.header['coarse_chan']) + " is: %i" % d_max_val[1].total_n_hits)
     data_obj.close()
     filewriter.close()
     return True
@@ -451,19 +451,25 @@ def tophitsearch(tree_findoppler_original, d_max_val, tsteps, header, tdwidth, f
 
     """
     fs = 1
+    header = copy.deepcopy(header)
+
     while fs <= fscrunch:
         max_val = d_max_val[fs]
         maxsnr = max_val.maxsnr
 
         if fs > 1:
-            print("TOPHITSEARCH fscrunching, ", fs)
+            logger.info("TOPHITSEARCH fscrunching, ", fs)
             tree_findoppler_original = tree_findoppler_original.reshape((-1, 2)).mean(axis=-1)
             tdwidth = tdwidth // 2
+            fftlen  = fftlen // 2
             max_drift = max_drift // 2
+            header['NAXIS1'] = header['NAXIS1'] // 2
+            header['DELTAF'] = header['DELTAF'] * 2
+            logger.info("%s %s %s" %(header['NAXIS1'], header['DELTAF'], tdwidth))
 
-        logger.debug("original matrix size: %d\t(%d, %d)"%(len(tree_findoppler_original), tsteps, tdwidth))
+        logger.info("original matrix size: %d\t(%d, %d)"%(len(tree_findoppler_original), tsteps, tdwidth))
         tree_orig = tree_findoppler_original.reshape((tsteps, tdwidth))
-        logger.debug("tree_orig shape: %s"%str(tree_orig.shape))
+        logger.info("tree_orig shape: %s"%str(tree_orig.shape))
 
         for i in (maxsnr > 0).nonzero()[0]:
             lbound = int(max(0, i - obs_length*max_drift/2))

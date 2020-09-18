@@ -133,7 +133,7 @@ class FileWriter(GeneralWriter):
         self.write(info_str)
         self.write('# --------------------------\n')
 
-    def report_tophit(self, max_val, ind, ind_tuple, tdwidth, fftlen, header, total_n_candi, obs_info=None):
+    def report_tophit(self, max_val, ind, ind_tuple, tdwidth, fftlen, header, total_n_candi, fscrunch, obs_info=None):
         """This function looks into the top hit in a region, basically finds the local maximum and saves that.
 
         Args:
@@ -182,6 +182,7 @@ class FileWriter(GeneralWriter):
         info_str += '%14.6f\t'%obs_info['SEFDs_freq'][this_one] #SEFD_mid_freq:
         info_str += '%i\t'%header['coarse_chan']
         info_str += '%i\t'%total_n_candi #
+        info_str += '%i\t' % fscrunch  #
         info_str +='\n'
         self.write(info_str)
 

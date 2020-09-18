@@ -8,8 +8,6 @@ Non-object functions:
     tophitsearch
 """
 
-import logging
-
 # Parallel python support
 import dask.bag as db
 from dask.diagnostics import ProgressBar
@@ -32,7 +30,10 @@ except:
 #For debugging
 #import pdb;# pdb.set_trace()
 
-logger = logging.getLogger(__name__)
+from logbook import Logger
+from ..log import logger_group
+logger = Logger('turboseti.find_doppler')
+logger_group.add_logger(logger)
 
 class MaxVals:
     """ Class used to initialize some maximums """
@@ -151,7 +152,7 @@ class FindDoppler:
                 b.map(search_coarse_channel, self).compute()
 
 
-def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, filewriter=None):
+def search_coarse_channel(data_dict, find_doppler_instance, fscrunch=1, logwriter=None, filewriter=None):
     """ Run a turboseti search on a single coarse channel.
 
     This function is separate from the FindDoppler class to allow parallelization. This should not be called
@@ -227,18 +228,19 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
     # Allocates array in a fast way (without initialize)
     tree_findoppler_original = np.empty_like(tree_findoppler)
 
-    # allocate array for negative doppler rates
-    tree_findoppler_flip = np.empty_like(tree_findoppler)
-
     # build index mask for in-place tree doppler correction
     ibrev = np.zeros(tsteps, dtype=np.int32)
 
     for i in range(0, tsteps):
         ibrev[i] = bitrev(i, int(np.log2(tsteps)))
 
-    ##EE: should double check if tdwidth is really better than fftlen here.
-    max_val = MaxVals()
-    max_val.init(tdwidth)
+    d_max_val = {}
+    fs = 1
+    while fs <= fscrunch:
+        max_val = MaxVals()
+        max_val.init(tdwidth // fs)
+        d_max_val[fs] = max_val
+        fs *= 2
 
     # EE: Making "shoulders" to avoid "edge effects". Could do further testing.
     specstart = int(tsteps * shoulder_size / 2)
@@ -264,20 +266,19 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
             populate_tree(spectra, tree_findoppler, nframes, tdwidth, tsteps, fftlen, shoulder_size,
                           roll=drift_block, reverse=1)
 
-        # populate original array
+        # make a copy of original array (BEFORE TAYLOR_FLT)
         np.copyto(tree_findoppler_original, tree_findoppler)
 
-        if drift_block <= 0:
-            logger.info("Doppler correcting reverse...")
-            np.copyto(tree_findoppler_flip, tree_findoppler)
-            tt.taylor_flt(tree_findoppler_flip, tsteps * tdwidth, tsteps)
-            tree_findoppler_flipx2 = tree_findoppler_flip[::-1]
-            logger.debug("done...")
-        else:
-            logger.info("Doppler correcting forward...")
-            tt.taylor_flt(tree_findoppler, tsteps * tdwidth, tsteps)
-            logger.debug("done...")
+        # Run taylor tree (main turboseti kernel)
+        logger.info("Doppler correcting block %i..." % drift_block)
+        tt.taylor_flt(tree_findoppler, tsteps * tdwidth, tsteps)
+        logger.debug("done...")
 
+        if drift_block <= 0:
+            logger.info("Un-flipping corrected negative doppler...")
+            tree_findoppler = tree_findoppler[::-1]
+
+        # DCP: Well this is horrible code:
         if drift_block <= 0:
             complete_drift_range = data_obj.drift_rate_resolution * np.array(
                 range(-1 * tsteps_valid * (np.abs(drift_block) + 1) + 1,
@@ -296,29 +297,22 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
             if data_obj.header['DELTAF'] < 0:
                 drift_rate *= -1
 
+            # Grab correct bit of spectrum out of the dedoppler tree output
             indx = ibrev[drift_indices[k]] * tdwidth
-
-            if drift_block <= 0:
-                spectrum = tree_findoppler_flipx2[indx: indx + tdwidth]
-            else:
-                spectrum = tree_findoppler[indx: indx + tdwidth]
+            spectrum = tree_findoppler[indx: indx + tdwidth]
 
             # normalize DCP: CAN THIS BE MOVED OUT OF LOOP?
             spectrum -= the_mean_val
             spectrum /= the_stddev
 
-            n_hits, max_val = hitsearch(spectrum, specstart, specend, snr,
-                                        drift_rate, data_obj.header,
-                                        tdwidth, max_val, 0)
-            info_str = "Found %d hits at drift rate %15.15f\n" % (n_hits, drift_rate)
-            max_val.total_n_hits += n_hits
-            logger.debug(info_str)
-            logwriter.info(info_str)
+            n_hits, d_max_val = hitsearch(spectrum, specstart, specend, snr,
+                                          drift_rate, data_obj.header,
+                                          tdwidth, d_max_val, 0, fscrunch=fscrunch)
 
     # Writing the top hits to file.
-    filewriter = tophitsearch(tree_findoppler_original, max_val, tsteps, data_obj.header, tdwidth,
+    filewriter = tophitsearch(tree_findoppler_original, d_max_val, tsteps, data_obj.header, tdwidth,
                               fftlen, max_drift, data_obj.obs_length,
-                              logwriter=logwriter, filewriter=filewriter, obs_info=obs_info)
+                              logwriter=logwriter, filewriter=filewriter, obs_info=obs_info, fscrunch=fscrunch)
 
     logger.info("Total number of candidates for coarse channel " + str(
         data_obj.header['coarse_chan']) + " is: %i" % max_val.total_n_hits)
@@ -371,7 +365,7 @@ def populate_tree(spectra, tree_findoppler, nframes, tdwidth, tsteps, fftlen,
 
 
 def hitsearch(spectrum, specstart, specend, hitthresh, drift_rate, header,
-              tdwidth, max_val, reverse, fscrunch=1):
+              tdwidth, d_max_val, reverse, fscrunch=1):
     """Searches for hits at given drift rate. A hit occurs in each channel if > hitthresh.
 
     Args:
@@ -389,39 +383,55 @@ def hitsearch(spectrum, specstart, specend, hitthresh, drift_rate, header,
       : int, max_vals,      j is the amount of hits.
 
     """
-    #logger.setLevel(5)
-    logger.debug('Start searching for hits at drift rate: %f'%drift_rate)
-    j = 0
-    if fscrunch > 1:
-        spectrum  = spectrum.reshape((len(spectrum) // fscrunch, fscrunch)).mean(axis=-1)
-        specstart = round(specstart / 2)
-        specend   = round(specend / 2)
-        logger.debug(spectrum.shape, specstart, specend)
+    fs = 1
+    d_n_hits = {}
 
-    for i in (spectrum[specstart:specend] > hitthresh).nonzero()[0] + specstart:
-        k = (tdwidth - 1 - i) if reverse else i
-        info_str = 'Hit found at SNR %f! %s\t' % (spectrum[i], '(reverse)' if reverse else '')
-        info_str += 'Spectrum index: %d, Drift rate: %f\t' % (i, drift_rate)
-        info_str += 'Uncorrected frequency: %f\t' % chan_freq(header, k, tdwidth, 0)
-        info_str += 'Corrected frequency: %f' % chan_freq(header, k, tdwidth, 1)
-        logger.debug(info_str)
-        j += 1
-        used_id = j
-        if spectrum[i] > max_val.maxsnr[k]:
-            max_val.maxsnr[k] = spectrum[i]
-            max_val.maxdrift[k] = drift_rate
-            max_val.maxid[k] = used_id
+    while fs <= fscrunch:
+        max_val = d_max_val[fs]
 
-    return j, max_val
+        logstr = 'Start searching for hits at drift rate: %f, fs: %s' % (drift_rate, fs)
+        logger.debug(logstr)
+
+        j = 0
+
+        if fs > 1:
+            spectrum  = spectrum.reshape((-1, 2)).sum(axis=-1)
+            specstart = round(specstart / 2)
+            specend   = round(specend / 2)
+            tdwidth   = tdwidth // 2
+            hitthresh *= np.sqrt(2)
+            #print("New hitthresh: ", hitthresh)
+            header['NAXIS1'] = header['NAXIS1'] // 2
+            header['DELTAF'] = header['DELTAF'] * 2
+            #logger.debug(spectrum.shape, specstart, specend)
+
+        for i in (spectrum[specstart:specend] > hitthresh).nonzero()[0] + specstart:
+            k = (tdwidth - 1 - i) if reverse else i
+            info_str  = 'Hit found at SNR %f! %s\t' % (spectrum[i], '(reverse)' if reverse else '')
+            info_str += 'Spectrum index: %d, Drift rate: %f\t' % (i, drift_rate)
+            info_str += 'Uncorrected frequency: %f\t' % chan_freq(header, k, tdwidth, 0)
+            #info_str += 'Corrected frequency: %f' % chan_freq(header, k, tdwidth, 1)
+            logger.debug(info_str)
+            j += 1
+            used_id = j
+            if spectrum[i] > max_val.maxsnr[k]:
+                max_val.maxsnr[k] = spectrum[i]
+                max_val.maxdrift[k] = drift_rate
+                max_val.maxid[k] = used_id
+        d_max_val[fs] = max_val
+        d_n_hits[fs] = j
+        fs *= 2
+
+    return d_n_hits, d_max_val
 
 
-def tophitsearch(tree_findoppler_original, max_val, tsteps, header, tdwidth, fftlen,
-                 max_drift, obs_length, logwriter=None, filewriter=None, obs_info=None):
+def tophitsearch(tree_findoppler_original, d_max_val, tsteps, header, tdwidth, fftlen,
+                 max_drift, obs_length, logwriter=None, filewriter=None, obs_info=None, fscrunch=1):
     """This finds the hits with largest SNR within 2*tsteps frequency channels.
 
     Args:
       tree_findoppler_original: ndarray,        spectra-populated findoppler tree
-      max_val: max_vals,       contains max values from hitsearch
+      d_max_val: max_vals,      dict contains max values from hitsearch
       tsteps: int,
       header: dict,           header in fits header format. See data_handler.py's DATAH5 class header. Used to report tophit in filewriter
       tdwidth: int,
@@ -437,31 +447,40 @@ def tophitsearch(tree_findoppler_original, max_val, tsteps, header, tdwidth, fft
       : FileWriter,     same filewriter that was input
 
     """
+    fs = 1
+    while fs <= fscrunch:
+        max_val = d_max_val[fs]
+        maxsnr = max_val.maxsnr
 
-    maxsnr = max_val.maxsnr
-    logger.debug("original matrix size: %d\t(%d, %d)"%(len(tree_findoppler_original), tsteps, tdwidth))
-    tree_orig = tree_findoppler_original.reshape((tsteps, tdwidth))
-    logger.debug("tree_orig shape: %s"%str(tree_orig.shape))
+        if fs > 1:
+            print("TOPHITSEARCH fscrunching, ", fs)
+            tree_findoppler_original = tree_findoppler_original.reshape((-1, 2)).mean(axis=-1)
+            tdwidth = tdwidth // 2
+            max_drift = max_drift // 2
 
-    for i in (maxsnr > 0).nonzero()[0]:
-        lbound = int(max(0, i - obs_length*max_drift/2))
-        ubound = int(min(tdwidth, i + obs_length*max_drift/2))
+        logger.debug("original matrix size: %d\t(%d, %d)"%(len(tree_findoppler_original), tsteps, tdwidth))
+        tree_orig = tree_findoppler_original.reshape((tsteps, tdwidth))
+        logger.debug("tree_orig shape: %s"%str(tree_orig.shape))
 
-        skip = 0
+        for i in (maxsnr > 0).nonzero()[0]:
+            lbound = int(max(0, i - obs_length*max_drift/2))
+            ubound = int(min(tdwidth, i + obs_length*max_drift/2))
 
-        if (maxsnr[lbound:ubound] > maxsnr[i]).nonzero()[0].any():
-            skip = 1
+            skip = 0
 
-        if skip:
-            logger.debug("SNR not big enough... %f pass... index: %d"%(maxsnr[i], i))
-        else:
-            info_str = "Top hit found! SNR: %f ... index: %d"%(maxsnr[i], i)
-            logger.info(info_str)
-            if logwriter:
-                logwriter.info(info_str)
-            if filewriter:
-                filewriter = filewriter.report_tophit(max_val, i, (lbound, ubound), tdwidth, fftlen, header,max_val.total_n_hits, obs_info=obs_info)
+            if (maxsnr[lbound:ubound] > maxsnr[i]).nonzero()[0].any():
+                skip = 1
+
+            if skip:
+                logger.debug("SNR not big enough... %f pass... index: %d"%(maxsnr[i], i))
             else:
-                logger.error('Not have filewriter? tell me why.')
-
+                info_str = "Top hit found! SNR: %f ... index: %d"%(maxsnr[i], i)
+                logger.info(info_str)
+                if logwriter:
+                    logwriter.info(info_str)
+                if filewriter:
+                    filewriter = filewriter.report_tophit(max_val, i, (lbound, ubound), tdwidth, fftlen, header, max_val.total_n_hits, fs, obs_info=obs_info)
+                else:
+                    logger.error('Not have filewriter? tell me why.')
+        fs *= 2
     return filewriter

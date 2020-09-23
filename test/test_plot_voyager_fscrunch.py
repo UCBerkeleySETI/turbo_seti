@@ -17,6 +17,9 @@ def test_plot_voyager_fscrunch():
     watfiles   = ['Voyager1.single_coarse.fine_res.h5', 'Voyager1.single_coarse.fine_res.flipped.h5']
     datfiles   = ['Voyager1.single_coarse.fine_res.dat', 'Voyager1.single_coarse.fine_res.flipped.dat']
     shortnames = ['voyager', 'voyager_flipped']
+
+    if not os.path.exists('./figs/'):
+        os.mkdir('./figs')
     for ii in range(len(watfiles)):
         watfile, datfile, shortname = watfiles[ii], datfiles[ii], shortnames[ii]
 

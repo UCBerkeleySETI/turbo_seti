@@ -131,6 +131,7 @@ def plot_waterfall(fil,
                    source_name,
                    f_start=None,
                    f_stop=None,
+                   f_scrunch=1,
                    **kwargs):
 
     """ Plot waterfall of data in a .fil or .h5 file
@@ -139,6 +140,7 @@ def plot_waterfall(fil,
         source_name (str): name of the target
         f_start (float): start frequency, in MHz
         f_stop (float): stop frequency, in MHz
+        f_scrunch (int): Average across frequency channels
         kwargs: keyword args to be passed to matplotlib imshow()
     """
 
@@ -150,6 +152,9 @@ def plot_waterfall(fil,
 
     #Make sure waterfall plot is under 4k*4k
     dec_fac_x, dec_fac_y = 1, 1
+
+    if dec_fac_y == 1 and f_scrunch > 1:
+        dec_fac_y = f_scrunch
 
     #rebinning data to plot correctly with fewer points
     if plot_data.shape[0] > MAX_IMSHOW_POINTS[0]:
@@ -172,10 +177,14 @@ def plot_waterfall(fil,
         plot_data = 10*np.log10(plot_data)
         kwargs.pop('logged')
 
+
+
     #get normalization parameters
     vmin = plot_data.min()
     vmax = plot_data.max()
     normalized_plot_data = (plot_data - vmin) / (vmax - vmin)
+
+
 
     #display the waterfall plot
     this_plot = plt.imshow(normalized_plot_data,

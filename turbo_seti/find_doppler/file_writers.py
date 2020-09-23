@@ -3,6 +3,10 @@
 import numpy as np
 from .helper_functions import chan_freq
 
+from logbook import Logger
+from ..log import logger_group
+logger = Logger('turboseti.file_writers')
+logger_group.add_logger(logger)
 
 class GeneralWriter:
     """Wrapper class for file operations."""
@@ -154,16 +158,21 @@ class FileWriter(GeneralWriter):
           : FileWriter object that called this function.
 
         """
-
         offset = int((tdwidth - fftlen)/2)
-        tdwidth =  len(max_val.maxsnr)
+
+        ind_fullres = ind * fscrunch
+        offset_fullres = offset
+        tdwidth_fullres = tdwidth
+        lb, ub = ind_tuple
+        lb_fullres, ub_fullres = lb * fscrunch, ub * fscrunch
 
         self.tophit_count += 1
-        freq_start = chan_freq(header, ind_tuple[0]-offset, tdwidth, 0)
-        freq_end   = chan_freq(header, ind_tuple[1]-1-offset, tdwidth, 0)
 
-        uncorr_freq = chan_freq(header, ind-offset, tdwidth, 0)
-        corr_freq = chan_freq(header, ind-offset, tdwidth, 1)
+        freq_start = chan_freq(header, lb_fullres-offset_fullres, tdwidth_fullres, 0)
+        freq_end   = chan_freq(header, ub_fullres-offset_fullres, tdwidth_fullres, 0)
+        logger.debug(f"{lb_fullres}, {ub_fullres}, {tdwidth_fullres}, {freq_start}, {freq_end}")
+        uncorr_freq = chan_freq(header, ind_fullres-offset_fullres, tdwidth_fullres, 0)
+        corr_freq = chan_freq(header, ind_fullres-offset_fullres, tdwidth_fullres, 1)
 
         #Choosing the index of given SEFD and freq.
         if obs_info['SEFDs_freq'][0] > 0.:
@@ -176,7 +185,7 @@ class FileWriter(GeneralWriter):
         info_str += '%10.6f\t'%max_val.maxsnr[ind]  #SNR
         info_str += '%14.10f\t'%uncorr_freq #Uncorrected Frequency:
         info_str += '%14.10f\t'%corr_freq #Corrected Frequency:
-        info_str += '%d\t'%(ind - offset) #Index:
+        info_str += '%d\t'%(ind_fullres - offset_fullres) #Index:
         info_str += '%14.10f\t'%freq_start #freq_start:
         info_str += '%14.10f\t'%freq_end #freq_end:
         info_str += '%s\t'%obs_info['SEFDs_val'][this_one] #SEFD:

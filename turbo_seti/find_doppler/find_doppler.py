@@ -293,6 +293,8 @@ def search_coarse_channel(data_dict, find_doppler_instance, fscrunch=1, logwrite
             sub_range = complete_drift_range[(complete_drift_range >= min_drift) &
                                              (complete_drift_range <= max_drift)]
 
+        # Loop over drift rate, and find max SNR values.
+        # The MaxVals() dict, d_max_val, will update with highest SNR found.
         for k, drift_rate in enumerate(sub_range):
 
             # DCP 2020.04 -- WAR to drift rate in flipped files
@@ -396,7 +398,9 @@ def hitsearch(spectrum, specstart, specend, hitthresh, drift_rate, header,
 
         logstr = 'Start searching for hits at drift rate: %f, fs: %s' % (drift_rate, fs)
         logger.debug(logstr)
-
+        sq2 = np.sqrt(2)
+        fs2 = np.log2(fs)
+        snrcorr = 1.0/np.power(sq2, fs2)  # Correction for SNR after fscrunch
         j = 0
         if fs > 1:
             spectrum  = spectrum.reshape((-1, 2)).sum(axis=-1)
@@ -410,17 +414,18 @@ def hitsearch(spectrum, specstart, specend, hitthresh, drift_rate, header,
 
         for i in (spectrum[specstart:specend] > hitthresh).nonzero()[0] + specstart:
             k = (tdwidth - 1 - i) if reverse else i
-            info_str  = 'Hit found at SNR %f! %s\t' % (spectrum[i], '(reverse)' if reverse else '')
+            info_str  = 'Hit found at SNR %f! %s\t' % (spectrum[i] * snrcorr, '(reverse)' if reverse else '')
             info_str += 'Spectrum index: %d, Drift rate: %f\t' % (i, drift_rate)
             info_str += 'Uncorrected frequency: %f\t' % chan_freq(header, k, tdwidth, 0)
             #info_str += 'Corrected frequency: %f' % chan_freq(header, k, tdwidth, 1)
             logger.debug(info_str)
             j += 1
             used_id = j
-            if spectrum[i] > max_val.maxsnr[k]:
-                max_val.maxsnr[k] = spectrum[i]
+            if spectrum[i] * snrcorr > max_val.maxsnr[k]:
+                max_val.maxsnr[k] = spectrum[i] * snrcorr
                 max_val.maxdrift[k] = drift_rate
                 max_val.maxid[k] = used_id
+        max_val.total_n_hits += j
         d_max_val[fs] = max_val
         d_n_hits[fs] = j
         fs *= 2
@@ -452,43 +457,51 @@ def tophitsearch(tree_findoppler_original, d_max_val, tsteps, header, tdwidth, f
     """
     fs = 1
     header = copy.deepcopy(header)
+    tdwidth0 = copy.copy(tdwidth)
+    fftlen0 = fftlen
+    deltaf0 = header['DELTAF']
+    header0 = copy.deepcopy(header)
 
     while fs <= fscrunch:
         max_val = d_max_val[fs]
         maxsnr = max_val.maxsnr
 
         if fs > 1:
-            logger.info("TOPHITSEARCH fscrunching, ", fs)
+            logger.debug("TOPHITSEARCH fscrunching, ", fs)
             tree_findoppler_original = tree_findoppler_original.reshape((-1, 2)).mean(axis=-1)
             tdwidth = tdwidth // 2
             fftlen  = fftlen // 2
-            max_drift = max_drift // 2
             header['NAXIS1'] = header['NAXIS1'] // 2
             header['DELTAF'] = header['DELTAF'] * 2
             logger.info("%s %s %s" %(header['NAXIS1'], header['DELTAF'], tdwidth))
+
+        total_drift_in_hz  = obs_length * max_drift
+        total_drift_n_chan = abs(round(total_drift_in_hz / header0['DELTAF'] / 1e6 / fs))
+        #print(total_drift_n_chan)
+
+        logger.info(f"max drift {max_drift}  obslen {obs_length:2.2f} tdrift {total_drift_in_hz:2.3f} tdrift_nchan {total_drift_n_chan} fscrunch {fs}")
 
         logger.info("original matrix size: %d\t(%d, %d)"%(len(tree_findoppler_original), tsteps, tdwidth))
         tree_orig = tree_findoppler_original.reshape((tsteps, tdwidth))
         logger.info("tree_orig shape: %s"%str(tree_orig.shape))
 
         for i in (maxsnr > 0).nonzero()[0]:
-            lbound = int(max(0, i - obs_length*max_drift/2))
-            ubound = int(min(tdwidth, i + obs_length*max_drift/2))
-
+            lbound = int(round(max(0, i - total_drift_n_chan)))
+            ubound = int(round(min(tdwidth, i + total_drift_n_chan)))
+            logger.debug(f"lb:ub {lbound}:{ubound} nchan: {tdwidth} {total_drift_n_chan}")
             skip = 0
 
             if (maxsnr[lbound:ubound] > maxsnr[i]).nonzero()[0].any():
                 skip = 1
-
             if skip:
                 logger.debug("SNR not big enough... %f pass... index: %d"%(maxsnr[i], i))
             else:
-                info_str = "Top hit found! SNR: %f ... index: %d"%(maxsnr[i], i)
+                info_str = "Top hit found! SNR: %2.1f ... index: %d"%(maxsnr[i], i)
                 logger.info(info_str)
                 if logwriter:
                     logwriter.info(info_str)
                 if filewriter:
-                    filewriter = filewriter.report_tophit(max_val, i, (lbound, ubound), tdwidth, fftlen, header, max_val.total_n_hits, fs, obs_info=obs_info)
+                    filewriter = filewriter.report_tophit(max_val, i, (lbound, ubound), tdwidth0, fftlen0, header0, max_val.total_n_hits, fs, obs_info=obs_info)
                 else:
                     logger.error('Not have filewriter? tell me why.')
         fs *= 2

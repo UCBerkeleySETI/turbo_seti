@@ -164,6 +164,7 @@ def read_dat(filename):
         FreqEnd = list(zip(*all_hits))[7]
         CoarseChanNum = list(zip(*all_hits))[10]
         FullNumHitsInRange = list(zip(*all_hits))[11]
+        Fscrunch = list(zip(*all_hits))[12]
 
         data = {'TopHitNum': TopHitNum,
                 'DriftRate': DriftRate,
@@ -173,7 +174,8 @@ def read_dat(filename):
                 'FreqStart': FreqStart,
                 'FreqEnd': FreqEnd,
                 'CoarseChanNum': CoarseChanNum,
-                'FullNumHitsInRange': FullNumHitsInRange
+                'FullNumHitsInRange': FullNumHitsInRange,
+                'Fscrunch': Fscrunch
                 }
 
         # Creating pandas dataframe from data we just read in

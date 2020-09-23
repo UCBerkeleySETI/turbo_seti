@@ -6,44 +6,43 @@ This module is very BL-GBT oriented. Will transfer to different repo.
  ..author: Emilio Enriquez
 """
 
-import pandas as pd
 from argparse import ArgumentParser
 import socket
+import pandas as pd
 import numpy as np
 
 pd.options.mode.chained_assignment = None  # To remove pandas warnings: default='warn'
 
-def find_scan_sets(filename,band,ok_bands = ['L','S']):
-    """Finding scan sets, needs filename of csv file and band.
+def find_scan_sets(filename, master_file_path, band='L', ok_bands=['L','S']):
+    """
+    TODO: Clean this up
+    
+    Finding scan sets, needs filename of csv file and band.
 
     Args:
-      filename: 
-      band: 
-      ok_bands:  (Default value = ['L')
-      'S']: 
+        filename: observation list
+        master_file_path: Path of file holding full A-list of stars
+        band: 'L' or 'S': (Default value = 'L')
+        ok_bands:  (Default value = ['L','S'])
 
-    Returns:
-
+    Returns: None
+    
+    Other effects:
+        Write 2 list files:
+            '%s_band_target_pairs.lst'%band
+            '%s_band_A_stars.lst'%band
     """
 
-    if '.csv' in filename:
-        spider_danny = True
-    else:
-        spider_danny = False
+    if filename is None or master_file_path is None:
+        raise ValueError('Both filename and master_file_path must be supplied')
+
+    spider_danny = '.csv' in filename
 
     #---------------------------
     # Read in the full "A list" of stars
     # This comes from the BL database.
     #---------------------------
-    local_host = socket.gethostname()
-
-    #To Do:
-    if 'bl' in local_host:
-        master_file = open('/home/obs/logs/target_list_5-50pc.lst')
-    else:
-        master_file = open('/Users/jeenriquez/RESEARCH/SETI_BL/L_band/target_list_5-50pc.lst')
-
-    a_list_master = master_file.read().splitlines()
+    a_list_master = master_file_path.read().splitlines()
 
     #---------------------------
     # Find the good  data by:
@@ -53,10 +52,14 @@ def find_scan_sets(filename,band,ok_bands = ['L','S']):
 
     if spider_danny:
         try:
-            df2 = pd.read_csv(filename) # New style spider files created by Danny's code.
-            #,Unnamed: 0,az_start,data_type,fch1,filepath,filesize,foff,host,ibeam,machine_id,nbeams,nbits,nchans,nifs,nints,rawdatafile,source_name,src_dej,src_raj,telescope_id,tsamp,tstart
+            # New style spider files created by Danny's code.
+            # First row has the column headings.
+            df2 = pd.read_csv(filename) 
+            #,Unnamed: 0,az_start,data_type,fch1,filepath,filesize,foff,host,
+            #          ibeam,machine_id,nbeams,nbits,nchans,nifs,nints,rawdatafile,
+            #          source_name,src_dej,src_raj,telescope_id,tsamp,tstart
         except:
-            IOError('Error opening file: %s'%filename)
+            raise IOError('spider_danny mode pd.read_cs error with file: %s'%filename)
 
         #column_names
         file = 'filepath'
@@ -69,11 +72,13 @@ def find_scan_sets(filename,band,ok_bands = ['L','S']):
         #Selection of high resolution data
         df3 = df2[df2[file].str.contains("gpuspec.0000.h5",na=False)]
 
-    else:
+    else: # does not have a CSV file extension
         try:
-            df = pd.read_csv(filename, sep=",|=", header=None,engine='python')    # Old style spider files.
+            # Old style spider files.  
+            # No headings row.
+            df = pd.read_csv(filename, sep=",|=", header=None, engine='python')    
         except:
-            IOError('Error opening file: %s'%filename)
+            raise IOError('old style mode pd.read_cs error with file: %s'%filename)
 
         #Reorganizing
         df2 = df.ix[:,1::2] #data
@@ -96,7 +101,7 @@ def find_scan_sets(filename,band,ok_bands = ['L','S']):
     elif band == 'L':
         df3 = df3[df3[freq_chan1] < 2500]
     else:
-        raise ValueError('Please probide one of the available bands:' + ok_bands)
+        raise ValueError('Please provide one of the available bands:' + ok_bands)
 
     #---------------------------
     # Adding some extra columns for later look at the good set of data.
@@ -115,7 +120,7 @@ def find_scan_sets(filename,band,ok_bands = ['L','S']):
     elif band == 'L':
         df3 = df3[df3['bands_used'].str.contains('.2.3.4.5')]
     else:
-        raise ValueError('Please probide one of the available bands:' + ok_bands)
+        raise ValueError('Please provide one of the available bands:' + ok_bands)
 
     #---------------------------
     #Check for correct Number of Samples
@@ -277,7 +282,9 @@ def find_scan_sets(filename,band,ok_bands = ['L','S']):
 #                print 'WARNING: A and B not in same location.', a_name
 #                 continue
 #             else:
+
             #a_star_file_name, b_star_file_name
+            local_host = socket.gethostname()
             tmp_string = ['/mnt_'+local_host+a_name,'\n','/mnt_'+local_host+b_name]
             list_targets += ''.join(tmp_string)+'\n'
             counting+=1
@@ -306,20 +313,32 @@ def main():
 
     parser = ArgumentParser(description="Command line utility for creating a list of ON/OFF pairs of spliced data.")
     parser.add_argument('filename', type=str, help='Full path and filename to read (csv).')
+    parser.add_argument('master_file_path', type=str, default=None, help='Full path of the A-list of stars.')
     parser.add_argument('band', type=str,default='L', help='Which band to use? (L,S)')
     args = parser.parse_args()
+
+    # Establish the path of the A-list of stars
+    if args.master_file_path is None:
+        # None specified so use an old default value depending on host name
+        # Danny???
+        local_host = socket.gethostname()
+        if 'bl' in local_host:
+            master_file_path = '/home/obs/logs/target_list_5-50pc.lst'
+        else:
+            master_file_path = '/Users/jeenriquez/RESEARCH/SETI_BL/L_band/target_list_5-50pc.lst'
+    else:
+        master_file_path = args.master_file_path
 
     #Available bands
     ok_bands = ['L','S']
 
     if args.band not in ok_bands:
-        raise ValueError('Please probide one of the available bands:' + ok_bands)
+        raise ValueError('Please provide one of the available bands:' + ok_bands)
     band = args.band
 
     filename = args.filename
 
-    find_scan_sets(filename,band,ok_bands=ok_bands)
+    find_scan_sets(filename, master_file_path, band, ok_bands=ok_bands)
 
 if __name__ == "__main__":
     main()
-

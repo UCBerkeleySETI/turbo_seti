@@ -59,7 +59,9 @@ Last updated: 05/24/2020
 """
 
 import pandas
+from blimpy import Waterfall
 from . import plot_event
+
 
 def plot_event_pipeline(event_csv_string,
                         fils_list_string,
@@ -90,7 +92,8 @@ def plot_event_pipeline(event_csv_string,
     #obtaining source names
     source_name_list = []
     for fil in fil_file_list:
-        source_name = fil.split('_')[5]
+        wf = Waterfall(fil)
+        source_name = wf.container.header["source_name"]
         source_name_list.append(source_name)
         print("plot_event_pipeline: source_name={}".format(source_name))
 

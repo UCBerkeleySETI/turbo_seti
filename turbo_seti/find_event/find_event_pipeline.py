@@ -110,6 +110,28 @@ except:
     from . import find_event
 
 import pandas as pd
+from blimpy import Waterfall
+
+
+def get_source_name(dat_path):
+    '''
+    Extract and return the target's source name from the DAT file path.
+    
+    Args:
+        dat_path: Full or relative path name of the DAT file
+
+    Returns:
+        source_name field from the header of the corresponding HDF5 file
+
+    Assumptions:
+        The HDF5 file is resident in the same directory of the DAT file.
+        The file name of the HDF5 file is identical to that of the DAT file 
+            except for the file extension (.h5 instead of .dat).
+    '''
+    filepath_h5 = dat_path.replace('.dat', '.h5')
+    wf = Waterfall(filepath_h5)
+    return wf.container.header["source_name"]
+
 
 def find_event_pipeline(dat_file_list_str,
                         SNR_cut=10, 
@@ -124,7 +146,7 @@ def find_event_pipeline(dat_file_list_str,
     """
 
     Args:
-      dat_file_list_str: 
+      dat_file_list_str: Text file containing a list of the DAT files
       SNR_cut:  (Default value = 10)
       check_zero_drift:  (Default value = False)
       filter_threshold:  (Default value = 3)
@@ -156,7 +178,8 @@ def find_event_pipeline(dat_file_list_str,
     #Getting source names
     source_name_list = []
     for dat in dat_file_list:
-        source_name = dat.split('_')[5] 
+        source_name = get_source_name(dat)
+        print("find_event_pipeline: source_name =", source_name)
         source_name_list.append(source_name)
         
     if on_source_complex_cadence:

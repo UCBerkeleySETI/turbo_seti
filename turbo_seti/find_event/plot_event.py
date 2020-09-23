@@ -166,6 +166,7 @@ def plot_waterfall(fil,
     #fix case where frequencies are reversed by fil.grab_data() # Shane Smith PR #82
     if plot_f[-1] < plot_f[0]:
         plot_f = plot_f[::-1]
+        plot_data = plot_data[:, ::-1]
 
     #determine extent of the plotting panel for imshow
     extent=(plot_f[0], plot_f[-1], (fil.timestamps[-1]-fil.timestamps[0])*24.*60.*60, 0.0)

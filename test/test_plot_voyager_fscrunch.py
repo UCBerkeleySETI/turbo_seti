@@ -4,6 +4,8 @@ import turbo_seti as ts
 from turbo_seti.find_event.plot_event import overlay_drift, plot_waterfall
 import os
 
+HERE = os.path.split(os.path.abspath(__file__))[0]
+
 def runcmd(cmd):
     print(cmd)
     os.system(cmd)
@@ -23,7 +25,7 @@ def test_plot_voyager_fscrunch():
 
     plt.figure(figsize=(12, 4))
     for ii in range(len(watfiles)):
-        watfile, datfile, shortname = watfiles[ii], datfiles[ii], shortnames[ii]
+        watfile, datfile, shortname = os.path.join(HERE, watfiles[ii]), os.path.join(HERE, datfiles[ii]), shortnames[ii]
 
         if os.path.exists(datfile):
             os.remove(datfile)
@@ -42,7 +44,7 @@ def test_plot_voyager_fscrunch():
             plt.clf()
             plot_waterfall(wf, wf.header['source_name'], f_start=fstart, f_stop=fstop, f_scrunch=fs)
             overlay_drift(f0, fstart, fstop, drate, tduration)
-            plt.savefig(f"figs/{shortname}_{ii}.png")
+            plt.savefig(os.path.join(HERE, "figs/{shortname}_{ii}.png"))
 
 if __name__ == "__main__":
     test_plot_voyager_fscrunch()

@@ -151,7 +151,8 @@ def validate_voyager_hits(filename_dat):
         }
     ]
 
-    atols = {'Freq': 0.000005, 'FreqStart': 0.00001, 'FreqEnd': 0.00001, 'SNR': 0.001, 'DriftRate': 0.02}
+    ###atols = {'Freq': 0.000005, 'FreqStart': 0.00001, 'FreqEnd': 0.00001, 'SNR': 0.001, 'DriftRate': 0.02}
+    atols = {'Freq': 0.001, 'FreqStart': 0.001, 'FreqEnd': 0.001, 'SNR': 2.5, 'DriftRate': 0.04}
 
     for vd in valid_data:
         hmax = h[np.isclose(h['Freq'], vd['Freq'], rtol=0.000001)].iloc[0]

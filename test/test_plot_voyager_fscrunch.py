@@ -31,7 +31,7 @@ def test_plot_voyager_fscrunch():
         if os.path.exists(datfile):
             os.remove(datfile)
 
-        runcmd(f"turboSETI {watfile} -f {fs} -M {dr}")
+        runcmd("turboSETI {} -f {} -M {} -o {}".format(watfile, fs, dr, HERE))
 
         tbl = ts.read_dat(datfile)
         wf  = bl.Waterfall(watfile)

@@ -21,7 +21,7 @@ pyximport.install(setup_args={"include_dirs":np.get_include()}, reload_support=T
 
 from .data_handler import DATAHandle, DATAH5
 from .file_writers import FileWriter, LogWriter
-from .helper_functions import bitrev, chan_freq, comp_stats, FlipX
+from .helper_functions import chan_freq, comp_stats
 from .merge_dats_logs import merge_dats_logs
 
 try:
@@ -239,7 +239,7 @@ def search_coarse_channel(data_dict, find_doppler_instance, fscrunch=1, logwrite
     ibrev = np.zeros(tsteps, dtype=np.int32)
 
     for i in range(0, tsteps):
-        ibrev[i] = bitrev(i, int(np.log2(tsteps)))
+        ibrev[i] = tt.bitrev(i, int(np.log2(tsteps)))
 
     d_max_val = {}
     fs = 1
@@ -417,6 +417,8 @@ def hitsearch(spectrum, specstart, specend, hitthresh, drift_rate, header,
             header['DELTAF'] = header['DELTAF'] * 2
             #logger.debug(spectrum.shape, specstart, specend)
 
+        print("DEBUG specstart, specend, hitthresh, spectrum[specstart:specend]:\n", 
+              specstart, specend, hitthresh, spectrum[specstart:specend])
         for i in (spectrum[specstart:specend] > hitthresh).nonzero()[0] + specstart:
             k = (tdwidth - 1 - i) if reverse else i
             info_str  = 'Hit found at SNR %f! %s\t' % (spectrum[i] * snrcorr, '(reverse)' if reverse else '')
@@ -464,7 +466,7 @@ def tophitsearch(tree_findoppler_original, d_max_val, tsteps, header, tdwidth, f
     header = copy.deepcopy(header)
     tdwidth0 = copy.copy(tdwidth)
     fftlen0 = fftlen
-    deltaf0 = header['DELTAF']
+    ## UNUSED: deltaf0 = header['DELTAF']
     header0 = copy.deepcopy(header)
 
     while fs <= fscrunch:

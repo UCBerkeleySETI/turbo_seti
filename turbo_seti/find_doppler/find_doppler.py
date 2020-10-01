@@ -417,7 +417,7 @@ def hitsearch(spectrum, specstart, specend, hitthresh, drift_rate, header,
             header['DELTAF'] = header['DELTAF'] * 2
             #logger.debug(spectrum.shape, specstart, specend)
 
-        print("DEBUG specstart, specend, hitthresh, spectrum[specstart:specend]:\n", 
+        logger.debug("specstart, specend, hitthresh, spectrum[specstart:specend]:\n", 
               specstart, specend, hitthresh, spectrum[specstart:specend])
         for i in (spectrum[specstart:specend] > hitthresh).nonzero()[0] + specstart:
             k = (tdwidth - 1 - i) if reverse else i

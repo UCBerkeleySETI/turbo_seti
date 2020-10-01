@@ -18,7 +18,7 @@ from dask.diagnostics import ProgressBar
 from .taylor_tree import TaylorTree
 from .data_handler import DATAHandle, DATAH5
 from .file_writers import FileWriter, LogWriter
-from .helper_functions import chan_freq, comp_stats, FlipX
+from .helper_functions import chan_freq, comp_stats
 from .merge_dats_logs import merge_dats_logs
 
 #For debugging
@@ -88,8 +88,8 @@ class FindDoppler:
         if (self.data_handle is None) or (self.data_handle.status is False):
             raise IOError("File error, aborting...")
 
-        #logger.info(self.data_handle.get_info())
-        #logger.info("A new FinDoppler instance created!")
+        logger.info(self.data_handle.get_info())
+        logger.info("A new FinDoppler instance created!")
 
         if obs_info is None:
             obs_info = {'pulsar': 0, 'pulsar_found': 0, 'pulsar_dm': 0.0, 'pulsar_snr': 0.0,
@@ -212,7 +212,7 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
         # Flagging spikes > 10 in SNR
         mask = (time_series - time_series_median) / time_series.std() > 10
         if mask.any():
-            #logwriter.info("Found spikes in the time series. Removing ...")
+            logwriter.info("Found spikes in the time series. Removing ...")
             spectra[mask, :] = time_series_median / float(
                 fftlen)  # So that the value is not the median in the time_series.
 
@@ -232,7 +232,7 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
 
     for i in range(0, tsteps):
         ibrev[i] = fd.tt.core.bitrev(i, int(fd.np.log2(tsteps)))
-    
+
     ##EE: should double check if tdwidth is really better than fftlen here.
     max_val = max_vals()
     if max_val.maxsnr is None:
@@ -245,7 +245,7 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
         max_val.maxid = fd.xp.zeros(tdwidth, dtype=fd.xp.uint32)
     if max_val.total_n_hits is None:
         max_val.total_n_hits = 0
-    
+
     # EE: Making "shoulders" to avoid "edge effects". Could do further testing.
     specstart = int(tsteps * shoulder_size / 2)
     specend = tdwidth - (tsteps * shoulder_size)

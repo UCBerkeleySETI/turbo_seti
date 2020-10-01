@@ -1,6 +1,6 @@
 """
 Two classes for the Data Handler of the turbo_seti package:
-    xp.
+    DATAHandle
     DATAH5
 
 Their descriptions are below.
@@ -85,7 +85,7 @@ class DATAHandle:
     def __make_h5_file(self):
         """
         Converts file to h5 format, saved in current directory.
-        Sets the filename attribute of the calling xp.
+        Sets the filename attribute of the calling DATAHandle.
         to the (new) filename.
         :return: void
         """
@@ -239,7 +239,7 @@ class DATAH5:
         self.fil_file.blank_dc(n_coarse_chan)
 
         spec = self.xp.squeeze(self.fil_file.data)
-        
+
         if self.single_precision:
             spectra = self.xp.array(spec, dtype=self.xp.float32)
         else:

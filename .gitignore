@@ -4,8 +4,6 @@
 .venv*/
 *.h5
 *.log
-/turbo_seti/find_doppler/taylor_tree.c
-/turbo_seti/find_doppler/taylor_tree.cpython-37m-x86_64-linux-gnu.so
 
 .eggs/
 .idea/
@@ -13,6 +11,7 @@
 .coverage/
 test/.coverage
 build/
+dist/
 docs/_build/
 
 test/*.png

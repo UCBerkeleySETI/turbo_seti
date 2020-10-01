@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import numpy as np
 import logging
 logger_hf = logging.getLogger(__name__)
 
@@ -26,37 +25,7 @@ def chan_freq(header, fine_channel, tdwidth, ref_frame):
     return chanfreq
 
 
-def bitrev(inval, nbits):
-    """This function bit-reverses the given value "inval" with the number of
-    bits, "nbits".    ----  R. Ramachandran, 10-Nov-97, nfra.
-    python version ----  H. Chen   Modified 2014
-    2020-07-21 speedup --- R. Elkins (texadactyl)
-
-    Args:
-      inval: number to be bit-reversed
-      nbits: The length of inval in bits. If user only wants the bit-reverse of a certain amount of bits of
-    inval, nbits is the amount of bits to be reversed counting from the least significant (rightmost)
-    bit. Any bits beyond this length will not be reversed and will be truncated from the result.
-
-    Returns:
-      : the bit-reverse of inval. If there are more significant bits beyond nbits, they are truncated.
-
-    """
-    if nbits <= 1:
-        ibitr = inval
-    else:
-        ifact = 2**(nbits - 1)
-        k = inval
-        ibitr = 0 if (1 & k == 0) else ifact
-        for i in range(2, nbits+1):
-            k = k >> 1
-            ifact = ifact >> 1
-            if 1 & k:
-                ibitr += ifact
-    return ibitr
-
-
-def FlipX(outbuf, xdim, ydim):
+def FlipX(xp, outbuf, xdim, ydim):
     """This function takes in an array of values and iteratively flips ydim chunks of values of length xdim. For example,
     if you have an array [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] and enter it with xdim = 5 and ydim = 2, the array will be
     modified to become [5, 4, 3, 2, 1, 10, 9, 8, 7, 6]. Note that if you wish for the whole array to be modified in this
@@ -71,10 +40,10 @@ def FlipX(outbuf, xdim, ydim):
     Returns:
 
     """
-    np.copyto(outbuf, outbuf.reshape((ydim, xdim))[:, ::-1].ravel())
+    xp.copyto(outbuf, outbuf.reshape((ydim, xdim))[:, ::-1].ravel())
 
 
-def comp_stats(np_arr):
+def comp_stats(xp, np_arr):
     """Compute mean and stddev of floating point vector array in a fast way, without using the outliers.
 
     Args:
@@ -85,11 +54,11 @@ def comp_stats(np_arr):
 
     """
 
-    new_vec = np.sort(np_arr)
+    new_vec = xp.sort(np_arr)
 
     #Removing the lowest 5% and highest 5% of data, this takes care of outliers.
     new_vec = new_vec[int(len(new_vec)*.05):int(len(new_vec)*.95)]
-    the_median = np.median(new_vec)
+    the_median = xp.median(new_vec)
     the_stddev = new_vec.std()
 
     return the_median, the_stddev

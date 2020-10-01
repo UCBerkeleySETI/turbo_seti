@@ -1,6 +1,6 @@
 """
 Two classes for the Data Handler of the turbo_seti package:
-    DATAHandle
+    xp.
     DATAH5
 
 Their descriptions are below.
@@ -29,7 +29,7 @@ class DATAHandle:
     coarse channel info, waterfall info, and file size checking.
     """
 
-    def __init__(self, filename=None, out_dir='./', n_coarse_chan=None, coarse_chans=None):
+    def __init__(self, xp, filename=None, out_dir='./', n_coarse_chan=None, coarse_chans=None, single_precision=False):
         """
         :param filename:        string,      name of file (.h5 or .fil)
         :param out_dir:         string,      directory where output files should be saved
@@ -62,7 +62,7 @@ class DATAHandle:
             self.filesize = self.filestat.st_size/(1024.0**2)
 
             # Grab header from DATAH5
-            dobj_master = DATAH5(filename)
+            dobj_master = DATAH5(xp, filename, single_precision=single_precision)
             self.header = dobj_master.header
             dobj_master.close()
 
@@ -85,7 +85,7 @@ class DATAHandle:
     def __make_h5_file(self):
         """
         Converts file to h5 format, saved in current directory.
-        Sets the filename attribute of the calling DATAHandle
+        Sets the filename attribute of the calling xp.
         to the (new) filename.
         :return: void
         """
@@ -155,8 +155,8 @@ class DATAH5:
     This class is where the waterfall data is loaded, as well as the header info.
     It creates other attributes related to the dedoppler search (load_drift_indexes).
     """
-    def __init__(self, filename, f_start=None, f_stop=None, t_start=None, t_stop=None,
-                 coarse_chan=1, n_coarse_chan=None):
+    def __init__(self, xp, filename, f_start=None, f_stop=None, t_start=None, t_stop=None,
+                 coarse_chan=1, n_coarse_chan=None, single_precision=False):
         """
         :param filename:        string      name of file
         :param f_start:         float       start frequency in MHz
@@ -174,6 +174,8 @@ class DATAH5:
         self.t_start = t_start
         self.t_stop = t_stop
         self.n_coarse_chan = n_coarse_chan
+        self.xp = xp
+        self.single_precision = single_precision
 
         #Instancing file.
         try:
@@ -201,10 +203,10 @@ class DATAH5:
 
         #EE To check if swapping tsteps_valid and tsteps is more appropriate.
         self.tsteps_valid = header['NAXIS2']
-        self.tsteps = int(math.pow(2, math.ceil(np.log2(math.floor(self.tsteps_valid)))))
+        self.tsteps = int(math.pow(2, math.ceil(self.xp.log2(math.floor(self.tsteps_valid)))))
 
         self.obs_length = self.tsteps_valid * header['DELTAT']
-        self.drift_rate_resolution = (1e6 * np.abs(header['DELTAF'])) / self.obs_length   # in Hz/sec
+        self.drift_rate_resolution = (1e6 * self.xp.abs(header['DELTAF'])) / self.obs_length   # in Hz/sec
         self.header['baryv'] = 0.0
         self.header['barya'] = 0.0
         self.header['coarse_chan'] = coarse_chan
@@ -236,8 +238,12 @@ class DATAH5:
             logger.warning('The file/selection is not an integer number of coarse channels. This could have unexpected consequences. Let op!')
         self.fil_file.blank_dc(n_coarse_chan)
 
-        spec = np.squeeze(self.fil_file.data)
-        spectra = np.array(spec, dtype=np.float64)
+        spec = self.xp.squeeze(self.fil_file.data)
+        
+        if self.single_precision:
+            spectra = self.xp.array(spec, dtype=self.xp.float32)
+        else:
+            spectra = self.xp.array(spec, dtype=self.xp.float64)
 
         # DCP APR 2020 -- COMMENTED OUT. THIS IS BREAKING STUFF IN CURRENT VERSION.
         #Arrange data in ascending order in freq if not already in that format.
@@ -247,8 +253,8 @@ class DATAH5:
         # This check will add rows of zeros if the obs is too short
         # (and thus not a power of two rows).
         if spectra.shape[0] != self.tsteps:
-            spectra = np.append(spectra, np.zeros((self.tsteps-spectra.shape[0],
-                                                   self.fftlen)), axis=0)
+            spectra = self.xp.append(spectra, self.xp.zeros((self.tsteps-spectra.shape[0],
+                                                             self.fftlen)), axis=0)
         self.tsteps_valid = self.tsteps
         self.obs_length = self.tsteps * self.header['DELTAT']
 
@@ -271,10 +277,10 @@ class DATAH5:
         Returns:
 
         """
-        n = int(np.log2(self.tsteps))
-        di_array = np.genfromtxt(resource_filename('turbo_seti',
-                                                   'drift_indexes/drift_indexes_array_%d.txt'%n),
-                                 delimiter=' ', dtype=int)
+        n = int(self.xp.log2(self.tsteps))
+        di_array = self.xp.array(np.genfromtxt(resource_filename('turbo_seti',
+                                 'drift_indexes/drift_indexes_array_%d.txt'%n),
+                                 delimiter=' ', dtype=int))
 
         ts2 = int(self.tsteps/2)
         drift_indexes = di_array[(self.tsteps_valid - 1 - ts2), 0:self.tsteps_valid]
@@ -301,7 +307,7 @@ class DATAH5:
         #used by helper_functions.py
         if coarse:
             base_header['NAXIS1'] = int(header['nchans']/self.n_coarse_chan)
-            base_header['FCNTR'] = np.abs(self.f_stop - self.f_start) / 2. + np.fmin(self.f_start, self.f_stop)
+            base_header['FCNTR'] = self.xp.abs(self.f_stop - self.f_start) / 2. + self.xp.fmin(self.f_start, self.f_stop)
         else:
             base_header['NAXIS1'] = int(header['nchans'])
             base_header['FCNTR'] = float(header['fch1']) + header['foff'] * base_header['NAXIS1'] / 2

@@ -13,10 +13,7 @@ import pytest
 from blimpy import Waterfall
 from turbo_seti import FindDoppler, seti_event, find_event, plot_event
 from turbo_seti.find_doppler.find_doppler import search_coarse_channel
-import pyximport
-pyximport.install(setup_args={"include_dirs":np.get_include()}, reload_support=True)
-
-from turbo_seti.find_doppler import data_handler, helper_functions, taylor_tree, file_writers
+from turbo_seti.find_doppler import data_handler, helper_functions, file_writers
 
 HERE = os.path.split(os.path.abspath(__file__))[0]
 VOYAH5 = 'Voyager1.single_coarse.fine_res.h5'

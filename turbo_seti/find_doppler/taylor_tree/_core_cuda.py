@@ -38,21 +38,19 @@ def flt(outbuf, mlen, nchn):
                 ndelay += 1
                 ndelay2 = (ndelay + 1)
                 nfin = int(npts + ioff1)
-
+                    
                 l1 = (nfin - ioff1)
                 a = outbuf[ioff1:nfin]
                 b = outbuf[i2+ndelay:i2+ndelay+l1]
                 c = outbuf[i2+ndelay2:i2+ndelay2+l1]
-                d = outbuf[i2:i2+l1]
-                e = outbuf[ioff1:nfin]
-                merge(a, b, c, d, e)
+
+                outbuf[ioff1:nfin], outbuf[i2:i2+l1] = sum(a, b, c)
+
 
 @cp.fuse()
-def merge(a, b, c, d, e):
-    f = a + b
-    g = a + c
-    cp.copyto(d, g)
-    cp.copyto(e, f)
+def sum(a, b, c):
+    return a + b, a + c
+
 
 def bitrev(inval, nbits):
     """

@@ -264,7 +264,7 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
     for drift_block in range(-1 * drift_rate_nblock, drift_rate_nblock + 1):
         logger.debug("Drift_block %i" % drift_block)
 
-        if drift_block <= 0:
+        if drift_block < 0:
             populate_tree(fd, spectra_flipped, tree_findoppler, nframes, tdwidth, tsteps, fftlen, shoulder_size,
                           roll=drift_block, reverse=0)
         else:
@@ -274,14 +274,14 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
         fd.xp.copyto(tree_findoppler_original, tree_findoppler)
         fd.tt.core.flt(tree_findoppler, tsteps * tdwidth, tsteps)
 
-        if drift_block <= 0:
+        if drift_block < 0:
             logger.info("Un-flipping corrected negative doppler...")
             tree_findoppler = tree_findoppler[::-1]
 
         tree_findoppler -= the_mean_val
         tree_findoppler /= the_stddev
 
-        if drift_block <= 0:
+        if drift_block < 0:
             complete_drift_range = data_obj.drift_rate_resolution * fd.xp.array(
                 range(-1 * tsteps_valid * (abs(drift_block) + 1) + 1,
                       -1 * tsteps_valid * (abs(drift_block)) + 1))
@@ -299,11 +299,17 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
                 drift_rate *= -1
 
             # Grab correct bit of spectrum out of the dedoppler tree output
-            indx = ibrev[drift_indices[k]] * tdwidth
+            if drift_block < 0:
+                indx = ibrev[drift_indices[::-1][
+                    (complete_drift_range < min_drift)
+                    & (complete_drift_range >= -1 * max_drift)][k]] * tdwidth
+            else:
+                indx = ibrev[drift_indices[k]] * tdwidth
+
             spectrum = tree_findoppler[indx: indx + tdwidth]
-            _, max_val = hitsearch(spectrum, specstart, specend, snr,
-                                          drift_rate, data_obj.header,
-                                          tdwidth, max_val, 0)
+            hitsearch(spectrum, specstart, specend, snr,
+                      drift_rate, data_obj.header,
+                      tdwidth, max_val, 0)
 
     # Writing the top hits to file.
     filewriter = tophitsearch(tree_findoppler_original, max_val, tsteps, data_obj.header, tdwidth,
@@ -311,7 +317,7 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
                               logwriter=logwriter, filewriter=filewriter, obs_info=obs_info)
 
     logger.info("Total number of candidates for coarse channel " + str(
-        data_obj.header['coarse_chan']) + " is: %i" % max_val.total_n_hits)
+    data_obj.header['coarse_chan']) + " is: %i" % max_val.total_n_hits)
     data_obj.close()
     filewriter.close()
     return True
@@ -375,12 +381,10 @@ def hitsearch(spectrum, specstart, specend, hitthresh, drift_rate, header, tdwid
       max_val: max_vals,           object to be filled with max values from this search and then returned
       reverse: int(boolean),       used to flag whether fine channel should be reversed
 
-    Returns:
-      : int, max_vals,      j is the amount of hits.
-
     """
     logger.debug('Start searching for hits at drift rate: %f'%drift_rate)
-    j = 0
+    
+    hits = 0
     for i in (spectrum > hitthresh).nonzero()[0] + specstart:
         k = (tdwidth - 1 - i) if reverse else i
 
@@ -391,13 +395,13 @@ def hitsearch(spectrum, specstart, specend, hitthresh, drift_rate, header, tdwid
             info_str += 'Corrected frequency: %f' % chan_freq(header, k, tdwidth, 1)
             logger.debug(info_str)
 
-        j += 1
+        hits += 1
         if spectrum[i] > max_val.maxsnr[k]:
             max_val.maxsnr[k] = spectrum[i]
             max_val.maxdrift[k] = drift_rate
-            max_val.maxid[k] = j
+            max_val.maxid[k] = hits
 
-    return j, max_val
+    max_val.total_n_hits += hits
 
 
 def tophitsearch(tree_findoppler_original, max_val, tsteps, header, tdwidth, fftlen,

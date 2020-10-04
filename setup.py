@@ -31,11 +31,8 @@ entry_points = {
      ]
 }
 
-# Need to copy over index files, generate filenames
-idxs = [2,3,4,5,6,7,8,9,10,11]
-drift_idxs = ['drift_indexes/drift_indexes_array_%i.txt' % ii for ii in idxs]
 package_data={
-    'turbo_seti': drift_idxs,
+    'turbo_seti': ['drift_indexes/*.txt', 'find_doppler/kernels/**/*.cu'],
 }
 
 setup(

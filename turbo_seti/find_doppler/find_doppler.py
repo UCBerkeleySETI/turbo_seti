@@ -15,7 +15,7 @@ import logging
 import dask.bag as db
 from dask.diagnostics import ProgressBar
 
-from .taylor_tree import TaylorTree
+from .kernels import Kernels
 from .data_handler import DATAHandle, DATAH5
 from .file_writers import FileWriter, LogWriter
 from .helper_functions import chan_freq, comp_stats
@@ -70,7 +70,7 @@ class FindDoppler:
 
         self.use_gpu = use_gpu
         self.single_precision = single_precision
-        self.tt = TaylorTree("cuda" if self.use_gpu else "numba")
+        self.kernels = Kernels("cuda" if self.use_gpu else "numba")
 
         if self.use_gpu:
             self.xp = importlib.import_module("cupy")
@@ -227,11 +227,13 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
     # Allocates array in a fast way (without initialize)
     tree_findoppler_original = fd.xp.empty_like(tree_findoppler, dtype=fd._float_type)
 
+    hitsearch_buf = fd.xp.empty(tdwidth, dtype=fd._float_type)
+
     # build index mask for in-place tree doppler correction
     ibrev = fd.xp.zeros(tsteps, dtype=fd.xp.int32)
 
     for i in range(0, tsteps):
-        ibrev[i] = fd.tt.core.bitrev(i, int(fd.np.log2(tsteps)))
+        ibrev[i] = fd.kernels.tt.bitrev(i, int(fd.np.log2(tsteps)))
 
     ##EE: should double check if tdwidth is really better than fftlen here.
     max_val = max_vals()
@@ -244,7 +246,7 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
     if max_val.maxid is None:
         max_val.maxid = fd.xp.zeros(tdwidth, dtype=fd.xp.uint32)
     if max_val.total_n_hits is None:
-        max_val.total_n_hits = 0
+        max_val.total_n_hits = fd.xp.zeros(1, dtype=fd.xp.uint32)
 
     # EE: Making "shoulders" to avoid "edge effects". Could do further testing.
     specstart = int(tsteps * shoulder_size / 2)
@@ -273,7 +275,7 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
 
         if drift_block == drift_rate_nblock:
             fd.xp.copyto(tree_findoppler_original, tree_findoppler)
-        fd.tt.core.flt(tree_findoppler, tsteps * tdwidth, tsteps)
+        fd.kernels.tt.flt(tree_findoppler, tsteps * tdwidth, tsteps)
 
         if drift_block < 0:
             logger.info("Un-flipping corrected negative doppler...")
@@ -307,10 +309,9 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
             else:
                 indx = ibrev[drift_indices[k]] * tdwidth
 
-            spectrum = tree_findoppler[indx: indx + tdwidth]
-            hitsearch(spectrum, specstart, specend, snr,
-                      drift_rate, data_obj.header,
-                      tdwidth, max_val, 0)
+            fd.xp.copyto(hitsearch_buf, tree_findoppler[indx: indx + tdwidth])
+            hitsearch(fd, hitsearch_buf, specstart, specend, snr,
+                      drift_rate, data_obj.header, tdwidth, max_val, 0)
 
     # Writing the top hits to file.
     filewriter = tophitsearch(tree_findoppler_original, max_val, tsteps, data_obj.header, tdwidth,
@@ -368,7 +369,7 @@ def populate_tree(fd, spectra, tree_findoppler, nframes, tdwidth, tsteps, fftlen
     return tree_findoppler
 
 
-def hitsearch(spectrum, specstart, specend, hitthresh, drift_rate, header, tdwidth, max_val, reverse):
+def hitsearch(fd, spectrum, specstart, specend, hitthresh, drift_rate, header, tdwidth, max_val, reverse):
     """Searches for hits at given drift rate. A hit occurs in each channel if > hitthresh.
 
     Args:
@@ -383,26 +384,37 @@ def hitsearch(spectrum, specstart, specend, hitthresh, drift_rate, header, tdwid
       reverse: int(boolean),       used to flag whether fine channel should be reversed
 
     """
-    logger.debug('Start searching for hits at drift rate: %f'%drift_rate)
+    logger.debug('Start searching for hits at drift rate: %f' % drift_rate)
+
+    if fd.use_gpu:
+
+        blockSize = 512;
+        length = specend - specstart
+        numBlocks = (length + blockSize - 1) // blockSize;
+        call = (length, spectrum[specstart:specend], hitthresh, drift_rate,
+                max_val.maxsnr, max_val.maxdrift, max_val.total_n_hits)
+        fd.kernels.hitsearch((numBlocks,), (blockSize,), call)
+
+    else:
     
-    hits = 0
-    for i in (spectrum[specstart:specend] > hitthresh).nonzero()[0] + specstart:
-        k = (tdwidth - 1 - i) if reverse else i
+        hits = 0
+        for i in (spectrum[specstart:specend] > hitthresh).nonzero()[0] + specstart:
+            k = (tdwidth - 1 - i) if reverse else i
 
-        if logger.level == logging.DEBUG:
-            info_str = 'Hit found at SNR %f! %s\t' % (spectrum[i], '(reverse)' if reverse else '')
-            info_str += 'Spectrum index: %d, Drift rate: %f\t' % (i, drift_rate)
-            info_str += 'Uncorrected frequency: %f\t' % chan_freq(header, k, tdwidth, 0)
-            info_str += 'Corrected frequency: %f' % chan_freq(header, k, tdwidth, 1)
-            logger.debug(info_str)
+            if logger.level == logging.DEBUG:
+                info_str = 'Hit found at SNR %f! %s\t' % (spectrum[i], '(reverse)' if reverse else '')
+                info_str += 'Spectrum index: %d, Drift rate: %f\t' % (i, drift_rate)
+                info_str += 'Uncorrected frequency: %f\t' % chan_freq(header, k, tdwidth, 0)
+                info_str += 'Corrected frequency: %f' % chan_freq(header, k, tdwidth, 1)
+                logger.debug(info_str)
 
-        hits += 1
-        if spectrum[i] > max_val.maxsnr[k]:
-            max_val.maxsnr[k] = spectrum[i]
-            max_val.maxdrift[k] = drift_rate
-            max_val.maxid[k] = hits
+            hits += 1
+            if spectrum[i] > max_val.maxsnr[k]:
+                max_val.maxsnr[k] = spectrum[i]
+                max_val.maxdrift[k] = drift_rate
+                #max_val.maxid[k] = hits
 
-    max_val.total_n_hits += hits
+        max_val.total_n_hits[0] += hits
 
 
 def tophitsearch(tree_findoppler_original, max_val, tsteps, header, tdwidth, fftlen,
@@ -450,7 +462,7 @@ def tophitsearch(tree_findoppler_original, max_val, tsteps, header, tdwidth, fft
             if logwriter:
                 logwriter.info(info_str)
             if filewriter:
-                filewriter = filewriter.report_tophit(max_val, i, (lbound, ubound), tdwidth, fftlen, header,max_val.total_n_hits, obs_info=obs_info)
+                filewriter = filewriter.report_tophit(max_val, i, (lbound, ubound), tdwidth, fftlen, header,max_val.total_n_hits[0], obs_info=obs_info)
             else:
                 logger.error('Not have filewriter? tell me why.')
 

@@ -38,7 +38,7 @@ def flt(outbuf, mlen, nchn):
                 ndelay += 1
                 ndelay2 = (ndelay + 1)
                 nfin = int(npts + ioff1)
-                    
+
                 l1 = (nfin - ioff1)
                 a = outbuf[ioff1:nfin]
                 b = outbuf[i2+ndelay:i2+ndelay+l1]

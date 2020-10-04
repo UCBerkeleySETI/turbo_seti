@@ -203,10 +203,10 @@ class DATAH5:
 
         #EE To check if swapping tsteps_valid and tsteps is more appropriate.
         self.tsteps_valid = header['NAXIS2']
-        self.tsteps = int(math.pow(2, math.ceil(self.xp.log2(math.floor(self.tsteps_valid)))))
+        self.tsteps = int(math.pow(2, math.ceil(np.log2(math.floor(self.tsteps_valid)))))
 
         self.obs_length = self.tsteps_valid * header['DELTAT']
-        self.drift_rate_resolution = (1e6 * self.xp.abs(header['DELTAF'])) / self.obs_length   # in Hz/sec
+        self.drift_rate_resolution = (1e6 * np.abs(header['DELTAF'])) / self.obs_length   # in Hz/sec
         self.header['baryv'] = 0.0
         self.header['barya'] = 0.0
         self.header['coarse_chan'] = coarse_chan
@@ -277,8 +277,8 @@ class DATAH5:
         Returns:
 
         """
-        n = int(self.xp.log2(self.tsteps))
-        di_array = self.xp.array(np.genfromtxt(resource_filename('turbo_seti',
+        n = int(np.log2(self.tsteps))
+        di_array = np.array(np.genfromtxt(resource_filename('turbo_seti',
                                  'drift_indexes/drift_indexes_array_%d.txt'%n),
                                  delimiter=' ', dtype=int))
 
@@ -307,7 +307,7 @@ class DATAH5:
         #used by helper_functions.py
         if coarse:
             base_header['NAXIS1'] = int(header['nchans']/self.n_coarse_chan)
-            base_header['FCNTR'] = self.xp.abs(self.f_stop - self.f_start) / 2. + self.xp.fmin(self.f_start, self.f_stop)
+            base_header['FCNTR'] = np.abs(self.f_stop - self.f_start) / 2. + np.fmin(self.f_start, self.f_stop)
         else:
             base_header['NAXIS1'] = int(header['nchans'])
             base_header['FCNTR'] = float(header['fch1']) + header['foff'] * base_header['NAXIS1'] / 2

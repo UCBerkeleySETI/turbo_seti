@@ -271,7 +271,8 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
             populate_tree(fd, spectra, tree_findoppler, nframes, tdwidth, tsteps, fftlen, shoulder_size,
                           roll=drift_block, reverse=1)
 
-        fd.xp.copyto(tree_findoppler_original, tree_findoppler)
+        if drift_block == drift_rate_nblock:
+            fd.xp.copyto(tree_findoppler_original, tree_findoppler)
         fd.tt.core.flt(tree_findoppler, tsteps * tdwidth, tsteps)
 
         if drift_block < 0:
@@ -282,13 +283,13 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
         tree_findoppler /= the_stddev
 
         if drift_block < 0:
-            complete_drift_range = data_obj.drift_rate_resolution * fd.xp.array(
+            complete_drift_range = data_obj.drift_rate_resolution * fd.np.array(
                 range(-1 * tsteps_valid * (abs(drift_block) + 1) + 1,
                       -1 * tsteps_valid * (abs(drift_block)) + 1))
             sub_range = complete_drift_range[(complete_drift_range < min_drift) &
                                              (complete_drift_range >= -1 * max_drift)]
         else:
-            complete_drift_range = data_obj.drift_rate_resolution * fd.xp.array(
+            complete_drift_range = data_obj.drift_rate_resolution * fd.np.array(
                 range(tsteps_valid * drift_block, tsteps_valid * (drift_block + 1)))
             sub_range = complete_drift_range[(complete_drift_range >= min_drift) &
                                              (complete_drift_range <= max_drift)]
@@ -385,7 +386,7 @@ def hitsearch(spectrum, specstart, specend, hitthresh, drift_rate, header, tdwid
     logger.debug('Start searching for hits at drift rate: %f'%drift_rate)
     
     hits = 0
-    for i in (spectrum > hitthresh).nonzero()[0] + specstart:
+    for i in (spectrum[specstart:specend] > hitthresh).nonzero()[0] + specstart:
         k = (tdwidth - 1 - i) if reverse else i
 
         if logger.level == logging.DEBUG:

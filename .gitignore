@@ -13,8 +13,9 @@ test/.coverage
 build/
 dist/
 docs/_build/
+exec
 
-test/*.png
-test/*.dat
-test/*.fil
-test/*.h5
+*.png
+*.dat
+*.fil
+*.h5

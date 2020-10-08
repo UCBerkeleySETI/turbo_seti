@@ -225,7 +225,7 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
     ibrev = np.zeros(tsteps, dtype=np.int32)
 
     for i in range(0, tsteps):
-        ibrev[i] = bitrev(i, int(np.log2(tsteps)))
+        ibrev[i] = tt.bitrev(i, int(np.log2(tsteps)))
 
     ##EE: should double check if tdwidth is really better than fftlen here.
     max_val = max_vals()

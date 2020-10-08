@@ -7,9 +7,14 @@ import blimpy as bl
 HERE = os.path.split(os.path.abspath(__file__))[0]
 
 
-def download_voyager_data():
+def download_test_data():
     """ Download Voyager test data """
+    try:
+        os.system('rm *.h5 *.fil *.dat *.log *.png')
+    except:
+        pass
     os.system('wget http://blpd0.ssl.berkeley.edu/Voyager_data/Voyager1.single_coarse.fine_res.h5')
+    os.system('wget http://blpd14.ssl.berkeley.edu/voyager_2020/single_coarse_channel/single_coarse_guppi_59046_80036_DIAG_VOYAGER-1_0011.rawspec.0000.h5')
 
 
 def create_fil_from_voyager_h5(voyager_fp):
@@ -40,7 +45,7 @@ def flip_data(filename):
     print("Done.")
 
 if __name__ == "__main__":
-    #  download_voyager_data()   # Currently included in repo
+    download_test_data()
     voyager_fp = os.path.join(HERE, 'Voyager1.single_coarse.fine_res.h5')
     flip_data(voyager_fp)
     create_fil_from_voyager_h5(voyager_fp)

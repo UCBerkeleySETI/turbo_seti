@@ -343,25 +343,27 @@ def find_events(dat_file_list,  SNR_cut=10, check_zero_drift=False, filter_thres
         if (i%2 == odd_even_indicator and complex_cadence == False) or (on_off_indicator == 0 and complex_cadence != False):
             #Using make_table function to read the .dat file 
             #and create the pandas hit table for off sources
-            off_table_i=make_table(dat_file)
-            off_table_i['status'] = 'off_table_%i'%off_count
-            print('Loaded %i hits from %s'%(len(off_table_i), dat_file))
-
-            #Grouping all of the off hits into one table
-            off_table_list.append(off_table_i)
-            off_count+=1
+            off_table_i = make_table(dat_file)
+            nhits = len(off_table_i)
+            print('Loaded %i hits from %s (OFF)'%(nhits, dat_file))
+            if nhits > 0:
+                off_table_i['status'] = 'off_table_%i'%off_count
+                #Grouping all of the off hits into one table
+                off_table_list.append(off_table_i)
+                off_count+=1
             
         #if on
         else: 
             #Using make_table function to read the .dat file 
             #and create the pandas hit table for on sources
-            on_table_i=make_table(dat_file)
-            on_table_i['status'] = 'on_table_%i'%on_count
-            print('Loaded %i hits from %s'%(len(on_table_i), dat_file))
-    
-            #Grouping all of the on hits into one table
-            on_table_list.append(on_table_i)
-            on_count+=1
+            on_table_i = make_table(dat_file)
+            nhits = len(on_table_i)
+            print('Loaded %i hits from %s (ON)'%(nhits, dat_file))
+            if nhits > 0:
+                on_table_i['status'] = 'on_table_%i'%on_count
+                #Grouping all of the on hits into one table
+                on_table_list.append(on_table_i)
+                on_count+=1
                     
     #If there are no hits on any on target, end the program
     if not len(on_table_list):

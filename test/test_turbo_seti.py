@@ -16,12 +16,13 @@ from turbo_seti.find_doppler.find_doppler import search_coarse_channel
 import pyximport
 pyximport.install(setup_args={"include_dirs":np.get_include()}, reload_support=True)
 
-from turbo_seti.find_doppler import data_handler, helper_functions, taylor_tree, file_writers
+from turbo_seti.find_doppler import data_handler, helper_functions, taylor_tree
 
 HERE = os.path.split(os.path.abspath(__file__))[0]
 VOYAH5 = 'Voyager1.single_coarse.fine_res.h5'
 VOYAH5FLIPPED = 'Voyager1.single_coarse.fine_res.flipped.h5'
 VOYAFIL = 'Voyager1.single_coarse.fine_res.fil'
+OFFNIL_H5 = 'single_coarse_guppi_59046_80036_DIAG_VOYAGER-1_0011.rawspec.0000.h5'
 
 
 def find_doppler(filename_fil):
@@ -186,18 +187,25 @@ def test_find_doppler_voyager_flipped():
     validate_voyager_hits(filename_dat)
     plot_hits(filename_fil, filename_dat)
 
+
 def test_find_doppler_voyager_filterbank():
     """ Run turboseti on Voyager data (filterbank version) """
     print("\n===== test_find_doppler_voyager_filterbank =====")
     filename_fil = os.path.join(HERE, VOYAH5)
     find_doppler(filename_fil)
 
+
 def test_turboSETI_entry_point():
     """ Test the command line utility turboSETI """
-    print("\n===== test_turboSETI_entry_point =====")
-    filename_fil = os.path.join(HERE, VOYAH5FLIPPED)
-    args = [filename_fil, ]
+    print("\n===== test_turboSETI_entry_point 1 =====")
+    h5_1 = os.path.join(HERE, VOYAH5FLIPPED)
+    args = [h5_1, ]
     seti_event.main(args)
+    print("\n===== test_turboSETI_entry_point 2 =====")
+    h5_2 = os.path.join(HERE, OFFNIL_H5)
+    args = [h5_2, ]
+    seti_event.main(args)
+
 
 def test_make_waterfall_plots():
     """ Some basic plotting tests
@@ -254,6 +262,7 @@ def test_data_handler():
 
 def test_dask():
     """ Test dask capability on Voyager data """
+    print("\n===== test_dask ===== begin")
     filename_h5 = os.path.join(HERE, VOYAH5)
     FD = FindDoppler(datafile=filename_h5, max_drift=2, out_dir=HERE)
     print("===== test_dask ===== n_partitions=None")
@@ -272,7 +281,10 @@ def test_dask():
     assert os.path.exists(flipped_dat)
     print("===== test_dask ===== End")
 
+
 def test_bitrev():
+    '''compare Python and Cython bitrev functions'''
+    print("\n===== test_bitrev")
     before = 32769
     nbits = 7
     out_c = taylor_tree.bitrev(before, nbits)

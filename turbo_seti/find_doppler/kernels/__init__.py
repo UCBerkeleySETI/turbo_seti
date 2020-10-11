@@ -41,3 +41,12 @@ class Kernels():
     def _load_hitsearch(self):
         if self._gpu_backend:
             self.hitsearch = importlib.import_module(self._base_lib + '._hitsearch').hitsearch
+
+    @staticmethod
+    def has_gpu():
+        try:
+            import cupy
+            cupy.__version__
+        except:
+            return False
+        return True

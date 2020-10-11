@@ -47,7 +47,7 @@ class hist_vals:
 class FindDoppler:
     """ """
     def __init__(self, datafile, max_drift, min_drift=0, snr=25.0, out_dir='./', coarse_chans=None,
-                 obs_info=None, flagging=None, n_coarse_chan=None, gpu_backend=False, precision=2):
+                 obs_info=None, flagging=None, n_coarse_chan=None, kernels=None, gpu_backend=False, precision=2):
         """
         Initializes FindDoppler object
 
@@ -67,9 +67,12 @@ class FindDoppler:
         self.max_drift = max_drift
         self.snr = snr
         self.out_dir = out_dir
-
         self.gpu_backend = gpu_backend
-        self.kernels = Kernels(gpu_backend, precision)
+
+        if not kernels:
+            self.kernels = Kernels(gpu_backend, precision)
+        else:
+            self.kernels = kernels
 
         self.data_handle = DATAHandle(datafile, out_dir=out_dir, n_coarse_chan=n_coarse_chan, coarse_chans=coarse_chans, kernels=self.kernels)
         if (self.data_handle is None) or (self.data_handle.status is False):
@@ -263,10 +266,6 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
             fd.kernels.xp.copyto(tree_findoppler_original, tree_findoppler)
         fd.kernels.tt.flt(tree_findoppler, tsteps * tdwidth, tsteps)
 
-        if drift_block < 0:
-            logger.info("Un-flipping corrected negative doppler...")
-            tree_findoppler = tree_findoppler[::-1]
-
         tree_findoppler -= the_mean_val
         tree_findoppler /= the_stddev
 
@@ -294,8 +293,14 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
                     & (complete_drift_range >= -1 * max_drift)][k]] * tdwidth
             else:
                 indx = ibrev[drift_indices[k]] * tdwidth
+    
+            spectrum = tree_findoppler[indx: indx + tdwidth]
 
-            fd.kernels.xp.copyto(hitsearch_buf, tree_findoppler[indx: indx + tdwidth])
+            if drift_block < 0:
+                logger.info("Un-flipping corrected negative doppler...")
+                spectrum = spectrum[::-1]
+
+            fd.kernels.xp.copyto(hitsearch_buf, spectrum)
             hitsearch(fd, hitsearch_buf, specstart, specend, snr,
                       drift_rate, data_obj.header, tdwidth, max_val, 0)
 

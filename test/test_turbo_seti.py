@@ -23,8 +23,13 @@ VOYAH5FLIPPED = 'Voyager1.single_coarse.fine_res.flipped.h5'
 VOYAFIL = 'Voyager1.single_coarse.fine_res.fil'
 OFFNIL_H5 = 'single_coarse_guppi_59046_80036_DIAG_VOYAGER-1_0011.rawspec.0000.h5'
 
+TESTS =  [
+    (Kernels(True, 2)), (Kernels(False, 2)), # Double-Precision
+    (Kernels(False, 1)), (Kernels(True, 1)), # Single-Precision
+]
 
-def find_doppler(filename_fil):
+
+def find_doppler(filename_fil, kernels):
     """ Run turboseti doppler search on filename with default params """
     print("\n===== find_doppler =====")
     print("Searching %s" % filename_fil)
@@ -44,7 +49,9 @@ def find_doppler(filename_fil):
     max_drift     = 1.0
 
     find_seti_event = FindDoppler(filename_fil, max_drift=max_drift, snr=snr, out_dir=HERE,
-                                  coarse_chans=coarse_chans, obs_info=obs_info, n_coarse_chan=n_coarse_chan)
+                                  coarse_chans=coarse_chans, obs_info=obs_info, n_coarse_chan=n_coarse_chan,
+                                  kernels=kernels)
+
     t0 = time.time()
     find_seti_event.search()
     t_taken = time.time() - t0
@@ -167,31 +174,34 @@ def validate_voyager_hits(filename_dat):
     return hmax
 
 
-def test_find_doppler_voyager():
+@pytest.mark.parametrize("kernels", TESTS)
+def test_find_doppler_voyager(kernels):
     """ Run turboseti on Voyager data """
     print("\n===== test_find_doppler_voyager =====")
     filename_fil = os.path.join(HERE, VOYAH5)
     filename_dat = filename_fil.replace('.h5', '.dat')
-    find_doppler(filename_fil)
+    find_doppler(filename_fil, kernels)
     validate_voyager_hits(filename_dat)
     plot_hits(filename_fil, filename_dat)
 
 
-def test_find_doppler_voyager_flipped():
+@pytest.mark.parametrize("kernels", TESTS)
+def test_find_doppler_voyager_flipped(kernels):
     """ Run turboseti on Voyager data (flipped in frequency) """
     print("\n===== test_find_doppler_voyager_flipped =====")
     filename_fil = os.path.join(HERE, VOYAH5FLIPPED)
     filename_dat = filename_fil.replace('.h5', '.dat')
-    find_doppler(filename_fil)
+    find_doppler(filename_fil, kernels)
     validate_voyager_hits(filename_dat)
     plot_hits(filename_fil, filename_dat)
 
 
-def test_find_doppler_voyager_filterbank():
+@pytest.mark.parametrize("kernels", TESTS)
+def test_find_doppler_voyager_filterbank(kernels):
     """ Run turboseti on Voyager data (filterbank version) """
     print("\n===== test_find_doppler_voyager_filterbank =====")
     filename_fil = os.path.join(HERE, VOYAH5)
-    find_doppler(filename_fil)
+    find_doppler(filename_fil, kernels)
 
 
 def test_turboSETI_entry_point():
@@ -233,37 +243,42 @@ def test_make_waterfall_plots():
                                     source_name_list)
 
 
-def test_data_handler():
+@pytest.mark.parametrize("kernels", TESTS)
+def test_data_handler(kernels):
     """ Basic data handler test """
     print("\n===== test_data_handler =====")
     with pytest.raises(IOError):
-        data_handler.DATAHandle(filename='made_up_not_existing_file.h5')
+        data_handler.DATAHandle(filename='made_up_not_existing_file.h5', kernels=kernels)
     with pytest.raises(IOError):
-        data_handler.DATAHandle(filename=os.path.abspath(__file__))
+        data_handler.DATAHandle(filename=os.path.abspath(__file__), kernels=kernels)
     filename_fil = os.path.join(HERE, VOYAFIL)
     with pytest.raises(IOError):
         out_dir = os.path.join(tempfile.mkdtemp()) + '/NO/SUCH/DIRECTORY'
         dh = data_handler.DATAHandle(filename=filename_fil,
                                      out_dir=out_dir,
                                      n_coarse_chan=42, 
-                                     coarse_chans=None)
+                                     coarse_chans=None,
+                                     kernels=kernels)
     dh = data_handler.DATAHandle(filename=filename_fil,
                                  out_dir=os.path.join(tempfile.mkdtemp()),
                                  n_coarse_chan=42, 
-                                 coarse_chans=None)
+                                 coarse_chans=None,
+                                 kernels=kernels)
     assert dh.status
     filename_h5 = os.path.join(HERE, VOYAH5)
     dh = data_handler.DATAHandle(filename=filename_h5, 
                                  n_coarse_chan=42, 
-                                 coarse_chans=(8300, 8400))
+                                 coarse_chans=(8300, 8400),
+                                 kernels=kernels)
     assert dh.status
 
 
-def test_dask():
+@pytest.mark.parametrize("kernels", TESTS)
+def test_dask(kernels):
     """ Test dask capability on Voyager data """
     print("\n===== test_dask ===== begin")
     filename_h5 = os.path.join(HERE, VOYAH5)
-    FD = FindDoppler(datafile=filename_h5, max_drift=2, out_dir=HERE)
+    FD = FindDoppler(datafile=filename_h5, max_drift=2, out_dir=HERE, kernels=kernels)
     print("===== test_dask ===== n_partitions=None")
     FD.search()
     print("===== test_dask ===== n_partitions=2")
@@ -273,7 +288,7 @@ def test_dask():
     print("===== test_dask ===== merge resulted in a DAT for both flipped and unflipped H5")
     unflipped_dat = filename_h5.replace('.h5', '.dat')
     filename_h5 = os.path.join(HERE, VOYAH5FLIPPED)
-    FD = FindDoppler(datafile=filename_h5, max_drift=2, out_dir=HERE)
+    FD = FindDoppler(datafile=filename_h5, max_drift=2, out_dir=HERE, kernels=kernels)
     FD.search(n_partitions=2)
     flipped_dat = filename_h5.replace('.h5', '.dat')
     assert os.path.exists(unflipped_dat)
@@ -281,7 +296,8 @@ def test_dask():
     print("===== test_dask ===== End")
 
 
-def test_bitrev():
+@pytest.mark.parametrize("kernels", TESTS)
+def test_bitrev(kernels):
     '''compare Python and Cython bitrev functions'''
     print("\n===== test_bitrev")
     before = 32769
@@ -296,14 +312,4 @@ def test_bitrev():
 
 
 if __name__ == "__main__":
-
-    kernels = Kernels("numba")
-
-    test_make_waterfall_plots()
-    test_turboSETI_entry_point()
-    test_find_doppler_voyager()
-    test_find_doppler_voyager_flipped()
-    test_find_doppler_voyager_filterbank()
-    test_data_handler()
-    test_dask()
-    test_bitrev()
+    print("Please run: pytest test_turbo_seti.py")

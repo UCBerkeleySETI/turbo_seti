@@ -31,7 +31,7 @@ class DATAHandle:
     coarse channel info, waterfall info, and file size checking.
     """
 
-    def __init__(self, filename=None, out_dir='./', n_coarse_chan=None, coarse_chans=None, kernels=None, precision=2, gpu_backend=False):
+    def __init__(self, filename=None, out_dir='./', n_coarse_chan=None, coarse_chans=None, kernels=None, gpu_backend=False, precision=2):
         """
         :param filename:        string,      name of file (.h5 or .fil)
         :param out_dir:         string,      directory where output files should be saved

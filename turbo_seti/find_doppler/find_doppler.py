@@ -47,7 +47,7 @@ class hist_vals:
 class FindDoppler:
     """ """
     def __init__(self, datafile, max_drift, min_drift=0, snr=25.0, out_dir='./', coarse_chans=None,
-                 obs_info=None, flagging=None, n_coarse_chan=None, use_gpu=False, single_precision=False):
+                 obs_info=None, flagging=None, n_coarse_chan=None, gpu_backend=False, precision=2):
         """
         Initializes FindDoppler object
 
@@ -68,23 +68,10 @@ class FindDoppler:
         self.snr = snr
         self.out_dir = out_dir
 
-        self.use_gpu = use_gpu
-        self.single_precision = single_precision
-        self.kernels = Kernels("cuda" if self.use_gpu else "numba")
+        self.gpu_backend = gpu_backend
+        self.kernels = Kernels(gpu_backend, precision)
 
-        if self.use_gpu:
-            self.xp = importlib.import_module("cupy")
-            self.np = importlib.import_module("numpy")
-        else:
-            self.xp = importlib.import_module("numpy")
-            self.np = self.xp
-
-        if self.single_precision:
-            self._float_type = self.xp.float32
-        else:
-            self._float_type = self.xp.float64
-
-        self.data_handle = DATAHandle(self.xp, datafile, out_dir=out_dir, n_coarse_chan=n_coarse_chan, coarse_chans=coarse_chans)
+        self.data_handle = DATAHandle(datafile, out_dir=out_dir, n_coarse_chan=n_coarse_chan, coarse_chans=coarse_chans, kernels=self.kernels)
         if (self.data_handle is None) or (self.data_handle.status is False):
             raise IOError("File error, aborting...")
 
@@ -93,7 +80,7 @@ class FindDoppler:
 
         if obs_info is None:
             obs_info = {'pulsar': 0, 'pulsar_found': 0, 'pulsar_dm': 0.0, 'pulsar_snr': 0.0,
-                        'pulsar_stats': self.np.zeros(6), 'RFI_level': 0.0, 'Mean_SEFD': 0.0, 'psrflux_Sens': 0.0,
+                        'pulsar_stats': self.kernels.np.zeros(6), 'RFI_level': 0.0, 'Mean_SEFD': 0.0, 'psrflux_Sens': 0.0,
                         'SEFDs_val': [0.0], 'SEFDs_freq': [0.0], 'SEFDs_freq_up': [0.0]}
 
         self.obs_info = obs_info
@@ -178,9 +165,8 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
     flagging = fd.flagging
 
     #logger.info("Start searching for coarse channel: %s" % d['coarse_chan'])
-    data_obj = DATAH5(fd.xp, d['filename'], f_start=d['f_start'], f_stop=d['f_stop'],
-                      coarse_chan=d['coarse_chan'], n_coarse_chan=d['n_coarse_chan'],
-                      single_precision=fd.single_precision)
+    data_obj = DATAH5(d['filename'], f_start=d['f_start'], f_stop=d['f_stop'],
+                      coarse_chan=d['coarse_chan'], n_coarse_chan=d['n_coarse_chan'], kernels=fd.kernels)
 
     fileroot_out = filename_in.split('/')[-1].replace('.h5', '').replace('.fits', '').replace('.fil', '')
     if logwriter is None:
@@ -189,7 +175,7 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
         filewriter = FileWriter('%s/%s_%i.dat' % (out_dir.rstrip('/'), fileroot_out, d['coarse_chan']), header_in)
 
     spectra, drift_indices = data_obj.load_data()
-    spectra_flipped = fd.xp.copy(spectra)[:, ::-1]
+    spectra_flipped = fd.kernels.xp.copy(spectra)[:, ::-1]
     tsteps = data_obj.tsteps
     tsteps_valid = data_obj.tsteps_valid
     tdwidth = data_obj.tdwidth
@@ -201,13 +187,13 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
         ##EE This flags the edges of the PFF for BL data (with 3Hz res per channel).
         ##EE The PFF flat profile falls after around 100k channels.
         ##EE But it falls slowly enough that could use 50-80k channels.
-        median_flag = fd.xp.median(spectra)
+        median_flag = fd.kernels.xp.median(spectra)
         #             spectra[:,:80000] = median_flag/float(tsteps)
         #             spectra[:,-80000:] = median_flag/float(tsteps)
 
         ##EE Flagging spikes in time series.
         time_series = spectra.sum(axis=1)
-        time_series_median = fd.xp.median(time_series)
+        time_series_median = fd.kernels.xp.median(time_series)
 
         # Flagging spikes > 10 in SNR
         mask = (time_series - time_series_median) / time_series.std() > 10
@@ -217,36 +203,36 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
                 fftlen)  # So that the value is not the median in the time_series.
 
     else:
-        median_flag = fd.xp.array([0], dtype=fd._float_type)
+        median_flag = fd.kernels.xp.array([0], dtype=fd.kernels.float_type)
 
     # allocate array for findopplering
     # init findopplering array to zero
-    tree_findoppler = fd.xp.zeros(tsteps * tdwidth, dtype=fd._float_type) + median_flag
+    tree_findoppler = fd.kernels.xp.zeros(tsteps * tdwidth, dtype=fd.kernels.float_type) + median_flag
 
     # allocate array for holding original
     # Allocates array in a fast way (without initialize)
-    tree_findoppler_original = fd.xp.empty_like(tree_findoppler, dtype=fd._float_type)
+    tree_findoppler_original = fd.kernels.xp.empty_like(tree_findoppler, dtype=fd.kernels.float_type)
 
-    hitsearch_buf = fd.xp.empty(tdwidth, dtype=fd._float_type)
+    hitsearch_buf = fd.kernels.xp.empty(tdwidth, dtype=fd.kernels.float_type)
 
     # build index mask for in-place tree doppler correction
-    ibrev = fd.xp.zeros(tsteps, dtype=fd.xp.int32)
+    ibrev = fd.kernels.xp.zeros(tsteps, dtype=fd.kernels.xp.int32)
 
     for i in range(0, tsteps):
-        ibrev[i] = fd.kernels.tt.bitrev(i, int(fd.np.log2(tsteps)))
+        ibrev[i] = fd.kernels.tt.bitrev(i, int(fd.kernels.np.log2(tsteps)))
 
     ##EE: should double check if tdwidth is really better than fftlen here.
     max_val = max_vals()
     if max_val.maxsnr is None:
-        max_val.maxsnr = fd.xp.zeros(tdwidth, dtype=fd._float_type)
+        max_val.maxsnr = fd.kernels.xp.zeros(tdwidth, dtype=fd.kernels.float_type)
     if max_val.maxdrift is None:
-        max_val.maxdrift = fd.xp.zeros(tdwidth, dtype=fd._float_type)
+        max_val.maxdrift = fd.kernels.xp.zeros(tdwidth, dtype=fd.kernels.float_type)
     if max_val.maxsmooth is None:
-        max_val.maxsmooth = fd.xp.zeros(tdwidth, dtype=fd.xp.uint8)
+        max_val.maxsmooth = fd.kernels.xp.zeros(tdwidth, dtype=fd.kernels.xp.uint8)
     if max_val.maxid is None:
-        max_val.maxid = fd.xp.zeros(tdwidth, dtype=fd.xp.uint32)
+        max_val.maxid = fd.kernels.xp.zeros(tdwidth, dtype=fd.kernels.xp.uint32)
     if max_val.total_n_hits is None:
-        max_val.total_n_hits = fd.xp.zeros(1, dtype=fd.xp.uint32)
+        max_val.total_n_hits = fd.kernels.xp.zeros(1, dtype=fd.kernels.xp.uint32)
 
     # EE: Making "shoulders" to avoid "edge effects". Could do further testing.
     specstart = int(tsteps * shoulder_size / 2)
@@ -254,12 +240,12 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
 
     # --------------------------------
     # Stats calc
-    the_mean_val, the_stddev = comp_stats(fd.xp, spectra.sum(axis=0))
+    the_mean_val, the_stddev = comp_stats(fd.kernels.xp, spectra.sum(axis=0))
 
     # --------------------------------
     # Looping over drift_rate_nblock
     # --------------------------------
-    drift_rate_nblock = int(fd.xp.floor(max_drift / (data_obj.drift_rate_resolution * tsteps_valid)))
+    drift_rate_nblock = int(fd.kernels.xp.floor(max_drift / (data_obj.drift_rate_resolution * tsteps_valid)))
 
     ##EE-debuging        kk = 0
 
@@ -274,7 +260,7 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
                           roll=drift_block, reverse=1)
 
         if drift_block == drift_rate_nblock:
-            fd.xp.copyto(tree_findoppler_original, tree_findoppler)
+            fd.kernels.xp.copyto(tree_findoppler_original, tree_findoppler)
         fd.kernels.tt.flt(tree_findoppler, tsteps * tdwidth, tsteps)
 
         if drift_block < 0:
@@ -285,13 +271,13 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
         tree_findoppler /= the_stddev
 
         if drift_block < 0:
-            complete_drift_range = data_obj.drift_rate_resolution * fd.np.array(
+            complete_drift_range = data_obj.drift_rate_resolution * fd.kernels.np.array(
                 range(-1 * tsteps_valid * (abs(drift_block) + 1) + 1,
                       -1 * tsteps_valid * (abs(drift_block)) + 1))
             sub_range = complete_drift_range[(complete_drift_range < min_drift) &
                                              (complete_drift_range >= -1 * max_drift)]
         else:
-            complete_drift_range = data_obj.drift_rate_resolution * fd.np.array(
+            complete_drift_range = data_obj.drift_rate_resolution * fd.kernels.np.array(
                 range(tsteps_valid * drift_block, tsteps_valid * (drift_block + 1)))
             sub_range = complete_drift_range[(complete_drift_range >= min_drift) &
                                              (complete_drift_range <= max_drift)]
@@ -309,7 +295,7 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
             else:
                 indx = ibrev[drift_indices[k]] * tdwidth
 
-            fd.xp.copyto(hitsearch_buf, tree_findoppler[indx: indx + tdwidth])
+            fd.kernels.xp.copyto(hitsearch_buf, tree_findoppler[indx: indx + tdwidth])
             hitsearch(fd, hitsearch_buf, specstart, specend, snr,
                       drift_rate, data_obj.header, tdwidth, max_val, 0)
 
@@ -360,11 +346,11 @@ def populate_tree(fd, spectra, tree_findoppler, nframes, tdwidth, tsteps, fftlen
 
         ##EE copy spectra into tree_findoppler, leaving two regions in each side blanck (each region of tsteps*(shoulder_size/2) in size).
         # Copy spectra into tree_findoppler, with rolling.
-        fd.xp.copyto(tree_findoppler[sind_a:sind_a+fftlen], fd.xp.roll(spectra[i], roll * i * direction))
+        fd.kernels.xp.copyto(tree_findoppler[sind_a:sind_a+fftlen], fd.kernels.xp.roll(spectra[i], roll * i * direction))
 
         ##EE loads the end part of the current spectrum into the left hand side black region in tree_findoppler (comment below says "next spectra" but for that need i+1...bug?)
         #load end of current spectra into left hand side of next spectra
-        fd.xp.copyto(tree_findoppler[sind_b:sind_b+size], spectra[i, fftlen-size:fftlen])
+        fd.kernels.xp.copyto(tree_findoppler[sind_b:sind_b+size], spectra[i, fftlen-size:fftlen])
 
     return tree_findoppler
 
@@ -386,11 +372,11 @@ def hitsearch(fd, spectrum, specstart, specend, hitthresh, drift_rate, header, t
     """
     logger.debug('Start searching for hits at drift rate: %f' % drift_rate)
 
-    if fd.use_gpu:
+    if fd.gpu_backend:
 
-        blockSize = 512;
+        blockSize = 512
         length = specend - specstart
-        numBlocks = (length + blockSize - 1) // blockSize;
+        numBlocks = (length + blockSize - 1) // blockSize
         call = (length, spectrum[specstart:specend], hitthresh, drift_rate,
                 max_val.maxsnr, max_val.maxdrift, max_val.total_n_hits)
         fd.kernels.hitsearch((numBlocks,), (blockSize,), call)

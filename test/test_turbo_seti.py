@@ -11,7 +11,9 @@ import numpy as np
 import pytest
 
 from blimpy import Waterfall
+
 from turbo_seti import FindDoppler, seti_event, find_event, plot_event
+from turbo_seti.find_doppler.kernels import Kernels
 from turbo_seti.find_doppler.find_doppler import search_coarse_channel
 from turbo_seti.find_doppler import data_handler, helper_functions, file_writers
 
@@ -284,16 +286,18 @@ def test_bitrev():
     print("\n===== test_bitrev")
     before = 32769
     nbits = 7
-    out_c = taylor_tree.bitrev(before, nbits)
+    out_c = kernels.tt.bitrev(before, nbits)
     out_p = helper_functions.bitrev(before, nbits)
     assert out_c == out_p
     before = 32770
-    out_c = taylor_tree.bitrev(before, nbits)
+    out_c = kernels.tt.bitrev(before, nbits)
     out_p = helper_functions.bitrev(before, nbits)
     assert out_c == out_p
 
 
 if __name__ == "__main__":
+
+    kernels = Kernels("numba")
 
     test_make_waterfall_plots()
     test_turboSETI_entry_point()

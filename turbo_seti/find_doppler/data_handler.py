@@ -16,6 +16,8 @@ import h5py
 from blimpy import Waterfall
 from blimpy.io import sigproc
 
+from .kernels import Kernels
+
 logger = logging.getLogger(__name__)
 
 #For debugging
@@ -29,13 +31,18 @@ class DATAHandle:
     coarse channel info, waterfall info, and file size checking.
     """
 
-    def __init__(self, xp, filename=None, out_dir='./', n_coarse_chan=None, coarse_chans=None, single_precision=False):
+    def __init__(self, filename=None, out_dir='./', n_coarse_chan=None, coarse_chans=None, kernels=None, precision=2, gpu_backend=False):
         """
         :param filename:        string,      name of file (.h5 or .fil)
         :param out_dir:         string,      directory where output files should be saved
         :param n_coarse_chan:   integer,     number of coarse channels
         :param coarse_chans     list or None,   list of course channels
         """
+
+        if not kernels:
+            self.kernels = Kernels(gpu_backend, precision)
+        else:
+            self.kernels = kernels
 
         if filename and os.path.isfile(filename):
             self.filename = filename
@@ -62,7 +69,7 @@ class DATAHandle:
             self.filesize = self.filestat.st_size/(1024.0**2)
 
             # Grab header from DATAH5
-            dobj_master = DATAH5(xp, filename, single_precision=single_precision)
+            dobj_master = DATAH5(filename, kernels=self.kernels)
             self.header = dobj_master.header
             dobj_master.close()
 
@@ -155,8 +162,8 @@ class DATAH5:
     This class is where the waterfall data is loaded, as well as the header info.
     It creates other attributes related to the dedoppler search (load_drift_indexes).
     """
-    def __init__(self, xp, filename, f_start=None, f_stop=None, t_start=None, t_stop=None,
-                 coarse_chan=1, n_coarse_chan=None, single_precision=False):
+    def __init__(self, filename, f_start=None, f_stop=None, t_start=None, t_stop=None,
+                 coarse_chan=1, n_coarse_chan=None, kernels=None):
         """
         :param filename:        string      name of file
         :param f_start:         float       start frequency in MHz
@@ -174,8 +181,7 @@ class DATAH5:
         self.t_start = t_start
         self.t_stop = t_stop
         self.n_coarse_chan = n_coarse_chan
-        self.xp = xp
-        self.single_precision = single_precision
+        self.kernels = kernels
 
         #Instancing file.
         try:
@@ -238,12 +244,8 @@ class DATAH5:
             logger.warning('The file/selection is not an integer number of coarse channels. This could have unexpected consequences. Let op!')
         self.fil_file.blank_dc(n_coarse_chan)
 
-        spec = self.xp.squeeze(self.fil_file.data)
-
-        if self.single_precision:
-            spectra = self.xp.array(spec, dtype=self.xp.float32)
-        else:
-            spectra = self.xp.array(spec, dtype=self.xp.float64)
+        spec = self.kernels.xp.squeeze(self.fil_file.data)
+        spectra = self.kernels.xp.array(spec, dtype=self.kernels.float_type)
 
         # DCP APR 2020 -- COMMENTED OUT. THIS IS BREAKING STUFF IN CURRENT VERSION.
         #Arrange data in ascending order in freq if not already in that format.
@@ -253,8 +255,8 @@ class DATAH5:
         # This check will add rows of zeros if the obs is too short
         # (and thus not a power of two rows).
         if spectra.shape[0] != self.tsteps:
-            spectra = self.xp.append(spectra, self.xp.zeros((self.tsteps-spectra.shape[0],
-                                                             self.fftlen)), axis=0)
+            spectra = self.kernels.xp.append(spectra, self.kernels.xp.zeros((self.tsteps-spectra.shape[0],
+                                                                             self.fftlen)), axis=0)
         self.tsteps_valid = self.tsteps
         self.obs_length = self.tsteps * self.header['DELTAT']
 

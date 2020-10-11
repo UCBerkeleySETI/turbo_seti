@@ -93,8 +93,8 @@ def exec(args):
                                       snr=args.snr, out_dir=args.out_dir,
                                       coarse_chans=coarse_chans, obs_info=None,
                                       n_coarse_chan=args.n_coarse_chan,
-                                      use_gpu=True if args.flag_gpu == "y" else False,
-                                      single_precision=True if args.flag_single_precision == "y" else False)
+                                      gpu_backend=True if args.flag_gpu == "y" else False,
+                                      precision=1 if args.flag_single_precision == "y" else 2)
 
         find_seti_event.search(n_partitions=args.n_parallel,
                                progress_bar=args.flag_progress_bar)

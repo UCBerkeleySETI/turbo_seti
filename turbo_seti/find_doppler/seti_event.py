@@ -12,6 +12,7 @@ from pstats import SortKey
 from argparse import ArgumentParser
 
 from .find_doppler import FindDoppler
+from turbo_seti.find_doppler.kernels import Kernels
 
 
 def main(args=None):
@@ -82,6 +83,9 @@ def exec(args):
     else:
         stream = sys.stderr
         format = '%%(relativeCreated)5d (name)-15s %(levelname)-8s %(message)s'
+    
+    if Kernels.has_gpu() and args.flag_gpu == "n":
+        print("Info: Your system is compatible with GPU-mode. Use the `-g y` argument to enable it.")
 
     #Doing search
     try:

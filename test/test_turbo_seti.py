@@ -24,14 +24,14 @@ VOYAFIL = 'Voyager1.single_coarse.fine_res.fil'
 OFFNIL_H5 = 'single_coarse_guppi_59046_80036_DIAG_VOYAGER-1_0011.rawspec.0000.h5'
 
 TESTS =  [
-    (Kernels(False, 2)),
-    (Kernels(False, 1)),
+    (Kernels(gpu_backend=False, precision=2)),
+    (Kernels(gpu_backend=False, precision=1)),
 ]
 
 if Kernels.has_gpu():
     GPU_TESTS = [
-        (Kernels(True, 2)),
-        (Kernels(True, 1)),
+        (Kernels(gpu_backend=True, precision=2)),
+        (Kernels(gpu_backend=True, precision=1)),
     ]
     TESTS.extend(GPU_TESTS)
 

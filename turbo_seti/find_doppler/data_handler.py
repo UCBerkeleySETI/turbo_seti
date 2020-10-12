@@ -255,8 +255,9 @@ class DATAH5:
         # This check will add rows of zeros if the obs is too short
         # (and thus not a power of two rows).
         if spectra.shape[0] != self.tsteps:
-            spectra = self.kernels.xp.append(spectra, self.kernels.xp.zeros((self.tsteps-spectra.shape[0],
-                                                                             self.fftlen)), axis=0)
+            padding = self.kernels.xp.zeros((self.tsteps-spectra.shape[0], self.fftlen))
+            spectra = self.kernels.xp.concatenate((spectra, padding), axis=0)
+
         self.tsteps_valid = self.tsteps
         self.obs_length = self.tsteps * self.header['DELTAT']
 

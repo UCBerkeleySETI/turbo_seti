@@ -1,10 +1,5 @@
-"""
-Two classes for the Data Handler of the turbo_seti package:
-    DATAHandle
-    DATAH5
+#!/usr/bin/env python
 
-Their descriptions are below.
-"""
 import os
 import math
 import logging
@@ -25,20 +20,31 @@ logger = logging.getLogger(__name__)
 #import pdb;# pdb.set_trace()
 
 class DATAHandle:
-    """
+    r"""
     Class to setup input file for further processing of data.
     Handles conversion to h5 (from fil), extraction of
     coarse channel info, waterfall info, and file size checking.
+
+    Parameters
+    ----------
+    filename : str
+        Name of file (.h5 or .fil).
+    out_dir : str
+        Directory where output files should be saved.
+    n_coarse_chan : int
+        Number of coarse channels.
+    coarse_chans : list or None
+        List of course channels.
+    kernels : Kernels, optional
+        Pre-configured class of Kernels.
+    gpu_backend : bool, optional
+        Use GPU accelerated Kernels.
+    precision : int {2: float64, 1: float32}, optional
+        Floating point precision.
+
     """
-
-    def __init__(self, filename=None, out_dir='./', n_coarse_chan=None, coarse_chans=None, kernels=None, gpu_backend=False, precision=2):
-        """
-        :param filename:        string,      name of file (.h5 or .fil)
-        :param out_dir:         string,      directory where output files should be saved
-        :param n_coarse_chan:   integer,     number of coarse channels
-        :param coarse_chans     list or None,   list of course channels
-        """
-
+    def __init__(self, filename=None, out_dir='./', n_coarse_chan=None, coarse_chans=None,
+                 kernels=None, gpu_backend=False, precision=2):
         if not kernels:
             self.kernels = Kernels(gpu_backend, precision)
         else:
@@ -84,19 +90,25 @@ class DATAHandle:
             raise IOError(errmsg)
 
     def get_info(self):
-        """:return:    dict,    header of the blimpy file"""
+        r"""
+        Get the header of the file.
 
+        Returns
+        -------
+        header : dict
+            Header of the blimpy file.
+
+        """
         fil_file = Waterfall(self.filename, load_data=False)
         return fil_file.header
 
     def __make_h5_file(self):
-        """
+        r"""
         Converts file to h5 format, saved in current directory.
         Sets the filename attribute of the calling DATAHandle.
         to the (new) filename.
-        :return: void
-        """
 
+        """
         fil_file = Waterfall(self.filename)
         bn = os.path.basename(self.filename)
         new_filename = os.path.join(self.out_dir, bn.replace('.fil', '.h5'))
@@ -104,13 +116,16 @@ class DATAHandle:
         self.filename = new_filename
 
     def __split_h5(self):
-        """
+        r"""
         Creates a plan to select data from single coarse channels.
-        :return: list[DATAH5],
-            where each list member contains a DATAH5 object
-            for each of the coarse channels in the file.
-        """
 
+        Returns
+        -------
+        data_list : list[DATAH5]
+            Where each list member contains a DATAH5 object
+            for each of the coarse channels in the file.
+
+        """
         data_list = []
 
         #Instancing file.
@@ -158,22 +173,30 @@ class DATAHandle:
         return data_list
 
 class DATAH5:
-    """
+    r"""
     This class is where the waterfall data is loaded, as well as the header info.
     It creates other attributes related to the dedoppler search (load_drift_indexes).
+
+    Parameters
+    ----------
+    filename : string
+        Name of file.
+    f_start : float
+        Start frequency in MHz.
+    f_stop : float
+        Stop frequency in MHz.
+    t_start : int
+        Start integration ID.
+    t_stop : int
+        Stop integration ID.
+    coarse_chan : int
+    n_coarse_chan : int
+    kernels : Kernels
+        Pre-configured class of kernels.
+
     """
     def __init__(self, filename, f_start=None, f_stop=None, t_start=None, t_stop=None,
                  coarse_chan=1, n_coarse_chan=None, kernels=None):
-        """
-        :param filename:        string      name of file
-        :param f_start:         float       start frequency in MHz
-        :param f_stop:          float       stop frequency in MHz
-        :param t_start:         int         start integration ID
-        :param t_stop:          int         stop integration ID
-        :param coarse_chan:     int
-        :param n_coarse_chan:  int
-        """
-
         self.filename = filename
         self.closed = False
         self.f_start = f_start
@@ -225,12 +248,12 @@ class DATAH5:
         self.tdwidth = self.fftlen + self.shoulder_size * self.tsteps
 
     def load_data(self):
-        """Read the spectra and drift indices from file.
-        :return:    ndarray, ndarray        spectra, drift indices
+        r"""
+        Read the spectra and drift indices from file.
 
-        Args:
-
-        Returns:
+        Returns
+        -------
+        spectra, drift indices : ndarray, ndarray
 
         """
         self.fil_file.read_data(f_start=self.f_start, f_stop=self.f_stop)
@@ -270,14 +293,13 @@ class DATAH5:
         return spectra, drift_indexes
 
     def load_drift_indexes(self):
-        """
+        r"""
         The drift indices are read from a stored file so that
         there is no need to recalculate. This speed things up.
-        :return:    ndarray     drift indices
 
-        Args:
-
-        Returns:
+        Returns
+        -------
+        drift_indexes : ndarray
 
         """
         n = int(np.log2(self.tsteps))
@@ -290,13 +312,21 @@ class DATAH5:
         return drift_indexes
 
     def __make_data_header(self, header, coarse=False):
-        """
-        Takes header into fits header format
-        :param header:      dict        blimpy waterfall header
-        :param coarse:      Boolean     whether or not there are coarse channels to analyze
-        :return:            dict
-        """
+        r"""
+        Takes header into fits header format.
 
+        Parameters
+        ----------
+        header : dict
+            Blimpy waterfall header.
+        coarse : Boolean
+            Whether or not there are coarse channels to analyze.
+        
+        Returns
+        -------
+        base_header : dict
+
+        """
         base_header = {}
 
         #used by file_writers.py
@@ -321,16 +351,12 @@ class DATAH5:
         return base_header
 
     def close(self):
-        """Closes file and sets the data attribute `.closed` to
+        r"""
+        Closes file and sets the data attribute `.closed` to
         True. A closed object can no longer be used for I/O operations.
         `close()` may be called multiple times without error.
 
-        Args:
-
-        Returns:
-
         """
-
         # Call file object destructor which should close the file
         del self.fil_file
 

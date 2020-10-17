@@ -1,12 +1,4 @@
-"""
-Class FindDoppler
-
-Non-object functions:
-    search_coarse_channel
-    populate_tree
-    hitsearch
-    tophitsearch
-"""
+#!/usr/bin/env python
 
 import importlib
 import logging
@@ -27,7 +19,10 @@ from .merge_dats_logs import merge_dats_logs
 logger = logging.getLogger(__name__)
 
 class max_vals:
-    """ Class used to initialize some maximums """
+    r"""
+    Class used to initialize some maximums.
+
+    """
     def __init__(self):
         self.maxsnr = None
         self.maxdrift = None
@@ -37,7 +32,10 @@ class max_vals:
 
 
 class hist_vals:
-    """Temporary class that saved the normalized spectrum for all drift rates."""
+    r"""
+    Temporary class that saved the normalized spectrum for all drift rates.
+    
+    """
     def __init__(self):
         self.histsnr = None
         self.histdrift = None
@@ -45,24 +43,41 @@ class hist_vals:
 
 
 class FindDoppler:
-    """ """
-    def __init__(self, datafile, max_drift, min_drift=0, snr=25.0, out_dir='./', coarse_chans=None,
-                 obs_info=None, flagging=None, n_coarse_chan=None, kernels=None, gpu_backend=False, precision=2):
-        """
-        Initializes FindDoppler object
+    r"""
+    Initializes FindDoppler object.
 
-        Args:
-            datafile (string):  Inputted filename (.h5 or .fil)
-            max_drift (float):  Max drift rate in Hz/second
-            min_drift (int):    Min drift rate in Hz/second
-            snr (float):        Signal to Noise Ratio - A ratio bigger than 1 to 1 has more signal than  noise
-            out_dir (string):   Directory where output files should be placed. By default this is the
-                                current working directory.
-            coarse_chans (list(int)):  the inputted comma separated list of coarse channels to analyze, if any.
-            obs_info (dict):     Used to hold info found on file, including info about pulsars, RFI, and SEFD
-            flagging (bool):     Flags the edges of the PFF for BL data (with 3Hz res per channel)
-            n_coarse_chan (int): Number of coarse channels in file
-        """
+    Parameters
+    ----------
+    datafile : string
+        Inputted filename (.h5 or .fil)
+    max_drift : float
+        Max drift rate in Hz/second.
+    min_drift : int
+        Min drift rate in Hz/second.
+    snr : float
+        Signal to Noise Ratio - A ratio bigger than 1 to 1 has more signal than noise.
+    out_dir : string
+        Directory where output files should be placed. By default this is the
+        current working directory.
+    coarse_chans : list(int)
+        The inputted comma separated list of coarse channels to analyze, if any.
+    obs_info : dict
+        Used to hold info found on file, including info about pulsars, RFI, and SEFD.
+    flagging : bool
+        Flags the edges of the PFF for BL data (with 3Hz res per channel).
+    n_coarse_chan : int
+        Number of coarse channels in file.
+    kernels : Kernels, optional
+        Pre-configured class of Kernels.
+    gpu_backend : bool, optional
+        Use GPU accelerated Kernels.
+    precision : int {2: float64, 1: float32}, optional
+        Floating point precision.
+
+    """
+    def __init__(self, datafile, max_drift, min_drift=0, snr=25.0, out_dir='./', coarse_chans=None,
+                 obs_info=None, flagging=None, n_coarse_chan=None, kernels=None, gpu_backend=False,
+                 precision=2):
         self.min_drift = min_drift
         self.max_drift = max_drift
         self.snr = snr
@@ -92,9 +107,8 @@ class FindDoppler:
         self.flagging = flagging
 
     def get_info(self):
-        """Generate info string
-
-        Args: None
+        r"""
+        Generate info string.
 
         Returns:
           : String that contains the values of this FinDoppler object's attributes.
@@ -104,12 +118,20 @@ class FindDoppler:
         return info_str
 
     def search(self, n_partitions=1, progress_bar='y'):
-        """ Top level search routine
+        r"""
+        Top level search routine. 
 
-        Uses dask to launch multiple drift searches in parallel
+        Parameters
+        ----------
+        n_partitions : int
+            Number of Dask threads to use in parallel. Defaults to single-thread.
+        progress_bar : str {'y', 'n'}, optional
+            Enable command-line progress bar.
 
-        Args:
-            n_partitions (int): Number of threads to use in parallel. Defaults to 1 (single-threaded)
+        Notes
+        -----
+        Can use dask to launch multiple drift searches in parallel.
+
         """
         logger.debug("Start searching...")
         logger.debug(self.get_info())
@@ -141,19 +163,31 @@ class FindDoppler:
 
 
 def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, filewriter=None):
-    """ Run a turboseti search on a single coarse channel.
+    r"""
+    Run a turboseti search on a single coarse channel.
 
+    Parameters
+    ----------
+    data_dict : dict
+        File's waterfall data handler.
+        Required keys: {'filename','f_start', 'f_stop', 'coarse_chan', 'n_coarse_chan'}
+    find_doppler_instance : FindDoppler
+        Instance of FindDoppler class.
+    logwriter : LogWriter, optional
+        A LogWriter to write log output into. If None, one will be created.
+    filewriter : FileWriter, optional
+        A FileWriter to use to write the dat file. If None, one will be created.
+
+    Returns
+    -------
+    : bool
+        Returns True if successful (needed for dask).
+
+    Notes
+    -----
     This function is separate from the FindDoppler class to allow parallelization. This should not be called
     directly, but rather via the `FindDoppler.search()` or `FindDoppler.search_dask()` routines.
 
-    Args:
-        data_dict (dict): File's waterfall data handler.
-                        Required keys: {'filename','f_start', 'f_stop', 'coarse_chan', 'n_coarse_chan'}
-        find_doppler_instance (FindDoppler): Instance of FindDoppler class (needed to access search params)
-        logwriter (LogWriter): A LogWriter to write log output into. If None, one will be created.
-        filewriter (FileWriter): A FileWriter to use to write the dat file. If None, one will be created.
-    Returns:
-        Success (bool): Returns True if successful (needed for dask).
     """
     d = data_dict
     fd = find_doppler_instance
@@ -243,7 +277,7 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
 
     # --------------------------------
     # Stats calc
-    the_mean_val, the_stddev = comp_stats(fd.kernels.xp, spectra.sum(axis=0))
+    the_mean_val, the_stddev = comp_stats(spectra.sum(axis=0), xp=fd.kernels.xp)
 
     # --------------------------------
     # Looping over drift_rate_nblock
@@ -310,26 +344,40 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
 
 def populate_tree(fd, spectra, tree_findoppler, nframes, tdwidth, tsteps, fftlen,
                   shoulder_size, roll=0, reverse=0):
-    """This script populates the findoppler tree with the spectra.
+    r"""
+    This script populates the findoppler tree with the spectra.
+
+    Parameters
+    ----------
+    fd : FindDoppler
+        Instance of FindDoppler class.
+    spectra : ndarray
+        Spectra calculated from file.
+    tree_findoppler : ndarray
+        Tree to be populated with spectra.
+    nframes : int
+    tdwidth : int
+    tsteps : int
+    fftlen : int
+        Length of fast fourier transform (fft) matrix.
+    shoulder_size : int
+        Size of shoulder region.
+    roll : int, optional
+        Used to calculate amount each entry to the spectra should be rolled (shifted).
+    reverse : int, optional
+        Used to determine which way spectra should be rolled (shifted).
+
+    Returns
+    -------
+    : ndarray
+        Spectra-populated version of the input tree_findoppler.
+
+    Notes
+    -----
     It creates two "shoulders" (each region of tsteps*(shoulder_size/2) in size) to avoid "edge" issues.
     It uses np.roll() for drift-rate blocks higher than 1.
 
-    Args:
-      spectra: ndarray,        spectra calculated from file
-      tree_findoppler: ndarray,        tree to be populated with spectra
-      nframes: int,
-      tdwidth: int,
-      tsteps: int,
-      fftlen: int,            length of fast fourier transform (fft) matrix
-      shoulder_size: int,            size of shoulder region
-      roll: int,            used to calculate amount each entry to the spectra should be rolled (shifted) (Default value = 0)
-      reverse: int(boolean),   used to determine which way spectra should be rolled (shifted) (Default value = 0)
-
-    Returns:
-      : ndarray,        spectra-populated version of the input tree_findoppler
-
     """
-
     if reverse:
         direction = -1
     else:
@@ -353,18 +401,29 @@ def populate_tree(fd, spectra, tree_findoppler, nframes, tdwidth, tsteps, fftlen
 
 
 def hitsearch(fd, spectrum, specstart, specend, hitthresh, drift_rate, header, tdwidth, max_val, reverse):
-    """Searches for hits at given drift rate. A hit occurs in each channel if > hitthresh.
+    r"""
+    Searches for hits at given drift rate. A hit occurs in each channel if > hitthresh.
 
-    Args:
-      spectrum: ndarray,
-      specstart: int,                first index to search for hit in spectrum
-      specend: int,                last index to search for hit in spectrum
-      hitthresh: float,              signal to noise ratio used as threshold for determining hits
-      drift_rate: float,              drift rate at which we are searching for hits
-      header: dict,               header in fits header format. See data_handler.py's DATAH5 class header
-      tdwidth: int,
-      max_val: max_vals,           object to be filled with max values from this search and then returned
-      reverse: int(boolean),       used to flag whether fine channel should be reversed
+    Parameters
+    ----------
+    fd : FindDoppler
+        Instance of FindDoppler class.
+    spectrum : ndarray
+    specstart : int
+        First index to search for hit in spectrum.
+    specend : int
+        Last index to search for hit in spectrum.
+    hitthresh : float
+        Signal to noise ratio used as threshold for determining hits.
+    drift_rate : float
+        Drift rate at which we are searching for hits.
+    header : dict
+        Header in fits header format. See data_handler.py's DATAH5 class header.
+    tdwidth : int
+    max_val : max_vals
+        Object to be filled with max values from this search and then returned.
+    reverse : int
+        Used to flag whether fine channel should be reversed.
 
     """
     logger.debug('Start searching for hits at drift rate: %f' % drift_rate)
@@ -395,34 +454,45 @@ def hitsearch(fd, spectrum, specstart, specend, hitthresh, drift_rate, header, t
             if spectrum[i] > max_val.maxsnr[k]:
                 max_val.maxsnr[k] = spectrum[i]
                 max_val.maxdrift[k] = drift_rate
-                #max_val.maxid[k] = hits
+                max_val.maxid[k] = hits
 
         max_val.total_n_hits[0] += hits
 
 
 def tophitsearch(tree_findoppler_original, max_val, tsteps, header, tdwidth, fftlen,
                  max_drift, obs_length, logwriter=None, filewriter=None, obs_info=None):
-    """This finds the hits with largest SNR within 2*tsteps frequency channels.
+    r"""
+    This finds the hits with largest SNR within 2*tsteps frequency channels.
 
-    Args:
-      tree_findoppler_original: ndarray,        spectra-populated findoppler tree
-      max_val: max_vals,       contains max values from hitsearch
-      tsteps: int,
-      header: dict,           header in fits header format. See data_handler.py's DATAH5 class header. Used to report tophit in filewriter
-      tdwidth: int,
-      fftlen: int,            length of fast fourier transform (fft) matrix
-      max_drift: float,          Max drift rate in Hz/second
-      obs_length: float,
-      logwriter: LogWriter       logwriter to which we should write if we find a top hit (Default value = None)
-      filewriter: FileWriter      filewriter corresponding to file to which we should save the
-    local maximum of tophit. See report_tophit in filewriters.py (Default value = None)
-      obs_info: dict, (Default value = None)
+    Parameters
+    ----------
+    tree_findoppler_original : ndarray
+        Spectra-populated findoppler tree
+    max_val : max_vals
+        Contains max values from hitsearch
+    tsteps : int
+    header : dict
+        Header in fits header format. Used to report tophit in filewriter.
+        See :class:`~turbo_seti.find_doppler.data_handler.DATAH5`
+    tdwidth : int
+    fftlen : int
+        Length of fast fourier transform (fft) matrix
+    max_drift : float
+        Max drift rate in Hz/second
+    obs_length : float,
+    logwriter : LogWriter, optional
+        Logwriter to which we should write if we find a top hit.
+    filewriter : FileWriter, optional
+        Filewriter corresponding to file to which we should save the local maximum of tophit.
+        See :func:`~turbo_seti.find_doppler.file_writers.FileWriter.report_tophit`
+    obs_info : dict, optional
 
-    Returns:
-      : FileWriter,     same filewriter that was input
+    Returns
+    -------
+    : FileWriter
+        Same filewriter that was input.
 
     """
-
     maxsnr = max_val.maxsnr
     logger.debug("original matrix size: %d\t(%d, %d)"%(len(tree_findoppler_original), tsteps, tdwidth))
     tree_orig = tree_findoppler_original.reshape((tsteps, tdwidth))

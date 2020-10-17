@@ -2,8 +2,18 @@ import importlib
 
 
 class Kernels():
+    r"""
+    Dynamically loads the right modules according to parameters.
 
-    def __init__(self, gpu_backend, precision=2):
+    Parameters
+    ----------
+    gpu_backend : bool, optional
+        Enable GPU acceleration.
+    precision : int {2: float64, 1: float32}, optional
+        Floating point precision.
+
+    """
+    def __init__(self, gpu_backend=False, precision=2):
         self._gpu_backend = gpu_backend
         self._precision = precision
         self._base_lib = "turbo_seti.find_doppler.kernels"
@@ -44,6 +54,19 @@ class Kernels():
 
     @staticmethod
     def has_gpu():
+        r"""
+        Check if the system has the modules needed for the GPU acceleration.
+
+        Note
+        ----
+        Modules are listed on `requirements_gpu.txt`.
+        
+        Returns
+        -------
+        has_gpu : bool
+            True if the system has GPU capabilities.
+
+        """
         try:
             import cupy
             cupy.__version__

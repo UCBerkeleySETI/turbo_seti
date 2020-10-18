@@ -16,7 +16,7 @@ This code is stable, but new features are currently under development.  'Git pul
 
 Some details for the expert eye:
 
-- Python based, with taylor tree in Cython for improved performance.
+- Python based, with taylor tree in Numba for improved performance.
 - Pre-calculated `drift index arrays`.
 - Output plain text file with information on each hit.
 - Including output reader into a pandas DataFrame.
@@ -31,11 +31,12 @@ It was originally based on `dedoppler` [dedoppler](http://github.com/cs150bf/gbt
 
 - Python 3.6+
 - astropy
-- cython
+- numba
 - numpy
 - dask
 - dask[bag]
 - blimpy (Breakthrough Listen I/O Methods for Python :  https://github.com/UCBerkeleySETI/blimpy)
+- cupy (GPU-mode only)
 
 &nbsp;
 

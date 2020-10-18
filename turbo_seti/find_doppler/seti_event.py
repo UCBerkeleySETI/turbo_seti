@@ -5,7 +5,6 @@ import logging
 import time
 import cProfile
 import pstats
-from pstats import SortKey
 from argparse import ArgumentParser
 
 from .find_doppler import FindDoppler
@@ -56,7 +55,7 @@ def main(args=None):
     if args.flag_profile == "y":
         cProfile.runctx('exec(args)', {'args': args, 'exec': exec}, {}, 'exec')
         p = pstats.Stats('exec')
-        p.strip_dirs().sort_stats(SortKey.TIME).print_stats(8)
+        p.strip_dirs().sort_stats('time').print_stats(8)
     else:
         exec(args)
 

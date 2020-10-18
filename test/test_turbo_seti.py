@@ -305,7 +305,7 @@ def test_dask(kernels):
 
 @pytest.mark.parametrize("kernels", TESTS)
 def test_bitrev(kernels):
-    '''compare Python and Cython bitrev functions'''
+    '''compare Python and Numba bitrev functions'''
     print("\n===== test_bitrev")
     before = 32769
     nbits = 7

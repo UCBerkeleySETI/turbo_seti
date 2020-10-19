@@ -7,3 +7,4 @@ fsspec
 dask
 dask[bag]
 numba
+cloudpickle

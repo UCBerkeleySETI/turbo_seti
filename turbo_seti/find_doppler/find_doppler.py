@@ -266,7 +266,7 @@ def search_coarse_channel(data_dict, find_doppler_instance, fscrunch=1, logwrite
         logger.debug("Drift_block %i" % drift_block)
 
         # Populates the find_doppler tree with the spectra
-        if drift_block <= 0:
+        if drift_block < 0:
             populate_tree(spectra_flipped, tree_findoppler, nframes, tdwidth, tsteps, fftlen, shoulder_size,
                           roll=drift_block, reverse=0)
         else:
@@ -281,12 +281,12 @@ def search_coarse_channel(data_dict, find_doppler_instance, fscrunch=1, logwrite
         tt.taylor_flt(tree_findoppler, tsteps * tdwidth, tsteps)
         logger.debug("done...")
 
-        if drift_block <= 0:
+        if drift_block < 0:
             logger.info("Un-flipping corrected negative doppler...")
             tree_findoppler = tree_findoppler[::-1]
 
         # DCP: Well this is horrible code:
-        if drift_block <= 0:
+        if drift_block < 0:
             complete_drift_range = data_obj.drift_rate_resolution * np.array(
                 range(-1 * tsteps_valid * (np.abs(drift_block) + 1) + 1,
                       -1 * tsteps_valid * (np.abs(drift_block)) + 1))

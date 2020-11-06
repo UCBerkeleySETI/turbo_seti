@@ -49,15 +49,15 @@ def find_doppler(filename_fil, kernels):
     if os.path.exists(filename_log):
         os.remove(filename_log)
 
-    snr           = 5
+    snr           = 5.0
     coarse_chans  = ''
     obs_info      = None
     n_coarse_chan = 1
     max_drift     = 1.0
 
     find_seti_event = FindDoppler(filename_fil, max_drift=max_drift, snr=snr, out_dir=HERE,
-                                  coarse_chans=coarse_chans, obs_info=obs_info, n_coarse_chan=n_coarse_chan,
-                                  kernels=kernels)
+                                  coarse_chans=coarse_chans, obs_info=obs_info,
+                                  n_coarse_chan=n_coarse_chan, kernels=kernels)
 
     t0 = time.time()
     find_seti_event.search()
@@ -221,6 +221,18 @@ def test_turboSETI_entry_point():
     h5_2 = os.path.join(HERE, OFFNIL_H5)
     args = [h5_2, ]
     seti_event.main(args)
+    print("\n===== test_turboSETI_entry_point 3 =====")
+    h5_3 = os.path.join(HERE, OFFNIL_H5)
+    args = [h5_3, "-l", "debug", ]
+    seti_event.main(args)
+    print("\n===== test_turboSETI_entry_point 4 =====")
+    h5_4 = os.path.join(HERE, OFFNIL_H5)
+    args = [h5_4, "-g", "y", ]
+    seti_event.main(args)
+    print("\n===== test_turboSETI_entry_point 5 =====")
+    h5_5 = os.path.join(HERE, OFFNIL_H5)
+    args = [h5_5, "-P", "y", ]
+    seti_event.main(args)
 
 
 def test_make_waterfall_plots():
@@ -309,13 +321,43 @@ def test_bitrev(kernels):
     print("\n===== test_bitrev")
     before = 32769
     nbits = 7
-    out_c = kernels.tt.bitrev(before, nbits)
+    out_c = kernels.bitrev(before, nbits)
     out_p = helper_functions.bitrev(before, nbits)
     assert out_c == out_p
     before = 32770
-    out_c = kernels.tt.bitrev(before, nbits)
+    out_c = kernels.bitrev(before, nbits)
     out_p = helper_functions.bitrev(before, nbits)
     assert out_c == out_p
+    before = 32771
+    out_c = kernels.bitrev(before, 1)
+    out_p = helper_functions.bitrev(before, 1)
+    assert out_c == out_p == before
+
+
+def test_compstats(xp=None):
+    tp = np if not xp else xp
+    arr = tp.array([1., 1., 1., 1., 50.])
+    median, stddev = helper_functions.comp_stats(arr, xp)
+    assert tp.isclose(median, 1.)
+    assert tp.isclose(stddev, 0.)
+
+
+def test_flipx(xp=None):
+    tp = np if not xp else xp
+    buf = tp.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+    exp = tp.array([5, 4, 3, 2, 1, 10, 9, 8, 7, 6])
+    helper_functions.FlipX(buf, 5, 2, xp)
+    assert tp.allclose(buf, exp)
+
+
+@pytest.mark.parametrize("kernels", TESTS)
+def test_compstats_kernel(kernels):
+    test_compstats(kernels.xp)
+
+
+@pytest.mark.parametrize("kernels", TESTS)
+def test_flipx_kernel(kernels):
+    test_flipx(kernels.xp)
 
 
 if __name__ == "__main__":

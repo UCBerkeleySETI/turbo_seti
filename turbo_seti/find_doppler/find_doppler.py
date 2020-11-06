@@ -31,17 +31,6 @@ class max_vals:
         self.total_n_hits = None
 
 
-class hist_vals:
-    r"""
-    Temporary class that saved the normalized spectrum for all drift rates.
-    
-    """
-    def __init__(self):
-        self.histsnr = None
-        self.histdrift = None
-        self.histid = None
-
-
 class FindDoppler:
     r"""
     Initializes FindDoppler object.
@@ -78,16 +67,15 @@ class FindDoppler:
     def __init__(self, datafile, max_drift, min_drift=0, snr=25.0, out_dir='./', coarse_chans=None,
                  obs_info=None, flagging=None, n_coarse_chan=None, kernels=None, gpu_backend=False,
                  precision=2):
-        self.min_drift = min_drift
-        self.max_drift = max_drift
-        self.snr = snr
-        self.out_dir = out_dir
-        self.gpu_backend = gpu_backend
-
         if not kernels:
             self.kernels = Kernels(gpu_backend, precision)
         else:
             self.kernels = kernels
+
+        self.min_drift = min_drift
+        self.max_drift = max_drift
+        self.out_dir = out_dir
+        self.snr = snr
 
         self.data_handle = DATAHandle(datafile, out_dir=out_dir, n_coarse_chan=n_coarse_chan, coarse_chans=coarse_chans, kernels=self.kernels)
         if (self.data_handle is None) or (self.data_handle.status is False):
@@ -236,8 +224,8 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
         mask = (time_series - time_series_median) / time_series.std() > 10
         if mask.any():
             logwriter.info("Found spikes in the time series. Removing ...")
-            spectra[mask, :] = time_series_median / float(
-                fftlen)  # So that the value is not the median in the time_series.
+            # So that the value is not the median in the time_series.
+            spectra[mask, :] = time_series_median / float(fftlen)
 
     else:
         median_flag = fd.kernels.xp.array([0], dtype=fd.kernels.float_type)
@@ -256,7 +244,7 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
     ibrev = fd.kernels.xp.zeros(tsteps, dtype=fd.kernels.xp.int32)
 
     for i in range(0, tsteps):
-        ibrev[i] = fd.kernels.tt.bitrev(i, int(fd.kernels.np.log2(tsteps)))
+        ibrev[i] = fd.kernels.bitrev(i, int(fd.kernels.np.log2(tsteps)))
 
     ##EE: should double check if tdwidth is really better than fftlen here.
     max_val = max_vals()
@@ -428,7 +416,7 @@ def hitsearch(fd, spectrum, specstart, specend, hitthresh, drift_rate, header, t
     """
     logger.debug('Start searching for hits at drift rate: %f' % drift_rate)
 
-    if fd.gpu_backend:
+    if fd.kernels.gpu_backend:
 
         blockSize = 512
         length = specend - specstart
@@ -438,7 +426,7 @@ def hitsearch(fd, spectrum, specstart, specend, hitthresh, drift_rate, header, t
         fd.kernels.hitsearch((numBlocks,), (blockSize,), call)
 
     else:
-    
+
         hits = 0
         for i in (spectrum[specstart:specend] > hitthresh).nonzero()[0] + specstart:
             k = (tdwidth - 1 - i) if reverse else i

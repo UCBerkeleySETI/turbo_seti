@@ -1,21 +1,23 @@
-*.pyc
-*.egg-info/
-.virtualenv*/
-.venv*/
+*.png
+*.dat
+*.fil
 *.h5
 *.log
+*.pyc
+*.egg-info/
 
 .eggs/
 .idea/
 .ipynb_checkpoints/
-.coverage/
-test/.coverage
+.coverage
+.virtualenv*/
+.venv*/
+
 build/
 dist/
 docs/_build/
 exec
 
-*.png
-*.dat
-*.fil
-*.h5
+test/.coverage
+test/htmlcov
+test/coverage.xml

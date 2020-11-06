@@ -9,6 +9,7 @@ with open(kernels_file, 'r') as f:
 _hitsearch_float64 = cp.RawKernel(kernels, 'hitsearch_float64')
 _hitsearch_float32 = cp.RawKernel(kernels, 'hitsearch_float32')
 
+
 def hitsearch(numBlocks, blockSize, call):
     r"""
     Performs hitsearch on the GPU with CUDA. Automatically chooses
@@ -24,6 +25,9 @@ def hitsearch(numBlocks, blockSize, call):
         Tuple of parameters required by `hitsearch`.
 
     """
+
+    assert isinstance(call[2], float)
+
     if call[1].dtype == cp.float64:
         _hitsearch_float64(numBlocks, blockSize, call)
     if call[1].dtype == cp.float32:

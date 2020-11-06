@@ -365,7 +365,7 @@ def find_events(dat_file_list,  SNR_cut=10, check_zero_drift=False, filter_thres
                 on_table_list.append(on_table_i)
                 on_count+=1
                     
-    #If there are no hits on any on target, end the program
+    #If there are no hits on any on target, return to caller
     if not len(on_table_list):
         print('There are no hits in this cadence :(')
         end_search(t0)
@@ -374,7 +374,10 @@ def find_events(dat_file_list,  SNR_cut=10, check_zero_drift=False, filter_thres
     #Concatenating the on and off tables into a giant on table 
     #and a giant off table
     on_table = pd.concat(on_table_list,ignore_index=True)
-    off_table = pd.concat(off_table_list,ignore_index=True)        
+    if len(off_table_list) > 0:
+        off_table = pd.concat(off_table_list,ignore_index=True)
+    else: # nil list of OFF tables
+        off_table = []
 
     #Check that all targets in the on_table come from the same source
     #Fix issue where some sources have B'' format

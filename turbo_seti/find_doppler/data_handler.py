@@ -232,8 +232,6 @@ class DATAH5:
             n_coarse_chan = self.n_coarse_chan
         else:
             n_coarse_chan = int(self.fil_file.calc_n_coarse_chan())
-        if n_coarse_chan != self.fil_file.calc_n_coarse_chan():
-            logger.warning('The file/selection is not an integer number of coarse channels. This could have unexpected consequences. Let op!')
         self.fil_file.blank_dc(n_coarse_chan)
 
         spec = np.squeeze(self.fil_file.data)

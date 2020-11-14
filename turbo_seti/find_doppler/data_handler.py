@@ -303,9 +303,16 @@ class DATAH5:
 
         """
         n = int(np.log2(self.tsteps))
-        di_array = np.array(np.genfromtxt(resource_filename('turbo_seti',
-                                 'drift_indexes/drift_indexes_array_%d.txt'%n),
-                                 delimiter=' ', dtype=int))
+        file_path = resource_filename('turbo_seti', f'drift_indexes/drift_indexes_array_{n}.txt')
+
+        if not os.path.isfile(file_path):
+            raise ValueError("""Don't attempt to use High Time Resolution (HRT) files with turboSETI. """
+                             """TurboSETI is designed to search for narrowband signals -- the maximum """
+                             """doppler drift we can expect due to the motion of celestial bodies is a few Hz/s. """
+                             """The high time resolution products (ending 0001.fil) has ~0.5 MHz resolution and """
+                             """~100 us integrations, so you'd be looking at insane drift rates. Issue #117.""")
+
+        di_array = np.array(np.genfromtxt(file_path, delimiter=' ', dtype=int))
 
         ts2 = int(self.tsteps/2)
         drift_indexes = di_array[(self.tsteps_valid - 1 - ts2), 0:self.tsteps_valid]
@@ -321,7 +328,7 @@ class DATAH5:
             Blimpy waterfall header.
         coarse : Boolean
             Whether or not there are coarse channels to analyze.
-        
+
         Returns
         -------
         base_header : dict

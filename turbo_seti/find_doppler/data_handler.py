@@ -62,7 +62,7 @@ class DATAHandle:
             self.filesize = self.filestat.st_size/(1024.0**2)
 
             # Grab header from DATAH5
-            dobj_master = DATAH5(filename)
+            dobj_master = DATAH5(filename, n_coarse_chan=self.n_coarse_chan)
             self.header = dobj_master.header
             dobj_master.close()
 
@@ -232,8 +232,6 @@ class DATAH5:
             n_coarse_chan = self.n_coarse_chan
         else:
             n_coarse_chan = int(self.fil_file.calc_n_coarse_chan())
-        if n_coarse_chan != self.fil_file.calc_n_coarse_chan():
-            logger.warning('The file/selection is not an integer number of coarse channels. This could have unexpected consequences. Let op!')
         self.fil_file.blank_dc(n_coarse_chan)
 
         spec = np.squeeze(self.fil_file.data)
@@ -301,10 +299,9 @@ class DATAH5:
         #used by helper_functions.py
         if coarse:
             base_header['NAXIS1'] = int(header['nchans']/self.n_coarse_chan)
-            base_header['FCNTR'] = np.abs(self.f_stop - self.f_start) / 2. + np.fmin(self.f_start, self.f_stop)
         else:
             base_header['NAXIS1'] = int(header['nchans'])
-            base_header['FCNTR'] = float(header['fch1']) + header['foff'] * base_header['NAXIS1'] / 2
+        base_header['FCNTR'] = float(header['fch1']) + header['foff'] * base_header['NAXIS1'] / 2
 
         #other header values.
         base_header['NAXIS'] = 2

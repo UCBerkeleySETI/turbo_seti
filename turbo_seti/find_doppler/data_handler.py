@@ -1,10 +1,5 @@
-"""
-Two classes for the Data Handler of the turbo_seti package:
-    DATAHandle
-    DATAH5
+#!/usr/bin/env python
 
-Their descriptions are below.
-"""
 import os
 import math
 import logging
@@ -16,6 +11,8 @@ import h5py
 from blimpy import Waterfall
 from blimpy.io import sigproc
 
+from .kernels import Kernels
+
 logger = logging.getLogger(__name__)
 
 #For debugging
@@ -23,19 +20,35 @@ logger = logging.getLogger(__name__)
 #import pdb;# pdb.set_trace()
 
 class DATAHandle:
-    """
+    r"""
     Class to setup input file for further processing of data.
     Handles conversion to h5 (from fil), extraction of
     coarse channel info, waterfall info, and file size checking.
-    """
 
-    def __init__(self, filename=None, out_dir='./', n_coarse_chan=None, coarse_chans=None):
-        """
-        :param filename:        string,      name of file (.h5 or .fil)
-        :param out_dir:         string,      directory where output files should be saved
-        :param n_coarse_chan:   integer,     number of coarse channels
-        :param coarse_chans     list or None,   list of course channels
-        """
+    Parameters
+    ----------
+    filename : str
+        Name of file (.h5 or .fil).
+    out_dir : str
+        Directory where output files should be saved.
+    n_coarse_chan : int
+        Number of coarse channels.
+    coarse_chans : list or None
+        List of course channels.
+    kernels : Kernels, optional
+        Pre-configured class of Kernels.
+    gpu_backend : bool, optional
+        Use GPU accelerated Kernels.
+    precision : int {2: float64, 1: float32}, optional
+        Floating point precision.
+
+    """
+    def __init__(self, filename=None, out_dir='./', n_coarse_chan=None, coarse_chans=None,
+                 kernels=None, gpu_backend=False, precision=2):
+        if not kernels:
+            self.kernels = Kernels(gpu_backend, precision)
+        else:
+            self.kernels = kernels
 
         if filename and os.path.isfile(filename):
             self.filename = filename
@@ -62,7 +75,7 @@ class DATAHandle:
             self.filesize = self.filestat.st_size/(1024.0**2)
 
             # Grab header from DATAH5
-            dobj_master = DATAH5(filename, n_coarse_chan=self.n_coarse_chan)
+            dobj_master = DATAH5(filename, n_coarse_chan=self.n_coarse_chan, kernels=self.kernels)
             self.header = dobj_master.header
             dobj_master.close()
 
@@ -77,19 +90,25 @@ class DATAHandle:
             raise IOError(errmsg)
 
     def get_info(self):
-        """:return:    dict,    header of the blimpy file"""
+        r"""
+        Get the header of the file.
 
+        Returns
+        -------
+        header : dict
+            Header of the blimpy file.
+
+        """
         fil_file = Waterfall(self.filename, load_data=False)
         return fil_file.header
 
     def __make_h5_file(self):
-        """
+        r"""
         Converts file to h5 format, saved in current directory.
-        Sets the filename attribute of the calling DATAHandle
+        Sets the filename attribute of the calling DATAHandle.
         to the (new) filename.
-        :return: void
-        """
 
+        """
         fil_file = Waterfall(self.filename)
         bn = os.path.basename(self.filename)
         new_filename = os.path.join(self.out_dir, bn.replace('.fil', '.h5'))
@@ -97,13 +116,16 @@ class DATAHandle:
         self.filename = new_filename
 
     def __split_h5(self):
-        """
+        r"""
         Creates a plan to select data from single coarse channels.
-        :return: list[DATAH5],
-            where each list member contains a DATAH5 object
-            for each of the coarse channels in the file.
-        """
 
+        Returns
+        -------
+        data_list : list[DATAH5]
+            Where each list member contains a DATAH5 object
+            for each of the coarse channels in the file.
+
+        """
         data_list = []
 
         #Instancing file.
@@ -151,22 +173,30 @@ class DATAHandle:
         return data_list
 
 class DATAH5:
-    """
+    r"""
     This class is where the waterfall data is loaded, as well as the header info.
     It creates other attributes related to the dedoppler search (load_drift_indexes).
+
+    Parameters
+    ----------
+    filename : string
+        Name of file.
+    f_start : float
+        Start frequency in MHz.
+    f_stop : float
+        Stop frequency in MHz.
+    t_start : int
+        Start integration ID.
+    t_stop : int
+        Stop integration ID.
+    coarse_chan : int
+    n_coarse_chan : int
+    kernels : Kernels
+        Pre-configured class of kernels.
+
     """
     def __init__(self, filename, f_start=None, f_stop=None, t_start=None, t_stop=None,
-                 coarse_chan=1, n_coarse_chan=None):
-        """
-        :param filename:        string      name of file
-        :param f_start:         float       start frequency in MHz
-        :param f_stop:          float       stop frequency in MHz
-        :param t_start:         int         start integration ID
-        :param t_stop:          int         stop integration ID
-        :param coarse_chan:     int
-        :param n_coarse_chan:  int
-        """
-
+                 coarse_chan=1, n_coarse_chan=None, kernels=None):
         self.filename = filename
         self.closed = False
         self.f_start = f_start
@@ -174,6 +204,7 @@ class DATAH5:
         self.t_start = t_start
         self.t_stop = t_stop
         self.n_coarse_chan = n_coarse_chan
+        self.kernels = kernels
 
         #Instancing file.
         try:
@@ -217,12 +248,12 @@ class DATAH5:
         self.tdwidth = self.fftlen + self.shoulder_size * self.tsteps
 
     def load_data(self):
-        """Read the spectra and drift indices from file.
-        :return:    ndarray, ndarray        spectra, drift indices
+        r"""
+        Read the spectra and drift indices from file.
 
-        Args:
-
-        Returns:
+        Returns
+        -------
+        spectra, drift indices : ndarray, ndarray
 
         """
         self.fil_file.read_data(f_start=self.f_start, f_stop=self.f_stop)
@@ -234,8 +265,8 @@ class DATAH5:
             n_coarse_chan = int(self.fil_file.calc_n_coarse_chan())
         self.fil_file.blank_dc(n_coarse_chan)
 
-        spec = np.squeeze(self.fil_file.data)
-        spectra = np.array(spec, dtype=np.float64)
+        spec = self.kernels.xp.squeeze(self.fil_file.data)
+        spectra = self.kernels.xp.array(spec, dtype=self.kernels.float_type)
 
         # DCP APR 2020 -- COMMENTED OUT. THIS IS BREAKING STUFF IN CURRENT VERSION.
         #Arrange data in ascending order in freq if not already in that format.
@@ -245,8 +276,9 @@ class DATAH5:
         # This check will add rows of zeros if the obs is too short
         # (and thus not a power of two rows).
         if spectra.shape[0] != self.tsteps:
-            spectra = np.append(spectra, np.zeros((self.tsteps-spectra.shape[0],
-                                                   self.fftlen)), axis=0)
+            padding = self.kernels.xp.zeros((self.tsteps-spectra.shape[0], self.fftlen))
+            spectra = self.kernels.xp.concatenate((spectra, padding), axis=0)
+
         self.tsteps_valid = self.tsteps
         self.obs_length = self.tsteps * self.header['DELTAT']
 
@@ -259,33 +291,47 @@ class DATAH5:
         return spectra, drift_indexes
 
     def load_drift_indexes(self):
-        """
+        r"""
         The drift indices are read from a stored file so that
         there is no need to recalculate. This speed things up.
-        :return:    ndarray     drift indices
 
-        Args:
-
-        Returns:
+        Returns
+        -------
+        drift_indexes : ndarray
 
         """
         n = int(np.log2(self.tsteps))
-        di_array = np.genfromtxt(resource_filename('turbo_seti',
-                                                   'drift_indexes/drift_indexes_array_%d.txt'%n),
-                                 delimiter=' ', dtype=int)
+        file_path = resource_filename('turbo_seti', f'drift_indexes/drift_indexes_array_{n}.txt')
+
+        if not os.path.isfile(file_path):
+            raise ValueError("""Don't attempt to use High Time Resolution (HRT) files with turboSETI. """
+                             """TurboSETI is designed to search for narrowband signals -- the maximum """
+                             """doppler drift we can expect due to the motion of celestial bodies is a few Hz/s. """
+                             """The high time resolution products (ending 0001.fil) has ~0.5 MHz resolution and """
+                             """~100 us integrations, so you'd be looking at insane drift rates. Issue #117.""")
+
+        di_array = np.array(np.genfromtxt(file_path, delimiter=' ', dtype=int))
 
         ts2 = int(self.tsteps/2)
         drift_indexes = di_array[(self.tsteps_valid - 1 - ts2), 0:self.tsteps_valid]
         return drift_indexes
 
     def __make_data_header(self, header, coarse=False):
-        """
-        Takes header into fits header format
-        :param header:      dict        blimpy waterfall header
-        :param coarse:      Boolean     whether or not there are coarse channels to analyze
-        :return:            dict
-        """
+        r"""
+        Takes header into fits header format.
 
+        Parameters
+        ----------
+        header : dict
+            Blimpy waterfall header.
+        coarse : Boolean
+            Whether or not there are coarse channels to analyze.
+
+        Returns
+        -------
+        base_header : dict
+
+        """
         base_header = {}
 
         #used by file_writers.py
@@ -309,16 +355,12 @@ class DATAH5:
         return base_header
 
     def close(self):
-        """Closes file and sets the data attribute `.closed` to
+        r"""
+        Closes file and sets the data attribute `.closed` to
         True. A closed object can no longer be used for I/O operations.
         `close()` may be called multiple times without error.
 
-        Args:
-
-        Returns:
-
         """
-
         # Call file object destructor which should close the file
         del self.fil_file
 

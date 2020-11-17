@@ -5,23 +5,32 @@ from .helper_functions import chan_freq
 
 
 class GeneralWriter:
-    """Wrapper class for file operations."""
+    r"""
+    Wrapper class for file operations.
+    
+    """
     def __init__(self, filename='', mode='a'):
-        """
+        r"""
         Initializes GeneralWriter object. Opens given file with given mode, sets new object's filehandle to the file
         object, sets the new object's filename to the file's name, then closes the file.
 
-        Args:
-            filename:    string,     name of file on which we would like to perform operations
-            mode:        string,     mode which we want to use to open file, same modes as the built-in python
-                                      built-in open function: r - read, a - append, w -write, x - create
+        Parameters
+        ----------
+        filename : str
+            Name of file on which we would like to perform operations.
+        mode : str {'a', 'r', 'w', 'x'}, optional
+            Mode which we want to use to open file, same modes as the built-in python
+            built-in open function: read (`r`), append (`a`), write (`w`), or create (`x`).
+
         """
         with open(filename, mode) as myfile:
             self.filehandle = myfile
             self.filename = filename
 
     def close(self):
-        """Closes file object if it is open.
+        r"""
+        Closes file object if it is open.
+
         """
         if self.filehandle.closed:
             pass
@@ -29,12 +38,16 @@ class GeneralWriter:
             self.filehandle.close()
 
     def open(self, mode='a'):
-        """Opens the file with the inputted mode, then closes it. Does not actually leave the file opened, only used for
+        r"""
+        Opens the file with the inputted mode, then closes it. Does not actually leave the file opened, only used for
         changing mode.
 
-        Args:
-          mode: string,     mode which we want to assign to this file, same modes as the built-in python
-        built-in open function: r - read, a - append, w -write, x - create (Default value = 'a')
+        Parameters
+        ----------
+        mode : str {'a', 'r', 'w', 'x'}, optional
+            Mode which we want to assign to this file, same modes as the built-in python
+            built-in open function: read (`r`), append (`a`), write (`w`), or create (`x`).
+
         """
         if self.filehandle.closed:
             with open(self.filename, mode) as myfile:
@@ -47,32 +60,41 @@ class GeneralWriter:
                 self.filehandle = myfile
 
     def is_open(self):
-        """Checks if file is open.
-        Returns:  boolean,    true if file is open, false otherwise
+        r"""
+        Checks if file is open.
+
+        Returns
+        ------- 
+          : boolean
+            True if file is open, False otherwise.
+
         """
         return not self.filehandle.closed
 
     def writable(self):
-        """Checks if file is open, and if it is, checks that mode is either write or append.
-        :return:    boolean,    true if file is open and writeable, false otherwise
+        r"""
+        Checks if file is open, and if it is, checks that mode is either write or append.
 
-        Args:
-
-        Returns:
+        Returns
+        ------- 
+          : boolean
+            True if file is open and writeable, False otherwise.
 
         """
         return self.is_open() and (('w' in self.filehandle.mode) or ('a' in self.filehandle.mode))
 
     def write(self, info_str, mode='a'):
-        """Sets file mode to a writeable mode and opens it if it is not already open in a writeable mode, writes info_str
+        r"""
+        Sets file mode to a writeable mode and opens it if it is not already open in a writeable mode, writes info_str
         to it, and then closes it. If the file was not previously open when this is called, the file is closed after
         writing in order to maintain the state the filewriter was in before.
 
-        Args:
-          info_str: string,     data to be written to file
-          mode: string,     mode for file. If it is not a writeable mode, it will be set to a writeable mode (Default value = 'a')
-
-        Returns:
+        Parameters
+        ----------
+        info_str : str
+            Data to be written to file.
+        mode : str {'a', 'w'}, optional
+            Mode for file. If it is not a writeable mode, it will be set to a writeable mode.
 
         """
         if mode not in ('a', 'w'):
@@ -86,12 +108,21 @@ class GeneralWriter:
 
 
 class FileWriter(GeneralWriter):
-    """Used to write information to turboSETI output files."""
+    r"""
+    Used to write information to turboSETI output files.
+    
+    """
     def __init__(self, filename, header):
-        """ Initializes FileWriter object and writes its header.
+        r"""
+        Initializes FileWriter object and writes its header.
 
-        :param filename:    string,     name of file on which we would like to perform operations
-        :param header:      dict,       information to be written to header of file filename
+        Parameters
+        ----------
+        filename : str
+            Name of file on which we would like to perform operations.
+        header : dict
+            Information to be written to header of file filename.
+
         """
         GeneralWriter.__init__(self, filename)
         self.write('# -------------------------- o --------------------------\n')
@@ -102,16 +133,15 @@ class FileWriter(GeneralWriter):
         self.tophit_count = 0
 
     def report_header(self, header):
-        """Write header information per given obs.
+        r"""
+        Write header information per given obs.
 
-        Args:
-          header: dict,       information to be written to file header
-
-        Returns:
-          : void
+        Parameters
+        ----------
+        header : dict
+            Information to be written to file header.
 
         """
-
         info_str = '# Source:%s\n# MJD: %18.12f\tRA: %s\tDEC: %s\n# DELTAT: %10.6f\tDELTAF(Hz): %10.6f\n'%\
                    (header['SOURCE'],header['MJD'], header['RA'], header['DEC'], header['DELTAT'], header['DELTAF']*1e6)
 
@@ -134,26 +164,29 @@ class FileWriter(GeneralWriter):
         self.write('# --------------------------\n')
 
     def report_tophit(self, max_val, ind, ind_tuple, tdwidth, fftlen, header, total_n_candi, obs_info=None):
-        """This function looks into the top hit in a region, basically finds the local maximum and saves that.
+        r"""
+        This function looks into the top hit in a region, basically finds the local maximum and saves that.
 
-        Args:
-          max_val: findopp.max_vals,
-          ind: int,                    index at which top hit is located in max_val's maxdrift and
-        maxsnr
-          ind_tuple: tuple(int, int)         (lbound, ubound)
-          tdwidth: int,
-          fftlen: int,                    length of the fast fourier transform matrix
-          header: dict,                   contains info on coarse channel to be written to file
-          total_n_candi: int,
-          ### spec_slice: dict, (Default value = None) <--- UNUSED
-          obs_info: dict,                   used to hold info found on file, including info about pulsars,
-        RFI, and SEFD (Default value = None)
+        Parameters
+        ----------
+          max_val : findopp
+          ind : int
+            Index at which top hit is located in max_val's maxdrift and maxsnr.
+          ind_tuple: tuple(int, int) (lbound, ubound)
+          tdwidth : int
+          fftlen : int
+            Length of the fast fourier transform matrix.
+          header : dict
+            Contains info on coarse channel to be written to file.
+          total_n_candi : int
+          obs_info:  dict, optional
+            Used to hold info found on file, including info about pulsars, RFI, and SEFD.
 
-        Returns:
+        Returns
+        -------
           : FileWriter object that called this function.
 
         """
-
         offset = int((tdwidth - fftlen)/2)
         tdwidth =  len(max_val.maxsnr)
 
@@ -188,15 +221,18 @@ class FileWriter(GeneralWriter):
         return self
 
 class LogWriter(GeneralWriter):
-    """Used to write data to log."""
+    r"""
+    Used to write data to log.
+
+    """
     def info(self, info_str):
-        """Writes info_str to file.
+        r"""
+        Writes info_str to file.
 
-        Args:
-          info_str: string,     to be written to file
-
-        Returns:
-          : void
+        Parameters
+        ----------
+        info_str : str
+            String to be written to file.
 
         """
         self.write(info_str + '\n')

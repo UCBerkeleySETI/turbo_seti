@@ -1,21 +1,23 @@
-*.pyc
-*.egg-info/
-.virtualenv*/
-.venv*/
+*.png
+*.dat
+*.fil
 *.h5
 *.log
-/turbo_seti/find_doppler/taylor_tree.c
-/turbo_seti/find_doppler/taylor_tree.cpython-37m-x86_64-linux-gnu.so
+*.pyc
+*.egg-info/
 
 .eggs/
 .idea/
 .ipynb_checkpoints/
-.coverage/
-test/.coverage
-build/
-docs/_build/
+.coverage
+.virtualenv*/
+.venv*/
 
-test/*.png
-test/*.dat
-test/*.fil
-test/*.h5
+build/
+dist/
+docs/_build/
+exec
+
+test/.coverage
+test/htmlcov
+test/coverage.xml

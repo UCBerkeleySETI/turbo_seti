@@ -1,0 +1,10 @@
+# configuration file used by run_tests.py
+[report]
+
+omit =
+    */turbo_seti/__init__.py
+    */turbo_seti/find_doppler/__init__.py
+    */turbo_seti/find_event/__init__.py
+    # Numba code isn't compatible. It will be reported as uncovered. Whitelisting...
+    */turbo_seti/find_doppler/kernels/_taylor_tree/_core_numba.py
+    */turbo_seti/find_doppler/kernels/_bitrev/__init__.py

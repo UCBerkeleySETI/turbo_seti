@@ -1,106 +1,12 @@
 #!/usr/bin/env python
 
-"""
+r"""
 Front-facing script to find drifting, narrowband events in a set of generalized 
 cadences of ON-OFF radio SETI observations.
-
-Part of the Breakthrough Listen software package turboSETI
-
-In this code, the following terminology is used:
-Hit = single strong narrowband signal in an observation
-Event = a strong narrowband signal that is associated with multiple hits
-        across ON observations
     
-The main function contained in this file is *find_event_pipeline*
-    Find_event_pipeline calls find_events from find_events.py to read a list 
-    of turboSETI .dat files. It then finds events within this group of files. 
-                      
-Usage (beta):
-    import find_event_pipeline;
-    find_event_pipeline.find_event_pipeline(dat_file_list_str, 
-                                            SNR_cut=10,
-                                            check_zero_drift=False,
-                                            filter_threshold=3, 
-                                            on_off_first='ON', 
-                                            number_in_cadence=6, 
-                                            on_source_complex_cadence=False,
-                                            saving=True,  
-                                            user_validation=False)
-    
-    dat_file_list_str   The string name of a plaintext file ending in .lst 
-                        that contains the filenames of .dat files, each on a 
-                        new line, that were created with seti_event.py. The 
-                        .lst should contain a set of cadences (ON observations 
-                        alternating with OFF observations). The cadence can be 
-                        of any length, given that the ON source is every other 
-                        file. This includes Breakthrough Listen standard ABACAD
-                        as well as OFF first cadences like BACADA. Minimum 
-                        cadence length is 2, maximum cadence length is 
-                        unspecified (currently tested up to 6).
-                                   
-                        Example: ABACAD|ABACAD|ABACAD
-                   
-    SNR_cut             The threshold SNR below which hits in the ON source 
-                        will be disregarded. For the least strict thresholding, 
-                        set this parameter equal to the minimum-searched SNR 
-                        that you used to create the .dat files from 
-                        seti_event.py. Recommendation (and default) is 10.
-                   
-    check_zero_drift    A True/False flag that tells the program whether to
-                        include hits that have a drift rate of 0 Hz/s. Earth-
-                        based RFI tends to have no drift rate, while signals
-                        from the sky are expected to have non-zero drift rates.
-                        Default is False.
-                        
-    filter_threshold    Specification for how strict the hit filtering will be.
-                        There are 3 different levels of filtering, specified by
-                        the integers 1, 2, and 3. Filter_threshold = 1 
-                        returns hits above an SNR cut, taking into account the
-                        check_zero_drift parameter, but without an ON-OFF check.
-                        Filter_threshold = 2 returns hits that passed level 1
-                        AND that are in at least one ON but no OFFs. 
-                        Filter_threshold = 3 returns events that passed level 2
-                        AND that are present in *ALL* ONs. Default is 3.
-                        
-    on_off_first        Tells the code whether the .dat sequence starts with
-                        the ON or the OFF observation. Valid entries are 'ON'
-                        and 'OFF' only. Default is 'ON'.
-    
-    number_in_cadence   The number of files in a single ON-OFF cadence.
-                        Default is 6 for ABACAD.
-                        
-    on_source_complex_cadence 
-    
-                        If using a complex cadence (i.e. ons and offs not
-                        alternating), this variable should be the string 
-                        target name used in the .dat filenames. The code will
-                        then determine which files in your dat_file_list_str
-                        cadence are ons and which are offs. Default is false. 
-                        
-    saving              A True/False flag that tells the program whether to 
-                        save the output array as a .csv. Default is True.
-                        
-    user_validation     A True/False flag that, when set to True, asks if the
-                        user wishes to continue with their input parameters
-                        (and requires a 'y' or 'n' typed as confirmation)
-                        before beginning to run the program. Recommended when
-                        first learning the program, not recommended for 
-                        automated scripts. Default is False.
-                    
-author: 
-    Version 2.0 - Sofia Sheikh (ssheikhmsa@gmail.com) and Karen Perez (kip2105@columbia.edu)
-    Version 1.0 - Emilio Enriquez (jeenriquez@gmail.com)
-    
-Last updated: 07/22/2020
-
-***
-NOTE: This code works for .dat files that were produced by seti_event.py
-after turboSETI version 0.8.2, and blimpy version 1.1.7 (~mid 2019). The 
-drift rates *before* that version were recorded with the incorrect sign
-and thus the drift rate sign would need to be flipped in the make_table 
-function.
-***
-
+The main function contained in this file is :func:`find_event_pipeline` calls
+find_events from find_events.py to read a list of turboSETI .dat files.
+It then finds events within this group of files.
 """
 
 #required packages and programs
@@ -114,48 +20,103 @@ from blimpy import Waterfall
 
 
 def get_source_name(dat_path):
-    '''
+    r'''
     Extract and return the target's source name from the DAT file path.
     
-    Args:
-        dat_path: Full or relative path name of the DAT file
+    Parameters
+    ----------
+    dat_path : str
+        Full or relative path name of the DAT file
 
-    Returns:
-        source_name field from the header of the corresponding HDF5 file
+    Returns
+    -------
+    source_name : str
+        Field from the header of the corresponding HDF5 file.
 
-    Assumptions:
-        The HDF5 file is resident in the same directory of the DAT file.
-        The file name of the HDF5 file is identical to that of the DAT file 
-            except for the file extension (.h5 instead of .dat).
+    Notes
+    -----
+    The HDF5 file is resident in the same directory of the DAT file.
+    The file name of the HDF5 file is identical to that of the DAT file 
+    except for the file extension (.h5 instead of .dat).
+
     '''
     filepath_h5 = dat_path.replace('.dat', '.h5')
     wf = Waterfall(filepath_h5)
     return wf.container.header["source_name"]
 
 
-def find_event_pipeline(dat_file_list_str,
-                        SNR_cut=10, 
-                        check_zero_drift=False, 
-                        filter_threshold=3, 
-                        on_off_first='ON', 
-                        number_in_cadence=6, 
-                        on_source_complex_cadence=False,
-                        saving=True, 
-                        csv_name=None,
-                        user_validation=False): 
+def find_event_pipeline(dat_file_list_str, SNR_cut=10, check_zero_drift=False, filter_threshold=3, 
+                        on_off_first='ON', number_in_cadence=6, on_source_complex_cadence=False,
+                        saving=True, csv_name=None, user_validation=False): 
     """
+    Find event pipeline.
 
-    Args:
-      dat_file_list_str: Text file containing a list of the DAT files
-      SNR_cut:  (Default value = 10)
-      check_zero_drift:  (Default value = False)
-      filter_threshold:  (Default value = 3)
-      on_off_first:  (Default value = 'ON')
-      number_in_cadence:  (Default value = 6)
-      saving:  (Default value = True)
-      user_validation:  (Default value = False)
+    Parameters
+    ----------
+    dat_file_list_str : str
+        The string name of a plaintext file ending in .lst 
+        that contains the filenames of .dat files, each on a 
+        new line, that were created with seti_event.py. The 
+        .lst should contain a set of cadences (ON observations 
+        alternating with OFF observations). The cadence can be 
+        of any length, given that the ON source is every other 
+        file. This includes Breakthrough Listen standard ABACAD
+        as well as OFF first cadences like BACADA. Minimum 
+        cadence length is 2, maximum cadence length is 
+        unspecified (currently tested up to 6).
+        Example: ABACAD|ABACAD|ABACAD
+    SNR_cut : int
+        The threshold SNR below which hits in the ON source 
+        will be disregarded. For the least strict thresholding, 
+        set this parameter equal to the minimum-searched SNR 
+        that you used to create the .dat files from 
+        seti_event.py. Recommendation (and default) is 10.
+    check_zero_drift : bool
+        A True/False flag that tells the program whether to
+        include hits that have a drift rate of 0 Hz/s. Earth-
+        based RFI tends to have no drift rate, while signals
+        from the sky are expected to have non-zero drift rates.
+    filter_threshold : int
+        Specification for how strict the hit filtering will be.
+        There are 3 different levels of filtering, specified by
+        the integers 1, 2, and 3. Filter_threshold = 1 
+        returns hits above an SNR cut, taking into account the
+        check_zero_drift parameter, but without an ON-OFF check.
+        Filter_threshold = 2 returns hits that passed level 1
+        AND that are in at least one ON but no OFFs. 
+        Filter_threshold = 3 returns events that passed level 2
+        AND that are present in *ALL* ONs.
+    on_off_first : str {'ON', 'OFF'}
+        Tells the code whether the .dat sequence starts with
+        the ON or the OFF observation. Valid entries are 'ON'
+        and 'OFF' only. Default is 'ON'.
+    number_in_cadence : int
+        The number of files in a single ON-OFF cadence.
+        Default is 6 for ABACAD.
+    on_source_complex_cadence : bool
+        If using a complex cadence (i.e. ons and offs not
+        alternating), this variable should be the string 
+        target name used in the .dat filenames. The code will
+        then determine which files in your dat_file_list_str
+        cadence are ons and which are offs.
+    saving : bool
+        A True/False flag that tells the program whether to 
+        save the output array as a .csv.
+    user_validation : bool
+        A True/False flag that, when set to True, asks if the
+        user wishes to continue with their input parameters
+        (and requires a 'y' or 'n' typed as confirmation)
+        before beginning to run the program. Recommended when
+        first learning the program, not recommended for 
+        automated scripts.
 
-    Returns:
+    Examples
+    --------
+    >>> import find_event_pipeline;
+    >>> find_event_pipeline.find_event_pipeline(dat_file_list_str, SNR_cut=10, check_zero_drift=False,
+    ...                                         filter_threshold=3, on_off_first='ON', number_in_cadence=6, 
+    ...                                         on_source_complex_cadence=False, saving=True,
+    ...                                         user_validation=False)
 
     """
     print()

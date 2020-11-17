@@ -1,10 +1,5 @@
-"""
-Utility for combining multiple DAT and LOG files after a turboSETI run.
+#!/usr/bin/env python
 
-Version 1:
-    Karen Perez
-    Richard Elkins
-"""
 from os import chdir, getcwd, listdir, remove, rename
 from argparse import ArgumentParser
 
@@ -12,16 +7,20 @@ PREFIX = "_c_"
 DEBUGGING = False
 
 def merge_dats_logs(arg_h5: str, arg_dir: str, arg_type: str, cleanup='n'):
-    """
-    Combine DAT or LOG files
+    r"""
+    Combine DAT or LOG files.
 
     Parameters
     ----------
-    arg_h5   : HDF5 file used by FindDoppler.search() to produce the
-               DAT and LOG files.
-    arg_dir  : Directory holding multiple DAT and LOG files after FindDoppler.search()
-               which ran with more than 1 partition.
-    arg_type : File extension of interest ('dat' or 'log').
+    arg_h5 : str
+        HDF5 file used by :func:`~turbo_seti.find_doppler.find_doppler.FindDoppler.search`
+        to produce the DAT and LOG files.
+    arg_dir : str
+        Directory holding multiple DAT and LOG files after FindDoppler.search()
+        which ran with more than 1 partition.
+    arg_type : str
+        File extension of interest ('dat' or 'log').
+
     """
     print("merge_dats_logs: dir={}, type={}, cleanup={}"
           .format(arg_dir, arg_type, cleanup))
@@ -87,12 +86,19 @@ def merge_dats_logs(arg_h5: str, arg_dir: str, arg_type: str, cleanup='n'):
     chdir(RETURN_TO)
 
 def main(args=None):
-    """
+    r"""
+    Utility for combining multiple DAT and LOG files after a turboSETI run.
     Main procedure for cleaning up after turboSETI.
     
     Parameters
     ----------
-    args : Command line parameters.
+    args : dict
+        Command line parameters.
+
+    Version 1:
+    - Karen Perez
+    - Richard Elkins
+
     """
     p = ArgumentParser(description='Merge DATs & LOGs after turboSETI.')
     p.add_argument('h5_file', type=str, help='Path of HDF5 file used to create DAT & LOG files.')

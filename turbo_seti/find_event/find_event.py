@@ -1,100 +1,12 @@
 #!/usr/bin/env python
-"""
-Part of the Breakthrough Listen software package turboSETI
-
+r"""
 Backend script to find drifting, narrowband events in a generalized cadence of
 radio SETI observations (any number of ons, any number of offs, any pattern -
 streamlined for alternating on-off sequences).
-
-In this code, the following terminology is used:
-Hit = single strong narrowband signal in an observation
-Event = a strong narrowband signal that is associated with multiple hits
-        across ON observations
     
-The main function contained in this file is *find_events*
-    Find_events uses the other helper functions in this file (described below)
-    to read a list of turboSETI .dat files. It then finds events within this 
-    group of files. 
-    
-The following helper functions are contained in this file:
-    end_search      - prints the runtime and ends the program
-    make_table      - generates a pandas dataframe from a turboSETI
-                      output .dat file created by seti_event.py
-    calc_freq_range - Calculates a range of frequencies where RFI in an OFF 
-                      could be related to a hit in an ON given a freq and 
-                      drift_rate
-    follow_event    - Follows a given hit to the next observation of the ON
-                      target and looks for hits which could be part of the 
-                      same event
-                      
-Usage (beta):
-    It is highly recommended that users interact with this program via the
-    front-facing find_event_pipeline.py script. See the usage of that file in
-    its own documentation. 
-    
-    If you would like to run find_events without calling
-    find_event_pipeline.py, the usage is as follows:
-    
-    find_event.find_events(file_sublist, 
-                           SNR_cut=10, 
-                           check_zero_drift=False, 
-                           filter_threshold=3, 
-                           on_off_first='ON',
-                           complex_cadence=False)
-    
-    file_sublist        A Python list of .dat files with ON observations of a
-                        single target alternating with OFF observations. This 
-                        cadence can be of any length, given that the ON source 
-                        is every other file. This includes Breakthrough Listen 
-                        standard ABACAD as well as OFF first cadences like 
-                        BACADA. Minimum cadence length is 2, maximum cadence 
-                        length is unspecified (currently tested up to 6).
-                   
-    SNR_cut             The threshold SNR below which hits in the ON source 
-                        will be disregarded. For the least strict thresholding, 
-                        set this parameter equal to the minimum-searched SNR 
-                        that you used to create the .dat files from 
-                        seti_event.py. Recommendation (and default) is 10.
-                   
-    check_zero_drift    A True/False flag that tells the program whether to
-                        include hits that have a drift rate of 0 Hz/s. Earth-
-                        based RFI tends to have no drift rate, while signals
-                        from the sky are expected to have non-zero drift rates.
-                        Default is False.
-                        
-    filter_threshold    Specification for how strict the hit filtering will be.
-                        There are 3 different levels of filtering, specified by
-                        the integers 1, 2, and 3. Filter_threshold = 1 
-                        returns hits above an SNR cut, taking into account the
-                        check_zero_drift parameter, but without an ON-OFF check.
-                        Filter_threshold = 2 returns hits that passed level 1
-                        AND that are in at least one ON but no OFFs. 
-                        Filter_threshold = 3 returns events that passed level 2
-                        AND that are present in *ALL* ONs. Default is 3.
-                        
-    on_off_first        Tells the code whether the .dat sequence starts with
-                        the ON or the OFF observation. Valid entries are 'ON'
-                        and 'OFF' only. Default is 'ON'.
-                        
-    complex_cadence     A Python list of 1s and 0s corresponding to which
-                        files in the file_sublist are on-sources and which are
-                        off_sources for complex (i.e. non alternating) cadences.
-                        Default is False.
-                    
-author: 
-    Version 2.0 - Sofia Sheikh (ssheikhmsa@gmail.com)
-    Version 1.0 - Emilio Enriquez (jeenriquez@gmail.com)
-    
-Last updated: 04/08/2020
-
-***
-NOTE: This code works for .dat files that were produced by seti_event.py
-after turboSETI version 0.8.2, and blimpy version 1.1.7 (~mid 2019). The 
-drift rates *before* that version were recorded with the incorrect sign
-and thus the drift rate sign would need to be flipped in the make_table 
-function.
-***
-
+The main function contained in this file is :func:`find_events` uses the other
+helper functions in this file (described below) to read a list of turboSETI .dat
+files. It then finds events within this group of files.
 """
 
 import pandas as pd
@@ -110,13 +22,13 @@ MAX_DRIFT_RATE = 2.0    # NOTE: these two values need to be updated.
 OBS_LENGTH = 300.
 #------
 def end_search(t0):
-    """ends the search when there are no candidates left, or when the filter
-    level matches the user-specified level
+    r"""
+    Ends the search when there are no candidates left, or when the filter
+    level matches the user-specified level.
 
-    Args:
-      t0: 
-
-    Returns:
+    Parameters
+    ----------
+    t0 : time
 
     """
     #Report elapsed search time
@@ -126,15 +38,20 @@ def end_search(t0):
     return
 
 def read_dat(filename):
-    """Read a turboseti .dat file
+    r"""
+    Read a turboseti .dat file.
 
-    Args:
-      filename(str): Name of .dat file to open
+    Parameters
+    ----------
+    filename : str
+        Name of .dat file to open.
 
-    Returns:
-        pandas dataframe of hits
+    Returns
+    -------
+    df_data : dict
+        Pandas dataframe of hits.
+
     """
-
     file_dat = open(filename.strip())
     hits = file_dat.readlines()
 
@@ -201,19 +118,22 @@ def read_dat(filename):
     return df_data
 
 def make_table(filename, init=False):
-    """Creates a pandas dataframe with column names standard for turboSETI .dat
+    r"""
+    Creates a pandas dataframe with column names standard for turboSETI .dat
     output files, either directly (if) or by reading the file line-by line and
-    then reorganizing the output (else)
+    then reorganizing the output (else).
 
-    Args:
-      filename: 
-      init:  (Default value = False)
+    Parameters
+    ----------
+    filename : str
+    init : bool, optional
 
-    Returns:
-        df_data: pandas dataframe
+    Returns
+    -------
+    df_data : dict
+        Pandas dataframe.
 
     """
-    
     if init:
         columns = ['FileID','Source','MJD','RA','DEC', 'DELTAT','DELTAF',
                    'TopHitNum','DriftRate', 'SNR', 'Freq', 'ChanIndx', 
@@ -226,18 +146,22 @@ def make_table(filename, init=False):
         df_data = read_dat(filename)
     return df_data
 
-def calc_freq_range(hit,delta_t=0,max_dr=True,follow=False):
-    """Calculates a range of frequencies where RFI in an off-source could
-        be related to a hit in an on-source given a freq and drift_rate.
+def calc_freq_range(hit, delta_t=0, max_dr=True, follow=False):
+    r"""
+    Calculates a range of frequencies where RFI in an off-source could
+    be related to a hit in an on-source given a freq and drift_rate.
 
-    Args:
-      hit: 
-      delta_t:  (Default value = 0)
-      max_dr:  (Default value = True)
-      follow:  (Default value = False)
+    Parameters
+    ----------
+    hit : dict 
+    delta_t : int, optional
+    max_dr : bool, optional
+    follow : bool, optional
 
-    Returns:
-        list [low_bound, high_bound]
+    Returns
+    -------
+    [low_bound, high_bound] : list
+
     """
     if max_dr:
         drift_rate = MAX_DRIFT_RATE
@@ -259,17 +183,20 @@ def calc_freq_range(hit,delta_t=0,max_dr=True,follow=False):
 
     return [low_bound,high_bound]
 
-def follow_event(hit,on_table,get_count=True):
-    """Follows a given hit to the next observation of the same target and
+def follow_event(hit, on_table, get_count=True):
+    r"""
+    Follows a given hit to the next observation of the same target and
     looks for hits which could be part of the same event.
 
-    Args:
-      hit: 
-      on_table: 
-      get_count:  (Default value = True)
+    Parameters
+    ----------
+    hit : dict
+    on_table : dict
+    get_count : bool
 
-    Returns:
-        new_on_table or count
+    Returns
+    -------
+    new_on_table or count : dict or int
 
     """
 
@@ -293,24 +220,72 @@ def follow_event(hit,on_table,get_count=True):
     else:
         return new_on_table
 
-def find_events(dat_file_list,  SNR_cut=10, check_zero_drift=False, filter_threshold=3, on_off_first='ON', complex_cadence=False):
-    """Reads a list of turboSETI .dat files.
-        It calls other functions to find events within this group of files.
-        Filter_threshold allows the return of a table of events with hits at
-        different levels of filtering.
-        Filter_threshold = [1,2,3] means:
-            1) Hits above an SNR cut witout AB check
-            2) Hits that are only in some As and no Bs
-            3) Hits that are only in all As and no Bs
+def find_events(dat_file_list, SNR_cut=10, check_zero_drift=False, filter_threshold=3, on_off_first='ON', complex_cadence=False):
+    r"""
+    Reads a list of turboSETI .dat files.
 
-    Args:
-      dat_file_list: 
-      SNR_cut:  (Default value = 10)
-      check_zero_drift:  (Default value = False)
-      filter_threshold:  (Default value = 3)
-      on_off_first:  (Default value = 'ON')
+    Parameters
+    ----------
+    dat_file_list : list
+        A Python list of .dat files with ON observations of a
+        single target alternating with OFF observations. This 
+        cadence can be of any length, given that the ON source 
+        is every other file. This includes Breakthrough Listen 
+        standard ABACAD as well as OFF first cadences like 
+        BACADA. Minimum cadence length is 2, maximum cadence 
+        length is unspecified (currently tested up to 6).
+    SNR_cut : int, optional
+        The threshold SNR below which hits in the ON source 
+        will be disregarded. For the least strict thresholding, 
+        set this parameter equal to the minimum-searched SNR 
+        that you used to create the .dat files from 
+        seti_event.py. Recommendation (and default) is 10.
+    check_zero_drift : bool, optional
+        A True/False flag that tells the program whether to
+        include hits that have a drift rate of 0 Hz/s. Earth-
+        based RFI tends to have no drift rate, while signals
+        from the sky are expected to have non-zero drift rates.
+        Default is False.
+    filter_threshold : int, optional
+        Specification for how strict the hit filtering will be.
+        There are 3 different levels of filtering, specified by
+        the integers 1, 2, and 3. Filter_threshold = 1 
+        returns hits above an SNR cut, taking into account the
+        check_zero_drift parameter, but without an ON-OFF check.
+        Filter_threshold = 2 returns hits that passed level 1
+        AND that are in at least one ON but no OFFs. 
+        Filter_threshold = 3 returns events that passed level 2
+        AND that are present in *ALL* ONs.
+    on_off_first : str {'ON', 'OFF}, optional
+        Tells the code whether the .dat sequence starts with
+        the ON or the OFF observation. Valid entries are 'ON'
+        and 'OFF' only.
+    complex_cadence : bool, optional
+        A Python list of 1s and 0s corresponding to which
+        files in the file_sublist are on-sources and which are
+        off_sources for complex (i.e. non alternating) cadences.
 
-    Returns:
+    Examples
+    --------
+    It is highly recommended that users interact with this program via the
+    front-facing find_event_pipeline.py script. See the usage of that file in
+    its own documentation. 
+    
+    If you would like to run find_events without calling
+    find_event_pipeline.py, the usage is as follows:
+    
+    >>> find_event.find_events(file_sublist, SNR_cut=10, check_zero_drift=False, 
+    ...                        filter_threshold=3, on_off_first='ON', complex_cadence=False)
+
+    Notes
+    -----
+    It calls other functions to find events within this group of files.
+    Filter_threshold allows the return of a table of events with hits at
+    different levels of filtering.
+    Filter_threshold = [1,2,3] means:
+        1) Hits above an SNR cut witout AB check
+        2) Hits that are only in some As and no Bs
+        3) Hits that are only in all As and no Bs
 
     """
     #Initializing timer
@@ -515,4 +490,3 @@ def find_events(dat_file_list,  SNR_cut=10, check_zero_drift=False, filter_thres
         return
     
     #----------------------------------------------------------------------
-

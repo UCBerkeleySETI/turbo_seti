@@ -42,27 +42,71 @@ It was originally based on `dedoppler` [dedoppler](http://github.com/cs150bf/gbt
 
 --------------------------
 
+## Installation
+
+The latest release can be installed via pip directly from this repository:
+`python3 -m pip install -U https://github.com/UCBerkeleySETI/turbo_seti`
+
+
 ## Usage
 
+### Expected Input File Format
 
-### Expected Inputs
+At the moment, the `turboSETI` command line and the `FindDoppler` class instantiation expect a single HDF5 file (.h5) produced by a blimpy utility (E.g. `fil2h5`).
 
-At the moment it expects a single .h5 file produced with `blimpy.Waterfall` .
+### Usage as a Command Line
 
-### Command Line
+Run with data: `turboSETI <FULL_PATH_TO_INPUT_HDF5_FILE> [OPTIONS]`
 
-> **`$turboSETI <FULL_PATH_TO_INPUT_FIL_FILE> [OPTIONS]`**
->
-> Use `$turboSETI -h` to view usage details.
->
-> &nbsp;
+For usage: `turboSETI -h`
 
 
-#### Example:
 
-**NOTE**:
+### Usage as a Python Package
 
-Will add an example file here in the near future.
+```
+from turbo_seti.find_doppler.find_doppler import FindDoppler
+fdop = FindDoppler(datafile=my_HDF5_file, ...)
+fdop.search(...)
+```
+
+### Example Usage as a Python Package
+
+```
+import time
+from shutil import rmtree
+from os import mkdir
+import blimpy
+from turbo_seti.find_doppler.find_doppler import FindDoppler
+
+H5DIR = "/mnt/elkdata/linux-home-folder/seti_testing/datasets/voyager/"
+H5PATH = H5DIR + "Voyager1.single_coarse.fine_res.h5"
+OUT_DIR_BASE = '/tmp/run_turbo_seti/'
+
+
+def run_turbo_seti(arg_in_h5_file: str, arg_out_dir: str):
+    print("\nrun_turbo_seti: Calling FindDoppler({})".format(arg_in_h5_file))
+    # -- Start fresh.
+    rmtree(arg_out_dir, ignore_errors=True)
+    mkdir(arg_out_dir)
+    # -- Get a report of header and data shape
+    wf = blimpy.Waterfall(arg_in_h5_file)
+    wf.info()
+    # -- Instantiate FindDoppler.
+    fdop = FindDoppler(datafile=arg_in_h5_file, max_drift=20, out_dir=arg_out_dir)
+    # -- Search for hits and report elapsed time.
+    print("\nPlease wait ...")
+    t0 = time.time()
+    fdop.search()
+    et = time.time() - t0
+    print("run_turbo_seti: search() elapsed time = {} seconds"
+          .format(et))
+
+
+if __name__ == '__main__':
+
+    run_turbo_seti(H5PATH, OUT_DIR_BASE)
+```
 
 
 #### Sample Outputs
@@ -85,13 +129,6 @@ Will add an example file here in the near future.
 
 &nbsp;
 
-
-### Use as a package
-
-```python
-> import turbo_seti
-> from turbo_seti.find_doppler.find_doppler import FindDoppler
-```
 
 **BL internal**:
 

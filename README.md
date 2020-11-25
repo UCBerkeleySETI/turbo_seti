@@ -45,8 +45,8 @@ It was originally based on `dedoppler` [dedoppler](http://github.com/cs150bf/gbt
 ## Installation
 
 The latest release can be installed via pip directly from this repository:
-`python3 -m pip install -U https://github.com/UCBerkeleySETI/turbo_seti`
 
+`python3 -m pip install -U https://github.com/UCBerkeleySETI/turbo_seti`
 
 ## Usage
 
@@ -109,7 +109,7 @@ if __name__ == '__main__':
 ```
 
 
-#### Sample Outputs
+### Sample Outputs
 
 &nbsp;
 
@@ -130,7 +130,7 @@ if __name__ == '__main__':
 &nbsp;
 
 
-**BL internal**:
+### BL Internal Technote
 
 Currently, there is some voyager test data in bls0 at the GBT cluster.
 From the .../turbo_seti/bin/ folder run the next command.

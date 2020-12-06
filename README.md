@@ -36,7 +36,7 @@ It was originally based on `dedoppler` [dedoppler](http://github.com/cs150bf/gbt
 - dask
 - dask[bag]
 - blimpy (Breakthrough Listen I/O Methods for Python :  https://github.com/UCBerkeleySETI/blimpy)
-- cupy (GPU-mode only)
+- cupy (NVIDIA GPU mode only)
 
 &nbsp;
 
@@ -47,6 +47,13 @@ It was originally based on `dedoppler` [dedoppler](http://github.com/cs150bf/gbt
 The latest release can be installed via pip directly from this repository:
 
 `python3 -m pip install -U https://github.com/UCBerkeleySETI/turbo_seti`
+
+## NVIDIA GPU Users
+
+Already included is NUMBA Just-in-Time (JIT) CPU performance enhancements. However, if you have NVIDIA GPU hardware on the computer where turbo_seti is going to execute, you can get significant additional performance improvement.  Enable GPU enhanced processing with these steps:
+
+1. Install pypi package "cupy":  `python3 -m pip install cupy`
+2. Run the exercutable this way:  `turboSETI <FULL_PATH_TO_INPUT_HDF5_FILE> -g y [OTHER OPTIONS]`
 
 ## Usage
 

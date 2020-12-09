@@ -7,7 +7,7 @@ ON-OFF radio SETI observations. The main function contained in this file is
 in this file (described below) to plot events from a turboSETI event .csv file.
 '''
 
-from os.path import dirname
+from os.path import dirname, abspath
 
 import matplotlib
 matplotlib.use('agg')
@@ -174,7 +174,7 @@ def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_r
     fig = plt.subplots(n_plots, sharex=True, sharey=True,figsize=(10, 2*n_plots))
     
     # get directory path for storing PNG files
-    dirpath = dirname(fil_file_list[0]) + '/'
+    dirpath = dirname(abspath(fil_file_list[0])) + '/'
 
     # read in data for the first panel
     print('make_waterfall_plots first_file in list: {}'.format(fil_file_list[0]))

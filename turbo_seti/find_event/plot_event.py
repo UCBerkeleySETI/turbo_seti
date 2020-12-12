@@ -177,7 +177,6 @@ def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_r
     dirpath = dirname(fil_file_list[0]) + '/'
 
     # read in data for the first panel
-    print('make_waterfall_plots first_file in list: {}'.format(fil_file_list[0]))
     fil1 = bl.Waterfall(fil_file_list[0], f_start=f_start, f_stop=f_stop)
     t0 = fil1.header['tstart']
     dummy, plot_data1 = fil1.grab_data()
@@ -349,7 +348,6 @@ def plot_candidate_events(candidate_event_dataframe, fil_file_list, filter_level
         print('Time Elapsed (inc. Slew) = ', round(t_elapsed), ' s')
         print('Middle Frequency = ', round(f_mid, 4), " MHz")
         print('Expected Drift = ', round(drift_rate, 4), " Hz/s")
-        print('*************************************************')
         print('*************************************************')
         print('')
 

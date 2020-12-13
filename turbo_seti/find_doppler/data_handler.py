@@ -362,6 +362,7 @@ class DATAH5:
 
         """
         # Call file object destructor which should close the file
-        del self.fil_file
+        if hasattr(self, 'fil_file'):
+            del self.fil_file
 
         self.closed = True

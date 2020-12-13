@@ -1,6 +1,6 @@
 | Version | Contents |
 | :--: | -- |
-| 2.0.1  | Amended `plot_event_pipeline.py` to accept a new filter_spec parameter. |
+| 2.0.1  | Amended `plot_event_pipeline.py` to accept a new filter_spec parameter. See issue \#127. |
 | | Amended `plot_event.py` to stop generating "RuntimeWarning: More than 20 figures have been opened".
 | | Default write-mode for DAT & LOG files is changed to "w" (replace). Append requires new optional `-a y` parameter.
 | 2.0.0  | Support NUMBA JIT compilation (CPU) and CUPY (NVIDIA GPU). |

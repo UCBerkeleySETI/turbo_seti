@@ -1,3 +1,6 @@
+This file is a version history of turbo_seti amendments, beginning with version 2.0.0.  Entries appear in version descending order (newest first, oldest last).
+<br>
+<br>
 | Version | Contents |
 | :--: | -- |
 | 2.0.1  | Amended `plot_event_pipeline.py` to accept a new filter_spec parameter. See issue \#127. |

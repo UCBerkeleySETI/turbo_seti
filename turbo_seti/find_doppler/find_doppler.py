@@ -319,7 +319,7 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
                       drift_rate, data_obj.header, tdwidth, max_val, 0)
 
     # Writing the top hits to file.
-    filewriter = tophitsearch(tree_findoppler_original, max_val, tsteps, data_obj.header, tdwidth,
+    filewriter = tophitsearch(fd, tree_findoppler_original, max_val, tsteps, data_obj.header, tdwidth,
                               fftlen, max_drift, data_obj.obs_length,
                               logwriter=logwriter, filewriter=filewriter, obs_info=obs_info)
 
@@ -447,7 +447,7 @@ def hitsearch(fd, spectrum, specstart, specend, hitthresh, drift_rate, header, t
         max_val.total_n_hits[0] += hits
 
 
-def tophitsearch(tree_findoppler_original, max_val, tsteps, header, tdwidth, fftlen,
+def tophitsearch(fd, tree_findoppler_original, max_val, tsteps, header, tdwidth, fftlen,
                  max_drift, obs_length, logwriter=None, filewriter=None, obs_info=None):
     r"""
     This finds the hits with largest SNR within 2*tsteps frequency channels.
@@ -482,9 +482,11 @@ def tophitsearch(tree_findoppler_original, max_val, tsteps, header, tdwidth, fft
 
     """
     maxsnr = max_val.maxsnr
-    logger.debug("original matrix size: %d\t(%d, %d)"%(len(tree_findoppler_original), tsteps, tdwidth))
-    tree_orig = tree_findoppler_original.reshape((tsteps, tdwidth))
-    logger.debug("tree_orig shape: %s"%str(tree_orig.shape))
+    logger.debug("original matrix size: %d\t(%d, %d)" % (len(tree_findoppler_original), tsteps, tdwidth))
+    logger.debug("tree_orig shape: %s"%str((tsteps, tdwidth)))
+
+    if fd.kernels.gpu_backend:
+        maxsnr = fd.kernels.xp.asnumpy(maxsnr)
 
     for i in (maxsnr > 0).nonzero()[0]:
         lbound = int(max(0, i - obs_length*max_drift/2))

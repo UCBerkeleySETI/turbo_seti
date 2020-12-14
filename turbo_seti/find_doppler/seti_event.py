@@ -8,7 +8,7 @@ import pstats
 from argparse import ArgumentParser
 
 from .find_doppler import FindDoppler
-from turbo_seti.find_doppler.kernels import Kernels
+from .kernels import Kernels
 
 
 def main(args=None):
@@ -46,6 +46,8 @@ def main(args=None):
                    help='Profile execution? (y/n)')
     p.add_argument('-S', '--single_precision', dest='flag_single_precision', type=str, default='n',
                    help='Use single precision (float32)? (y/n)')
+    p.add_argument('-a', '--append_output', dest='flag_append_output', type=str, default='n',
+                   help='Append output DAT & LOG files? (y/n)')
 
     if args is None:
         args = p.parse_args()
@@ -75,11 +77,11 @@ def exec(args):
 
     if level_log == logging.INFO:
         stream = sys.stdout
-        format = '%(name)-15s %(levelname)-8s %(message)s'
+        fmt = '%(name)-15s %(levelname)-8s %(message)s'
     else:
         stream = sys.stderr
-        format = '%%(relativeCreated)5d (name)-15s %(levelname)-8s %(message)s'
-    
+        fmt = '%%(relativeCreated)5d (name)-15s %(levelname)-8s %(message)s'
+
     if Kernels.has_gpu() and args.flag_gpu == "n":
         print("Info: Your system is compatible with GPU-mode. Use the `-g y` argument to enable it.")
 
@@ -87,13 +89,16 @@ def exec(args):
     try:
         t0 = time.time()
 
-        logging.basicConfig(format=format, stream=stream, level=level_log)
+        logging.basicConfig(format=fmt, stream=stream, level=level_log)
 
         find_seti_event = FindDoppler(args.filename, max_drift=args.max_drift,
-                                      snr=args.snr, out_dir=args.out_dir,
-                                      coarse_chans=coarse_chans, obs_info=None,
+                                      snr=args.snr,
+                                      out_dir=args.out_dir,
+                                      append_output=(args.flag_append_output == "y"),
+                                      coarse_chans=coarse_chans,
+                                      obs_info=None,
                                       n_coarse_chan=args.n_coarse_chan,
-                                      gpu_backend=True if args.flag_gpu == "y" else False,
+                                      gpu_backend=(args.flag_gpu == "y"),
                                       precision=1 if args.flag_single_precision == "y" else 2)
 
         find_seti_event.search(n_partitions=args.n_parallel,
@@ -104,7 +109,7 @@ def exec(args):
 
     except Exception as e:
         logging.exception(e)
-        raise Exception(1, '[turbo_SETI] Some issue with FindDoppler.', e)
+        raise RuntimeError('[turboSETI] An exception occured in FindDoppler.') from e
 
 if __name__ == '__main__':
     main()

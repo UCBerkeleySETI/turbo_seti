@@ -8,21 +8,21 @@ in this file (described below) to plot events from a turboSETI event .csv file.
 '''
 
 from os.path import dirname
+import logging
+logging.disable(logging.CRITICAL)
 
+# Plotting packages import
 import matplotlib
+import matplotlib.pyplot as plt
 matplotlib.use('agg')
 
-# General packages import
+# Math/Science package imports
 import numpy as np
-import logging; logging.disable(logging.CRITICAL)
 from astropy.time import Time
 
 # BL imports
 import blimpy as bl
 from blimpy.utils import rebin
-
-# Plotting packages import
-import matplotlib.pyplot as plt
 
 # preliminary plot arguments
 fontsize=16
@@ -55,7 +55,7 @@ def overlay_drift(f_event, f_start, f_stop, drift_rate, t_duration, offset=0):
 def plot_waterfall(fil, source_name, f_start=None, f_stop=None, **kwargs):
     r"""
     Plot waterfall of data in a .fil or .h5 file.
-    
+
     Parameters
     ----------
     fil : str
@@ -101,10 +101,7 @@ def plot_waterfall(fil, source_name, f_start=None, f_stop=None, **kwargs):
 
     # plot and scale intensity (log vs. linear)
     kwargs['cmap'] = kwargs.get('cmap', 'viridis')
-    kwargs['logged'] = True
-    if kwargs['logged'] == True:
-        plot_data = 10*np.log10(plot_data)
-        kwargs.pop('logged')
+    plot_data = 10.0 * np.log10(plot_data)
 
     # get normalization parameters
     vmin = plot_data.min()
@@ -136,7 +133,7 @@ def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_r
                          filter_level, source_name_list, offset=0, **kwargs):
     r'''
     Makes waterfall plots of an event for an entire on-off cadence.
-    
+
     Parameters
     ----------
     fil_file_list : str
@@ -172,12 +169,11 @@ def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_r
     # set up the sub-plots
     n_plots = len(fil_file_list)
     fig = plt.subplots(n_plots, sharex=True, sharey=True,figsize=(10, 2*n_plots))
-    
+
     # get directory path for storing PNG files
     dirpath = dirname(fil_file_list[0]) + '/'
 
     # read in data for the first panel
-    print('make_waterfall_plots first_file in list: {}'.format(fil_file_list[0]))
     fil1 = bl.Waterfall(fil_file_list[0], f_start=f_start, f_stop=f_stop)
     t0 = fil1.header['tstart']
     dummy, plot_data1 = fil1.grab_data()
@@ -252,11 +248,11 @@ def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_r
     plt.subplots_adjust(hspace=0,wspace=0)
 
     # save the figures
-    # Somehow, some way, "testing" is inserted between dirpath and the actual file name.  How?????
     plt.savefig(dirpath + filter_level + '_' + on_source_name + '_dr_' + "{:0.2f}".format(drift_rate) + '_freq_' "{:0.6f}".format(f_start) + ".png",
                 bbox_inches='tight')
 
-    plt.clf()
+    # close all figure windows
+    plt.close('all')
 
     return subplots
 
@@ -303,7 +299,7 @@ def plot_candidate_events(candidate_event_dataframe, fil_file_list, filter_level
         event) or 'auto' (shifts line to the left by
         an auto-calculated amount, with addition lines
         showing original position).
-    plot_snr_list : bool
+    plot_snr_list : bool (*** NOT YET IN USE***)
     kwargs : dict
 
 
@@ -351,7 +347,6 @@ def plot_candidate_events(candidate_event_dataframe, fil_file_list, filter_level
         print('Middle Frequency = ', round(f_mid, 4), " MHz")
         print('Expected Drift = ', round(drift_rate, 4), " Hz/s")
         print('*************************************************')
-        print('*************************************************')
         print('')
 
         # Pass info to make_waterfall_plots() function
@@ -365,4 +360,3 @@ def plot_candidate_events(candidate_event_dataframe, fil_file_list, filter_level
                              source_name_list,
                              offset=offset,
                              **kwargs)
- 

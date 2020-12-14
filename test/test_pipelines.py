@@ -10,6 +10,7 @@ Date         Who            Description
 2020-08-01   R. Elkins      Expand filter threshold coverage to 1, 2, & 3
 2020-08-18   R. Elkins      Fix test_pipelines execution to re-clean-up
                             between find_plot_pipelines() executions.
+2020-12-12   R. Elkins      Issue #127 - use new filter_spec parameter.
 '''
 
 from time import time
@@ -91,9 +92,8 @@ def make_one_dat_file(arg_h5_name):
     h5_path = TESTDIR + arg_h5_name
     time_start = time()
     doppler = FindDoppler(h5_path,
-                          max_drift=1,
-                          min_drift=-1,
-                          snr=25,
+                          max_drift=4,
+                          snr=10,
                           out_dir=TESTDIR)
     time_stop = time()
     print('make_one_dat_file: End FindDoppler({}), et = {:.1f} seconds'
@@ -104,7 +104,7 @@ def make_one_dat_file(arg_h5_name):
     
     # ----------------------------------------------------------------------------
     # No more than 1 execution of this program because of dask methodology!
-    # To do multiple dask partitions, would cause initialization & cleanup chaos.
+    # To do multiple dask partitions would cause initialization & cleanup chaos.
     time_start = time()
     doppler.search(n_partitions=1)
     time_stop = time()
@@ -187,6 +187,7 @@ def find_plot_pipelines(need_init=True, filter_threshold=2):
           .format(PATH_CSVF, PATH_H5_LIST_FILE))
     plot_event_pipeline(PATH_CSVF,
                         PATH_H5_LIST_FILE,
+                        filter_spec='f{}'.format(filter_threshold),
                         user_validation=False)
 
     main_time_stop = time()

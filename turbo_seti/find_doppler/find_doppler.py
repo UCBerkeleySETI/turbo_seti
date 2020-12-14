@@ -7,7 +7,7 @@ import logging
 import dask.bag as db
 from dask.diagnostics import ProgressBar
 
-from .kernels import Kernels
+from .kernels import Kernels, Scheduler
 from .data_handler import DATAHandle, DATAH5
 from .file_writers import FileWriter, LogWriter
 from .helper_functions import chan_freq, comp_stats
@@ -136,8 +136,9 @@ class FindDoppler:
 
         # Run serial version
         if n_partitions == 1:
-            for _, data_dict in enumerate(self.data_handle.data_list):
-                search_coarse_channel(data_dict, self, filewriter=filewriter, logwriter=logwriter)
+            sched = Scheduler(load_data, [ (l, self.kernels) for l in self.data_handle.data_list ])
+            for dl in self.data_handle.data_list:
+                search_coarse_channel(dl, self, dataloader=sched, filewriter=filewriter, logwriter=logwriter)
         # Run Parallel version via dask
         else:
             b = db.from_sequence(self.data_handle.data_list, npartitions=n_partitions)
@@ -149,8 +150,15 @@ class FindDoppler:
             merge_dats_logs(filename_in, self.out_dir, 'dat', cleanup='y')
             merge_dats_logs(filename_in, self.out_dir, 'log', cleanup='y')
 
+def load_data(d, kernel):
+    data_obj = DATAH5(d['filename'], f_start=d['f_start'], f_stop=d['f_stop'],
+                      coarse_chan=d['coarse_chan'], n_coarse_chan=d['n_coarse_chan'], kernels=kernel)
+    spectra, drift_indices = data_obj.load_data()
+    data_obj.close()
 
-def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, filewriter=None):
+    return (data_obj, spectra, drift_indices)
+
+def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, logwriter=None, filewriter=None):
     r"""
     Run a turboseti search on a single coarse channel.
 
@@ -177,6 +185,7 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
     directly, but rather via the `FindDoppler.search()` or `FindDoppler.search_dask()` routines.
 
     """
+    
     d = data_dict
     fd = find_doppler_instance
 
@@ -189,9 +198,10 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
     obs_info = fd.obs_info
     flagging = fd.flagging
 
-    #logger.info("Start searching for coarse channel: %s" % d['coarse_chan'])
-    data_obj = DATAH5(d['filename'], f_start=d['f_start'], f_stop=d['f_stop'],
-                      coarse_chan=d['coarse_chan'], n_coarse_chan=d['n_coarse_chan'], kernels=fd.kernels)
+    if dataloader:
+        data_obj, spectra, drift_indices = dataloader.get()
+    else:
+        data_obj, spectra, drift_indices = load_data(d, fd.kernels)
 
     fileroot_out = filename_in.split('/')[-1].replace('.h5', '').replace('.fits', '').replace('.fil', '')
     if logwriter is None:
@@ -199,7 +209,6 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
     if filewriter is None:
         filewriter = FileWriter('%s/%s_%i.dat' % (out_dir.rstrip('/'), fileroot_out, d['coarse_chan']), header_in)
 
-    spectra, drift_indices = data_obj.load_data()
     spectra_flipped = fd.kernels.xp.copy(spectra)[:, ::-1]
     tsteps = data_obj.tsteps
     tsteps_valid = data_obj.tsteps_valid
@@ -325,7 +334,6 @@ def search_coarse_channel(data_dict, find_doppler_instance, logwriter=None, file
 
     logger.info("Total number of candidates for coarse channel " + 
                 str(data_obj.header['coarse_chan']) + " is: %i" % max_val.total_n_hits)
-    data_obj.close()
     filewriter.close()
     return True
 

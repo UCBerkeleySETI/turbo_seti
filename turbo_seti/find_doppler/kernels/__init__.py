@@ -1,5 +1,6 @@
 import importlib
 
+from .Scheduler import Scheduler
 
 class Kernels():
     r"""

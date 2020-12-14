@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import importlib
 import logging
 
 # Parallel python support
@@ -62,11 +61,13 @@ class FindDoppler:
         Use GPU accelerated Kernels.
     precision : int {2: float64, 1: float32}, optional
         Floating point precision.
+    append_output : bool, optional
+        Append output DAT & LOG files? (True/False)
 
     """
     def __init__(self, datafile, max_drift, min_drift=0, snr=25.0, out_dir='./', coarse_chans=None,
                  obs_info=None, flagging=None, n_coarse_chan=None, kernels=None, gpu_backend=False,
-                 precision=2):
+                 precision=2, append_output=False):
         if not kernels:
             self.kernels = Kernels(gpu_backend, precision)
         else:
@@ -93,6 +94,7 @@ class FindDoppler:
 
         self.status = True
         self.flagging = flagging
+        self.append_output = append_output
 
     def get_info(self):
         r"""
@@ -104,6 +106,19 @@ class FindDoppler:
         """
         info_str = "File: %s\n drift rates (min, max): (%f, %f)\n SNR: %f\n"%(self.data_handle.filename, self.min_drift, self.max_drift, self.snr)
         return info_str
+
+    def __truncate_file(self, arg_path):
+        r"""
+        Truncate a DAT or LOG file.
+
+        Parameters
+        ----------
+        arg_path : string
+            Path of file to be truncated.
+
+        """
+        with open(arg_path, 'w') as myfile:
+            myfile.close()
 
     def search(self, n_partitions=1, progress_bar='y'):
         r"""
@@ -128,8 +143,16 @@ class FindDoppler:
         header_in   = self.data_handle.header
 
         wfilename = filename_in.split('/')[-1].replace('.h5', '').replace('.fits', '').replace('.fil', '')
-        logwriter = LogWriter('%s/%s.log'%(self.out_dir.rstrip('/'), wfilename))
-        filewriter = FileWriter('%s/%s.dat'%(self.out_dir.rstrip('/'), wfilename), header_in)
+        path_log = '{}/{}.log'.format(self.out_dir.rstrip('/'), wfilename)
+        path_dat = '{}/{}.dat'.format(self.out_dir.rstrip('/'), wfilename)
+        if self.append_output:
+            print('Appending {}'.format(path_dat))
+        else:
+            print('Truncating {}'.format(path_dat))
+            self.__truncate_file(path_log)
+            self.__truncate_file(path_dat)
+        logwriter = LogWriter(path_log)
+        filewriter = FileWriter(path_dat, header_in)
 
         logger.info("Start ET search for %s" % filename_in)
         logwriter.info("Start ET search for %s" % filename_in)

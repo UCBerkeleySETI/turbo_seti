@@ -265,9 +265,8 @@ class DATAH5:
             n_coarse_chan = int(self.fil_file.calc_n_coarse_chan())
         self.fil_file.blank_dc(n_coarse_chan)
 
-        spec = self.kernels.xp.squeeze(self.fil_file.data)
-        spectra = self.kernels.xp.array(spec, dtype=self.kernels.float_type)
-
+        spectra = self.kernels.np.squeeze(self.fil_file.data)
+        
         # DCP APR 2020 -- COMMENTED OUT. THIS IS BREAKING STUFF IN CURRENT VERSION.
         #Arrange data in ascending order in freq if not already in that format.
         #if self.header['DELTAF'] < 0.0:
@@ -276,8 +275,8 @@ class DATAH5:
         # This check will add rows of zeros if the obs is too short
         # (and thus not a power of two rows).
         if spectra.shape[0] != self.tsteps:
-            padding = self.kernels.xp.zeros((self.tsteps-spectra.shape[0], self.fftlen))
-            spectra = self.kernels.xp.concatenate((spectra, padding), axis=0)
+            padding = self.kernels.np.zeros((self.tsteps-spectra.shape[0], self.fftlen))
+            spectra = self.kernels.np.concatenate((spectra, padding), axis=0)
 
         self.tsteps_valid = self.tsteps
         self.obs_length = self.tsteps * self.header['DELTAT']
@@ -288,6 +287,7 @@ class DATAH5:
 
         drift_indexes = self.load_drift_indexes()
 
+        spectra = self.kernels.xp.array(spectra, dtype=self.kernels.float_type)
         return spectra, drift_indexes
 
     def load_drift_indexes(self):
@@ -362,6 +362,10 @@ class DATAH5:
 
         """
         # Call file object destructor which should close the file
-        del self.fil_file
+        if hasattr(self, 'fil_file'):
+            del self.fil_file
+
+        if hasattr(self, 'kernels'):
+            del self.kernels
 
         self.closed = True

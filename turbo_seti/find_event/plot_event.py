@@ -178,7 +178,7 @@ def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_r
     if plot_dir is None:
         dirpath = dirname(abspath(fil_file_list[0])) + '/'
     else:
-        if !os.path.isdir(plot_dir):
+        if not os.path.isdir(plot_dir):
             os.mkdir(plot_dir)
         dirpath = plot_dir
 

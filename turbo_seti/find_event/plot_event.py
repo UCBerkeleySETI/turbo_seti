@@ -7,6 +7,7 @@ ON-OFF radio SETI observations. The main function contained in this file is
 in this file (described below) to plot events from a turboSETI event .csv file.
 '''
 
+import os
 from os.path import dirname, abspath
 
 import matplotlib
@@ -55,7 +56,7 @@ def overlay_drift(f_event, f_start, f_stop, drift_rate, t_duration, offset=0):
 def plot_waterfall(fil, source_name, f_start=None, f_stop=None, **kwargs):
     r"""
     Plot waterfall of data in a .fil or .h5 file.
-    
+
     Parameters
     ----------
     fil : str
@@ -133,10 +134,10 @@ def plot_waterfall(fil, source_name, f_start=None, f_stop=None, **kwargs):
     return this_plot
 
 def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_rate, f_mid,
-                         filter_level, source_name_list, offset=0, **kwargs):
+                         filter_level, source_name_list, offset=0, plot_dir=None, **kwargs):
     r'''
     Makes waterfall plots of an event for an entire on-off cadence.
-    
+
     Parameters
     ----------
     fil_file_list : str
@@ -172,9 +173,15 @@ def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_r
     # set up the sub-plots
     n_plots = len(fil_file_list)
     fig = plt.subplots(n_plots, sharex=True, sharey=True,figsize=(10, 2*n_plots))
-    
+
     # get directory path for storing PNG files
-    dirpath = dirname(abspath(fil_file_list[0])) + '/'
+    if plot_dir is None
+        dirpath = dirname(abspath(fil_file_list[0])) + '/'
+    else:
+        if !os.path.isdir(plot_dir):
+            os.mkdir(plot_dir)
+        dirpath = plot_dir
+
 
     # read in data for the first panel
     print('make_waterfall_plots first_file in list: {}'.format(fil_file_list[0]))
@@ -253,7 +260,7 @@ def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_r
 
     # save the figures
     # Somehow, some way, "testing" is inserted between dirpath and the actual file name.  How?????
-    plt.savefig(dirpath + filter_level + '_' + on_source_name + '_dr_' + "{:0.2f}".format(drift_rate) + '_freq_' "{:0.6f}".format(f_start) + ".png",
+    plt.savefig(dirpath + filter_level + '_' + on_source_name + '_dr_' + "{:0.2f}".format(drift_rate) + '_freq_' "{:0.6f}".format(f_start) + ".pdf",
                 bbox_inches='tight')
 
     plt.clf()
@@ -365,4 +372,4 @@ def plot_candidate_events(candidate_event_dataframe, fil_file_list, filter_level
                              source_name_list,
                              offset=offset,
                              **kwargs)
- 
+

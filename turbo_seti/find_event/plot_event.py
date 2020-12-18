@@ -268,7 +268,7 @@ def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_r
     return subplots
 
 def plot_candidate_events(candidate_event_dataframe, fil_file_list, filter_level, source_name_list,
-                          offset=0, plot_snr_list=False, **kwargs):
+                          offset=0, plot_snr_list=False, plot_dir=None, **kwargs):
     r'''
     Calls :func:`~make_waterfall_plots` on each event in the input .csv file.
 
@@ -371,5 +371,6 @@ def plot_candidate_events(candidate_event_dataframe, fil_file_list, filter_level
                              filter_level,
                              source_name_list,
                              offset=offset,
+                             plot_dir=plot_dir,
                              **kwargs)
 

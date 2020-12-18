@@ -126,4 +126,5 @@ def plot_event_pipeline(event_csv_string, fils_list_string, user_validation=Fals
                                    filter_level,
                                    source_name_list,
                                    offset=offset,
+                                   plot_dir=plot_dir,
                                    plot_snr_list=plot_snr_list)

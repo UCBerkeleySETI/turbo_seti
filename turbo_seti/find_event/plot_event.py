@@ -175,7 +175,7 @@ def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_r
     fig = plt.subplots(n_plots, sharex=True, sharey=True,figsize=(10, 2*n_plots))
 
     # get directory path for storing PNG files
-    if plot_dir is None
+    if plot_dir is None:
         dirpath = dirname(abspath(fil_file_list[0])) + '/'
     else:
         if !os.path.isdir(plot_dir):

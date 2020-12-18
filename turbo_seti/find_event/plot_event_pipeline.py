@@ -100,6 +100,8 @@ def plot_event_pipeline(event_csv_string, fils_list_string, user_validation=Fals
     #take filter-level information from the .csv filename
     if filter_level is None:
         filter_level = event_csv_string.split('_')[2]
+    else:
+        str(filter_level)
 
 
     #begin user validation

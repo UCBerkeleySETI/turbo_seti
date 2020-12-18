@@ -46,7 +46,7 @@ It was originally based on `dedoppler` [dedoppler](http://github.com/cs150bf/gbt
 
 The latest release can be installed via pip directly from this repository:
 
-`python3 -m pip install -U https://github.com/UCBerkeleySETI/turbo_seti`
+`python3 -m pip install -U git+https://github.com/UCBerkeleySETI/turbo_seti`
 
 ## NVIDIA GPU Users
 

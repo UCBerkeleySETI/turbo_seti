@@ -7,6 +7,7 @@ This file is a version history of turbo_seti amendments, beginning with version 
 | | Amended `plot_event.py` to stop generating "RuntimeWarning: More than 20 figures have been opened".
 | | Default write-mode for DAT & LOG files is changed to "w" (replace). Append requires new optional `-a y` parameter.
 | | GPU-mode performance improvements.
+| | Restored console logging.
 | 2.0.0  | Support NUMBA JIT compilation (CPU) and CUPY (NVIDIA GPU). |
 | | Made `turboSETI -n ...` work (set the number of coarse channels).
 | | No longer keeping Voyager test data in this repository.

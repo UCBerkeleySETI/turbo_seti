@@ -118,7 +118,6 @@ if __name__ == '__main__':
 
 ### Sample DAT File Output
 
-&nbsp;
 
     File ID: blc07_guppi_57650_67573_Voyager1_0002.gpuspec.0000_57
     Source:Voyager1 MJD: 57650.782094907408 RA:  17:10:04.0 DEC:  +12:10:58.8       DELTAT:  18.253611      DELTAF(Hz):   2.793968

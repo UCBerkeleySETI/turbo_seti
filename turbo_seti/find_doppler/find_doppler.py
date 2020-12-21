@@ -240,8 +240,9 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
     nframes = tsteps_valid
     shoulder_size = data_obj.shoulder_size
 
-    logger.debug('coarse_channel={}, flagging={}, spectra_flipped={}, tsteps={}, tsteps_valid={}, tdwidth={}, fftlen={}, nframes={}, shoulder_size={}'
-                 .format(coarse_channel, flagging, spectra_flipped, tsteps, tsteps_valid, tdwidth, fftlen, nframes, shoulder_size))
+    logger.info('coarse_channel={}, f_start={}, f_stop={}'.format(coarse_channel, d['f_start'], d['f_stop']))
+    logger.debug('flagging={}, spectra_flipped={}, tsteps={}, tsteps_valid={}, tdwidth={}, fftlen={}, nframes={}, shoulder_size={}'
+                 .format(flagging, spectra_flipped, tsteps, tsteps_valid, tdwidth, fftlen, nframes, shoulder_size))
 
     if flagging:
         ##EE This flags the edges of the PFF for BL data (with 3Hz res per channel).

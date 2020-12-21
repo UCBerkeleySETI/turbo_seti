@@ -8,6 +8,8 @@ in this file (described below) to plot events from a turboSETI event .csv file.
 '''
 
 from os.path import dirname
+#import logging
+#logging.disable(logging.CRITICAL)
 
 # Plotting packages import
 import matplotlib

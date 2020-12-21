@@ -4,7 +4,7 @@ This file is a version history of turbo_seti amendments, beginning with version 
 | Version | Contents |
 | :--: | -- |
 | 2.1.0 | Amended `find_doppler.py`, `seti_event.py`, and `plot_event.py` to ressurect logging. See issue \#134. |
-| | Add frequency channel masking capability. See issue #125
+| | Add frequency channel masking capability. See issue #125.
 | 2.0.1 | Amended `plot_event_pipeline.py` to accept a new filter_spec parameter. See issue \#127. |
 | | Amended `plot_event.py` to stop generating "RuntimeWarning: More than 20 figures have been opened".
 | | Default write-mode for DAT & LOG files is changed to "w" (replace). Append requires new optional `-a y` parameter.

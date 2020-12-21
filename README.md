@@ -134,7 +134,7 @@ if __name__ == '__main__':
     006       0.000000      298.061948         8419.921871     8419.921871  524287     8419.921848     8419.921890  0.0           0.000000
 
 ### Sample Console Logging (level=INFO) Output
-
+Note that the coarse channel number appears as a suffix of the logger name.  For example, "find_doppler.8" depicts logging for find_doppler.py in coarse channel number 8 (relative to 0).
 ```
 turboSETI  /seti_data/voyager/Voyager1.single_coarse.fine_res.h5 -n 16 -o /tmp/run_turbo_seti/ -l info
 find_doppler    INFO     {'DIMENSION_LABELS': array(['frequency', 'feed_id', 'time'], dtype=object), 'az_start': 0.0, 'data_type': 1, 'fch1': 8421.386717353016, 'foff': -2.7939677238464355e-06, 'ibeam': 1, 'machine_id': 20, 'nbeams': 1, 'nbits': 32, 'nchans': 1048576, 'nifs': 1, 'rawdatafile': 'guppi_57650_67573_Voyager1_0002.0000.raw', 'source_name': 'Voyager1', 'src_dej': <Angle 12.183 deg>, 'src_raj': <Angle 17.16777333 hourangle>, 'telescope_id': 6, 'tsamp': 18.253611008, 'tstart': 57650.78209490741, 'za_start': 0.0}

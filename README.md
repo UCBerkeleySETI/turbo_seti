@@ -116,7 +116,7 @@ if __name__ == '__main__':
 ```
 
 
-### Sample Outputs
+### Sample DAT File Output
 
 &nbsp;
 
@@ -134,8 +134,38 @@ if __name__ == '__main__':
     005      -0.363527       49.893235         8419.319681     8419.319681  308755     8419.319659     8419.319701  0.0           0.000000
     006       0.000000      298.061948         8419.921871     8419.921871  524287     8419.921848     8419.921890  0.0           0.000000
 
-&nbsp;
+### Sample Console Logging (level=INFO) Output
 
+&nbsp;
+```
+turboSETI  /seti_data/voyager/Voyager1.single_coarse.fine_res.h5 -n 16 -o /tmp/run_turbo_seti/ -l info
+find_doppler    INFO     {'DIMENSION_LABELS': array(['frequency', 'feed_id', 'time'], dtype=object), 'az_start': 0.0, 'data_type': 1, 'fch1': 8421.386717353016, 'foff': -2.7939677238464355e-06, 'ibeam': 1, 'machine_id': 20, 'nbeams': 1, 'nbits': 32, 'nchans': 1048576, 'nifs': 1, 'rawdatafile': 'guppi_57650_67573_Voyager1_0002.0000.raw', 'source_name': 'Voyager1', 'src_dej': <Angle 12.183 deg>, 'src_raj': <Angle 17.16777333 hourangle>, 'telescope_id': 6, 'tsamp': 18.253611008, 'tstart': 57650.78209490741, 'za_start': 0.0}
+find_doppler    INFO     Recreating DAT and LOG files
+find_doppler    INFO     Start ET search for /seti_data/voyager/Voyager1.single_coarse.fine_res.h5
+find_doppler.0  INFO     Total number of candidates for coarse channel 0 is: 0
+find_doppler.1  INFO     Total number of candidates for coarse channel 1 is: 0
+find_doppler.2  INFO     Total number of candidates for coarse channel 2 is: 0
+find_doppler.3  INFO     Total number of candidates for coarse channel 3 is: 0
+find_doppler.4  INFO     Total number of candidates for coarse channel 4 is: 0
+find_doppler.5  INFO     Total number of candidates for coarse channel 5 is: 0
+find_doppler.6  INFO     Total number of candidates for coarse channel 6 is: 0
+find_doppler.7  INFO     Total number of candidates for coarse channel 7 is: 0
+find_doppler.8  INFO     Top hit found! SNR: 247337.821136 ... index: 0
+find_doppler.8  INFO     Top hit found! SNR: 15524.311644 ... index: 52
+find_doppler.8  INFO     Top hit found! SNR: 15522.626980 ... index: 65500
+find_doppler.8  INFO     Total number of candidates for coarse channel 8 is: 30719
+find_doppler.9  INFO     Total number of candidates for coarse channel 9 is: 0
+find_doppler.10 INFO     Total number of candidates for coarse channel 10 is: 0
+find_doppler.11 INFO     Top hit found! SNR: 154.966914 ... index: 19037
+find_doppler.11 INFO     Top hit found! SNR: 1247.693444 ... index: 27033
+find_doppler.11 INFO     Top hit found! SNR: 158.058329 ... index: 35141
+find_doppler.11 INFO     Total number of candidates for coarse channel 11 is: 167459
+find_doppler.12 INFO     Total number of candidates for coarse channel 12 is: 0
+find_doppler.13 INFO     Total number of candidates for coarse channel 13 is: 0
+find_doppler.14 INFO     Total number of candidates for coarse channel 14 is: 0
+find_doppler.15 INFO     Total number of candidates for coarse channel 15 is: 0
+Search time:  0.34 min
+```
 
 ### BL Internal Technote
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import yaml
 import math
 import logging
 
@@ -35,6 +36,8 @@ class DATAHandle:
         Number of coarse channels.
     coarse_chans : list or None
         List of course channels.
+    mask : str, optional
+        Used to specify the frequency masking file-path.
     kernels : Kernels, optional
         Pre-configured class of Kernels.
     gpu_backend : bool, optional
@@ -44,7 +47,7 @@ class DATAHandle:
 
     """
     def __init__(self, filename=None, out_dir='./', n_coarse_chan=None, coarse_chans=None,
-                 kernels=None, gpu_backend=False, precision=2):
+                 kernels=None, gpu_backend=False, precision=2, mask=None):
         if not kernels:
             self.kernels = Kernels(gpu_backend, precision)
         else:
@@ -79,6 +82,9 @@ class DATAHandle:
             self.header = dobj_master.header
             dobj_master.close()
 
+            # Load mask file from disk
+            self.__parse_mask_file(mask)
+
             # Split the file
             self.data_list = self.__split_h5()
             self.status = True
@@ -101,6 +107,57 @@ class DATAHandle:
         """
         fil_file = Waterfall(self.filename, load_data=False)
         return fil_file.header
+
+    def __parse_mask_file(self, mask_path):
+        r"""
+        Loads mask file from disk and creates the masking plan.
+
+        """
+        # Check if user specified a mask file
+        if not mask_path:
+            self.freq_mask = None
+            return
+
+        # Check if mask file exists and load data
+        if not os.path.isfile(mask_path):
+            error = f"Masking file ({mask_path}) not found."
+            logger.error(error)
+            raise RuntimeError(error)
+
+        with open(mask_path) as f:
+            mask_data = yaml.load(f, Loader=yaml.FullLoader)
+
+        # Verify if data from file is valid
+        if not "blacklist" in mask_data:
+            error = "Can't file blacklist key. Check mask file."
+            raise RuntimeError(error)
+
+        for r in mask_data["blacklist"]:
+            if not "range" in r:
+                error = "Invalid key inside blacklist. Check mask file."
+                raise RuntimeError(error)
+
+            start_keys = ["start", "START_FREQ"]
+            end_keys = ["end", "END_FREQ"]
+            keys = r["range"]
+
+            if len(keys) != 2:
+                error = "Invalid number of keys inside blacklist range item. Check mask file."
+                raise RuntimeError(error)
+
+            for s in keys:
+                if not any(n in s for n in (start_keys + end_keys)):
+                    error = "Invalid key inside blacklist range item. Check mask file"
+                    raise RuntimeError(error)
+
+            for a, b in [(start_keys, end_keys), (end_keys, start_keys)]:
+                for key in a:
+                    if any(key in n for n in keys) and not any(n in x for n in b for x in keys):
+                        error = f"The key `{key}` requires either `{b[0]}` or `{b[1]}`. Check mask file."
+                        raise RuntimeError(error)
+
+        print(mask_data)
+        print("loaded!")
 
     def __make_h5_file(self):
         r"""
@@ -266,7 +323,7 @@ class DATAH5:
         self.fil_file.blank_dc(n_coarse_chan)
 
         spectra = self.kernels.np.squeeze(self.fil_file.data)
-        
+
         # DCP APR 2020 -- COMMENTED OUT. THIS IS BREAKING STUFF IN CURRENT VERSION.
         #Arrange data in ascending order in freq if not already in that format.
         #if self.header['DELTAF'] < 0.0:

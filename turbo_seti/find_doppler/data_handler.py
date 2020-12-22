@@ -13,7 +13,7 @@ from blimpy.io import sigproc
 
 from .kernels import Kernels
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('data_handler')
 
 #For debugging
 #import cProfile

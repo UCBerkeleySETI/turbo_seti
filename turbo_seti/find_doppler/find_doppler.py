@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import os
 import logging
 
 # Parallel python support
@@ -14,8 +15,8 @@ from .merge_dats_logs import merge_dats_logs
 
 #For debugging
 #import pdb;# pdb.set_trace()
-
-logger = logging.getLogger(__name__)
+logger_name = 'find_doppler'
+logger = logging.getLogger(logger_name)
 
 class max_vals:
     r"""
@@ -63,27 +64,34 @@ class FindDoppler:
         Floating point precision.
     append_output : bool, optional
         Append output DAT & LOG files? (True/False)
+    log_level_int : int, optional
+        Python logging threshold level (INFO, DEBUG, or WARNING)
 
     """
     def __init__(self, datafile, max_drift, min_drift=0, snr=25.0, out_dir='./', coarse_chans=None,
-                 obs_info=None, flagging=None, n_coarse_chan=None, kernels=None, gpu_backend=False,
-                 precision=2, append_output=False):
+                 obs_info=None, flagging=False, n_coarse_chan=None, kernels=None, gpu_backend=False,
+                 precision=2, append_output=False, log_level_int=logging.INFO):
         if not kernels:
             self.kernels = Kernels(gpu_backend, precision)
         else:
             self.kernels = kernels
+
+        logger.setLevel(log_level_int)
 
         self.min_drift = min_drift
         self.max_drift = max_drift
         self.out_dir = out_dir
         self.snr = snr
 
-        self.data_handle = DATAHandle(datafile, out_dir=out_dir, n_coarse_chan=n_coarse_chan, coarse_chans=coarse_chans, kernels=self.kernels)
+        self.data_handle = DATAHandle(datafile,
+                                      out_dir=out_dir,
+                                      n_coarse_chan=n_coarse_chan,
+                                      coarse_chans=coarse_chans,
+                                      kernels=self.kernels)
         if (self.data_handle is None) or (self.data_handle.status is False):
             raise IOError("File error, aborting...")
 
         logger.info(self.data_handle.get_info())
-        logger.info("A new FinDoppler instance created!")
 
         if obs_info is None:
             obs_info = {'pulsar': 0, 'pulsar_found': 0, 'pulsar_dm': 0.0, 'pulsar_snr': 0.0,
@@ -107,22 +115,9 @@ class FindDoppler:
         info_str = "File: %s\n drift rates (min, max): (%f, %f)\n SNR: %f\n"%(self.data_handle.filename, self.min_drift, self.max_drift, self.snr)
         return info_str
 
-    def __truncate_file(self, arg_path):
-        r"""
-        Truncate a DAT or LOG file.
-
-        Parameters
-        ----------
-        arg_path : string
-            Path of file to be truncated.
-
-        """
-        with open(arg_path, 'w') as myfile:
-            myfile.close()
-
     def search(self, n_partitions=1, progress_bar='y'):
         r"""
-        Top level search routine. 
+        Top level search routine.
 
         Parameters
         ----------
@@ -146,11 +141,13 @@ class FindDoppler:
         path_log = '{}/{}.log'.format(self.out_dir.rstrip('/'), wfilename)
         path_dat = '{}/{}.dat'.format(self.out_dir.rstrip('/'), wfilename)
         if self.append_output:
-            print('Appending {}'.format(path_dat))
+            logger.info('Appending DAT and LOG files')
         else:
-            print('Truncating {}'.format(path_dat))
-            self.__truncate_file(path_log)
-            self.__truncate_file(path_dat)
+            logger.info('Recreating DAT and LOG files')
+            if os.path.exists(path_log):
+                os.remove(path_log)
+            if os.path.exists(path_dat):
+                os.remove(path_dat)
         logwriter = LogWriter(path_log)
         filewriter = FileWriter(path_dat, header_in)
 
@@ -208,6 +205,7 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
     directly, but rather via the `FindDoppler.search()` or `FindDoppler.search_dask()` routines.
 
     """
+    global logger
     
     d = data_dict
     fd = find_doppler_instance
@@ -220,6 +218,8 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
     snr = fd.snr
     obs_info = fd.obs_info
     flagging = fd.flagging
+    coarse_channel = d['coarse_chan']
+    logger = logging.getLogger(logger_name + '.' + str(coarse_channel))
 
     if dataloader:
         data_obj, spectra, drift_indices = dataloader.get()
@@ -228,9 +228,9 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
 
     fileroot_out = filename_in.split('/')[-1].replace('.h5', '').replace('.fits', '').replace('.fil', '')
     if logwriter is None:
-        logwriter = LogWriter('%s/%s_%i.log' % (out_dir.rstrip('/'), fileroot_out, d['coarse_chan']))
+        logwriter = LogWriter('%s/%s_%i.log' % (out_dir.rstrip('/'), fileroot_out, coarse_channel))
     if filewriter is None:
-        filewriter = FileWriter('%s/%s_%i.dat' % (out_dir.rstrip('/'), fileroot_out, d['coarse_chan']), header_in)
+        filewriter = FileWriter('%s/%s_%i.dat' % (out_dir.rstrip('/'), fileroot_out, coarse_channel), header_in)
 
     spectra_flipped = fd.kernels.xp.copy(spectra)[:, ::-1]
     tsteps = data_obj.tsteps
@@ -239,6 +239,11 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
     fftlen = data_obj.fftlen
     nframes = tsteps_valid
     shoulder_size = data_obj.shoulder_size
+
+    logger.info('===== coarse_channel={}, f_start={}, f_stop={}'
+                .format(coarse_channel, d['f_start'], d['f_stop']))
+    logger.debug('flagging={}, spectra_flipped={}, tsteps={}, tsteps_valid={}, tdwidth={}, fftlen={}, nframes={}, shoulder_size={}'
+                 .format(flagging, spectra_flipped, tsteps, tsteps_valid, tdwidth, fftlen, nframes, shoulder_size))
 
     if flagging:
         ##EE This flags the edges of the PFF for BL data (with 3Hz res per channel).
@@ -261,6 +266,7 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
 
     else:
         median_flag = fd.kernels.xp.array([0], dtype=fd.kernels.float_type)
+    logger.debug('median_flag={}'.format(median_flag))
 
     # allocate array for findopplering
     # init findopplering array to zero
@@ -294,20 +300,25 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
     # EE: Making "shoulders" to avoid "edge effects". Could do further testing.
     specstart = int(tsteps * shoulder_size / 2)
     specend = tdwidth - (tsteps * shoulder_size)
+    logger.debug('specstart={}, specend={}'.format(specstart, specend))
 
     # --------------------------------
     # Stats calc
     the_mean_val, the_stddev = comp_stats(spectra.sum(axis=0), xp=fd.kernels.xp)
+    logger.debug('comp_stats the_mean_val={}, the_stddev={}'.format(the_mean_val, the_stddev))
 
     # --------------------------------
     # Looping over drift_rate_nblock
     # --------------------------------
     drift_rate_nblock = int(fd.kernels.xp.floor(max_drift / (data_obj.drift_rate_resolution * tsteps_valid)))
+    logger.debug('BEGIN looping over drift_rate_nblock, drift_rate_nblock={}.'.format(drift_rate_nblock))
 
     ##EE-debuging        kk = 0
-
-    for drift_block in range(-1 * drift_rate_nblock, drift_rate_nblock + 1):
-        logger.debug("Drift_block %i" % drift_block)
+    drift_low = -1 * drift_rate_nblock
+    drift_high = drift_rate_nblock + 1
+    for drift_block in range(drift_low, drift_high):
+        logger.debug("Drift_block {} (in range {} to {})"
+                     .format(drift_block, drift_low, drift_high))
 
         if drift_block < 0:
             populate_tree(fd, spectra_flipped, tree_findoppler, nframes, tdwidth, tsteps, fftlen, shoulder_size,
@@ -321,8 +332,8 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
         fd.kernels.tt.flt(tree_findoppler, tsteps * tdwidth, tsteps)
 
         if drift_block < 0:
-            logger.info("Un-flipping corrected negative doppler...")
             tree_findoppler = tree_findoppler[::-1]
+            logger.debug("Un-flipped corrected negative drift_block")
 
         tree_findoppler -= the_mean_val
         tree_findoppler /= the_stddev
@@ -333,11 +344,13 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
                       -1 * tsteps_valid * (abs(drift_block)) + 1))
             sub_range = complete_drift_range[(complete_drift_range < min_drift) &
                                              (complete_drift_range >= -1 * max_drift)]
+            logger.debug('drift_block < 0: sub_range={}'.format(sub_range))
         else:
             complete_drift_range = data_obj.drift_rate_resolution * fd.kernels.np.array(
                 range(tsteps_valid * drift_block, tsteps_valid * (drift_block + 1)))
             sub_range = complete_drift_range[(complete_drift_range >= min_drift) &
                                              (complete_drift_range <= max_drift)]
+            logger.debug('drift_block > 0: sub_range={}'.format(sub_range))
 
         for k, drift_rate in enumerate(sub_range):
             # DCP 2020.04 -- WAR to drift rate in flipped files
@@ -351,11 +364,12 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
                       drift_rate, data_obj.header, tdwidth, max_val, 0)
 
     # Writing the top hits to file.
+    logger.debug('END looping over drift_rate_nblock.')
     filewriter = tophitsearch(fd, tree_findoppler_original, max_val, tsteps, data_obj.header, tdwidth,
                               fftlen, max_drift, data_obj.obs_length,
                               logwriter=logwriter, filewriter=filewriter, obs_info=obs_info)
 
-    logger.info("Total number of candidates for coarse channel " + 
+    logger.info("Total number of candidates for coarse channel " +
                 str(data_obj.header['coarse_chan']) + " is: %i" % max_val.total_n_hits)
     filewriter.close()
     return True
@@ -445,6 +459,8 @@ def hitsearch(fd, spectrum, specstart, specend, hitthresh, drift_rate, header, t
         Used to flag whether fine channel should be reversed.
 
     """
+    global logger
+    
     logger.debug('Start searching for hits at drift rate: %f' % drift_rate)
 
     if fd.kernels.gpu_backend:
@@ -512,6 +528,8 @@ def tophitsearch(fd, tree_findoppler_original, max_val, tsteps, header, tdwidth,
         Same filewriter that was input.
 
     """
+    global logger
+    
     maxsnr = max_val.maxsnr
     logger.debug("original matrix size: %d\t(%d, %d)" % (len(tree_findoppler_original), tsteps, tdwidth))
     logger.debug("tree_orig shape: %s"%str((tsteps, tdwidth)))

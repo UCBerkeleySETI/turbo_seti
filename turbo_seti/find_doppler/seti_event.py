@@ -1,6 +1,8 @@
 #!/usr/bin/env python
+'''
+Main program module for executable turboSETI
+'''
 
-import sys
 import logging
 import time
 import cProfile
@@ -30,8 +32,8 @@ def main(args=None):
                    help='SNR threshold. Default: 25.0')
     p.add_argument('-o', '--out_dir', dest='out_dir', type=str, default='./',
                    help='Location for output files. Default: local dir. ')
-    p.add_argument('-l', '--loglevel', dest='loglevel', type=str, default='info',
-                   help='Specify log level (info, debug)')
+    p.add_argument('-l', '--loglevel', dest='log_level', type=str, default='info',
+                   help='Specify log level (info, debug, warning)')
     p.add_argument('-c', '--coarse_chans', dest='coarse_chans', type=str, default=None,
                    help='Comma separated list of coarse channels to analyze.')
     p.add_argument('-n', '--n_coarse_chan', dest='n_coarse_chan', type=int, default=None,
@@ -62,25 +64,31 @@ def main(args=None):
         exec(args)
 
 def exec(args):
+    r"""
+    Interface to FindDoppler class, called by main().
+
+    Parameters
+    ----------
+    args : dict
+
+    """
     if args.coarse_chans is None:
         coarse_chans = ''
     else:
         coarse_chans = map(int, args.coarse_chans.split(','))
 
     # Setting log level
-    if args.loglevel == 'info':
-        level_log = logging.INFO
-    elif args.loglevel == 'debug':
-        level_log = logging.DEBUG
+    if args.log_level == 'info':
+        log_level_int = logging.INFO
+    elif args.log_level == 'debug':
+        log_level_int = logging.DEBUG
+    elif args.log_level == 'warning':
+        log_level_int = logging.WARNING
     else:
-        raise ValueError('Need valid loglevel value (info,debug).')
+        raise ValueError('Need valid loglevel value (info, debug, warning).')
 
-    if level_log == logging.INFO:
-        stream = sys.stdout
-        fmt = '%(name)-15s %(levelname)-8s %(message)s'
-    else:
-        stream = sys.stderr
-        fmt = '%%(relativeCreated)5d (name)-15s %(levelname)-8s %(message)s'
+    fmt = '%(name)-15s %(levelname)-8s %(message)s'
+    logging.basicConfig(format=fmt, level=logging.WARNING)
 
     if Kernels.has_gpu() and args.flag_gpu == "n":
         print("Info: Your system is compatible with GPU-mode. Use the `-g y` argument to enable it.")
@@ -89,7 +97,6 @@ def exec(args):
     try:
         t0 = time.time()
 
-        logging.basicConfig(format=fmt, stream=stream, level=level_log)
 
         find_seti_event = FindDoppler(args.filename, max_drift=args.max_drift,
                                       snr=args.snr,
@@ -99,7 +106,8 @@ def exec(args):
                                       obs_info=None,
                                       n_coarse_chan=args.n_coarse_chan,
                                       gpu_backend=(args.flag_gpu == "y"),
-                                      precision=1 if args.flag_single_precision == "y" else 2)
+                                      precision=1 if args.flag_single_precision == "y" else 2,
+                                      log_level_int=log_level_int)
 
         find_seti_event.search(n_partitions=args.n_parallel,
                                progress_bar=args.flag_progress_bar)

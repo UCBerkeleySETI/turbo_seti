@@ -1,0 +1,16 @@
+blacklist:
+  - range:
+    - start: 2.4e6
+    - end: 2.4e9
+  - range:
+    - start: 4.8e9
+    - end: 9.6e9
+  - range:
+    - START_FREQ
+    - START_FREQ
+  - range:
+    - START_FREQ
+    - END_FREQ
+  - range:
+    - START_FREQ
+    - end: 1.2e9

@@ -17,7 +17,7 @@ install:
 
 # Command to run test
 script:
-  - travis_wait 30 cd test; python download_test_data.py; ./run_tests.sh;
+  - travis_wait 30; cd test; python download_test_data.py; ./run_tests.sh;
     
 branches:
   only:

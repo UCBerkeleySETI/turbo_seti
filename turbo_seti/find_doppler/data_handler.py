@@ -75,7 +75,7 @@ class DATAHandle:
             self.filesize = self.filestat.st_size/(1024.0**2)
 
             # Grab header from DATAH5
-            dobj_master = DATAH5(filename, n_coarse_chan=self.n_coarse_chan, kernels=self.kernels)
+            dobj_master = DATAH5(filename, kernels=self.kernels)
             self.header = dobj_master.header
             dobj_master.close()
 
@@ -266,7 +266,7 @@ class DATAH5:
         self.fil_file.blank_dc(n_coarse_chan)
 
         spectra = self.kernels.np.squeeze(self.fil_file.data)
-        
+
         # DCP APR 2020 -- COMMENTED OUT. THIS IS BREAKING STUFF IN CURRENT VERSION.
         #Arrange data in ascending order in freq if not already in that format.
         #if self.header['DELTAF'] < 0.0:
@@ -345,9 +345,11 @@ class DATAH5:
         #used by helper_functions.py
         if coarse:
             base_header['NAXIS1'] = int(header['nchans']/self.n_coarse_chan)
+            base_header['FCNTR'] = self.kernels.xp.abs(self.f_stop - self.f_start) / 2. + self.kernels.xp.fmin(
+                self.f_start, self.f_stop)
         else:
             base_header['NAXIS1'] = int(header['nchans'])
-        base_header['FCNTR'] = float(header['fch1']) + header['foff'] * base_header['NAXIS1'] / 2
+            base_header['FCNTR'] = float(header['fch1']) + header['foff'] * base_header['NAXIS1'] / 2
 
         #other header values.
         base_header['NAXIS'] = 2

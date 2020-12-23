@@ -17,7 +17,7 @@ install:
 
 # Command to run test
 script:
-  # Ping stdout every 9 minutes or Travis kills build,
+  # Ping stdout every 5 minutes or Travis kills build,
   # while travis_wait does not show the command output while processing.
   # https://docs.travis-ci.com/user/common-build-problems/#build-times-out-because-no-output-was-received
   - |

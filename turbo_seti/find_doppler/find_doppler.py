@@ -202,7 +202,7 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
     Notes
     -----
     This function is separate from the FindDoppler class to allow parallelization. This should not be called
-    directly, but rather via the `FindDoppler.search()` or `FindDoppler.search_dask()` routines.
+    directly, but rather via the `FindDoppler.search()` function.
 
     """
     global logger

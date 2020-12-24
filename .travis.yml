@@ -17,6 +17,13 @@ install:
 
 # Command to run test
 script:
+  # Ping stdout every 5 minutes or Travis kills build,
+  # while travis_wait does not show the command output while processing.
+  # https://docs.travis-ci.com/user/common-build-problems/#build-times-out-because-no-output-was-received
+  - |
+    while sleep 5m; do
+      echo "====[ $SECONDS seconds still running ]===="
+    done &
   - cd test; python download_test_data.py; ./run_tests.sh;
     
 branches:

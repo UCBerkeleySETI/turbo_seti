@@ -323,7 +323,7 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
         logger.debug("Drift_block {} (in range {} to {})"
                      .format(drift_block, drift_low, drift_high))
 
-        if drift_block < 0:
+        if drift_block <= 0:
             populate_tree(fd, spectra_flipped, tree_findoppler, nframes, tdwidth, tsteps, fftlen, shoulder_size,
                           roll=drift_block, reverse=0)
         else:
@@ -334,14 +334,14 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
             fd.kernels.xp.copyto(tree_findoppler_original, tree_findoppler)
         fd.kernels.tt.flt(tree_findoppler, tsteps * tdwidth, tsteps)
 
-        if drift_block < 0:
+        if drift_block <= 0:
             tree_findoppler = tree_findoppler[::-1]
             logger.debug("Un-flipped corrected negative drift_block")
 
         tree_findoppler -= the_mean_val
         tree_findoppler /= the_stddev
 
-        if drift_block < 0:
+        if drift_block <= 0:
             complete_drift_range = data_obj.drift_rate_resolution * fd.kernels.np.array(
                 range(-1 * tsteps_valid * (abs(drift_block) + 1) + 1,
                       -1 * tsteps_valid * (abs(drift_block)) + 1))
@@ -495,7 +495,6 @@ def hitsearch(fd, spectrum, specstart, specend, hitthresh, drift_rate, header, t
                 max_val.maxid[k] = hits
 
         max_val.total_n_hits[0] += hits
-
 
 def tophitsearch(fd, tree_findoppler_original, max_val, tsteps, header, tdwidth, fftlen,
                  max_drift, obs_length, logwriter=None, filewriter=None, obs_info=None):

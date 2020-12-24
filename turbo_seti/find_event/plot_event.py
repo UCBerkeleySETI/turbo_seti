@@ -8,8 +8,10 @@ in this file (described below) to plot events from a turboSETI event .csv file.
 '''
 
 from os.path import dirname
-#import logging
-#logging.disable(logging.CRITICAL)
+import logging
+logger_plot_event_name = 'plot_event'
+logger_plot_event = logging.getLogger(logger_plot_event_name)
+logger_plot_event.setLevel(logging.INFO)
 
 # Plotting packages import
 import matplotlib
@@ -163,6 +165,8 @@ def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_r
     at the frequency of a recorded event from find_event. Calls :func:`~plot_waterfall`
 
     '''
+    global logger_plot_event
+
     # prepare for plotting
     matplotlib.rc('font', **font)
 
@@ -194,7 +198,7 @@ def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_r
 
     # Fill in each subplot for the full plot
     for i,filename in enumerate(fil_file_list):
-        print('make_waterfall_plots file {} in list: {}'.format(i, filename))
+        logger_plot_event.debug('make_waterfall_plots: file {} in list: {}'.format(i, filename))
         # identify panel
         subplot = plt.subplot(n_plots,1,i+1)
         subplots.append(subplot)
@@ -248,8 +252,9 @@ def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_r
     plt.subplots_adjust(hspace=0,wspace=0)
 
     # save the figures
-    plt.savefig(dirpath + filter_level + '_' + on_source_name + '_dr_' + "{:0.2f}".format(drift_rate) + '_freq_' "{:0.6f}".format(f_start) + ".png",
-                bbox_inches='tight')
+    path_png = dirpath + filter_level + '_' + on_source_name + '_dr_' + "{:0.2f}".format(drift_rate) + '_freq_' "{:0.6f}".format(f_start) + ".png"
+    plt.savefig(path_png, bbox_inches='tight')
+    logger_plot_event.debug('make_waterfall_plots: Saved file {}'.format(path_png))
 
     # close all figure windows
     plt.close('all')
@@ -316,6 +321,8 @@ def plot_candidate_events(candidate_event_dataframe, fil_file_list, filter_level
     ...                                  filter_level, source_name_list, offset=0)
 
     '''
+    global logger_plot_event
+    
     # load in the data for each individual hit
     for i in range(0, len(candidate_event_dataframe)):
         candidate = candidate_event_dataframe.iloc[i]
@@ -337,17 +344,15 @@ def plot_candidate_events(candidate_event_dataframe, fil_file_list, filter_level
         # Get start and stop frequencies based on midpoint and bandwidth
         f_start, f_stop = np.sort((f_mid - (bandwidth/2),  f_mid + (bandwidth/2)))
 
-        # Print useful values
-        print('')
-        print('*************************************************')
-        print('***     The Parameters for This Plot Are:    ****')
-        print('Target = ', on_source_name)
-        print('Bandwidth = ', round(bandwidth, 5), ' MHz')
-        print('Time Elapsed (inc. Slew) = ', round(t_elapsed), ' s')
-        print('Middle Frequency = ', round(f_mid, 4), " MHz")
-        print('Expected Drift = ', round(drift_rate, 4), " Hz/s")
-        print('*************************************************')
-        print('')
+        # logger_plot_event.debug useful values
+        logger_plot_event.debug('*************************************************')
+        logger_plot_event.debug('***     The Parameters for This Plot Are:    ****')
+        logger_plot_event.debug('Target = {}'.format(on_source_name))
+        logger_plot_event.debug('Bandwidth = {} MHz'.format(round(bandwidth, 5)))
+        logger_plot_event.debug('Time Elapsed (inc. Slew) = {} s'.format(round(t_elapsed)))
+        logger_plot_event.debug('Middle Frequency = {} MHz'.format(round(f_mid, 4)))
+        logger_plot_event.debug('Expected Drift = {} Hz/s'.format(round(drift_rate, 4)))
+        logger_plot_event.debug('*************************************************')
 
         # Pass info to make_waterfall_plots() function
         make_waterfall_plots(fil_file_list,

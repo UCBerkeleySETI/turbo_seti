@@ -18,6 +18,6 @@ dist/
 docs/_build/
 exec
 
-test/.coverage
-test/htmlcov
-test/coverage.xml
+.coverage
+htmlcov
+coverage.xml

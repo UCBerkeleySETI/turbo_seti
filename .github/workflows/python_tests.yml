@@ -1,0 +1,55 @@
+name: Test TurboSETI
+
+on:
+  push:
+    paths-ignore:
+      - '**.ipynb'
+      - '**.png'
+      - '**.rst'
+      - '**.md'
+  pull_request:
+    paths-ignore:
+      - '**.ipynb'
+      - '**.png'
+      - '**.rst'
+      - '**.md'
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-verison: [3.7, 3.8, 3.9]
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install system dependencies
+        run: |
+          sudo apt update
+          cat dependencies.txt | sudo xargs -n 1 apt install -y
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install -r requirements.txt
+          python3 -m pip install -r requirements_test.txt
+      - name: Download test files
+        run: |
+          export PATH=/home/runner/.local/bin:$PATH
+          cdtest
+          python3 download_test_data.py
+          cd ..
+      - name: Run coverage test
+        run: |
+          export PATH=/home/runner/.local/bin:$PATH
+          python3 -m pytest --cov=./ --cov-report=xml
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          name: turboseti-codecov-p${{ matrix.python-version }}
+

@@ -4,6 +4,7 @@ This file is a version history of turbo_seti amendments, beginning with version 
 | Version | Contents |
 | :--: | -- |
 | 2.1.0 **coming soon** | Add frequency channel masking capability. See issue #125. |
+| 2.0.4 | Add GitHub Actions Workflows for CI instead of Travis CI. |
 | 2.0.3 | Fix issue #135 by reverting changes made by PR #121 and #113. |
 | 2.0.2 | Amended `find_doppler.py`, `seti_event.py`, and `plot_event.py` to ressurect logging. See issue \#134. |
 | 2.0.1 | Amended `plot_event_pipeline.py` to accept a new filter_spec parameter. See issue \#127. |

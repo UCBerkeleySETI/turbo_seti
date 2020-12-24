@@ -40,7 +40,7 @@ jobs:
       - name: Download test files
         run: |
           export PATH=/home/runner/.local/bin:$PATH
-          cdtest
+          cd test
           python3 download_test_data.py
           cd ..
       - name: Run coverage test

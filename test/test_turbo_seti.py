@@ -122,7 +122,7 @@ def plot_hits(filename_fil, filename_dat):
     plt.savefig(filename_dat.replace('.dat', '.png'))
 
 
-def validate_voyager_hits(filename_dat, flipped=False):
+def validate_voyager_hits(filename_dat):
     r""" This checks voyager hits against known values.
     """
     print("\n===== validate_voyager_hits =====")
@@ -182,7 +182,7 @@ def test_find_doppler_voyager(kernels):
     filename_fil = os.path.join(HERE, VOYAH5)
     filename_dat = filename_fil.replace('.h5', '.dat')
     find_doppler(filename_fil, kernels)
-    validate_voyager_hits(filename_dat, flipped=False)
+    validate_voyager_hits(filename_dat)
     plot_hits(filename_fil, filename_dat)
 
 
@@ -193,7 +193,7 @@ def test_find_doppler_voyager_flipped(kernels):
     filename_fil = os.path.join(HERE, VOYAH5FLIPPED)
     filename_dat = filename_fil.replace('.h5', '.dat')
     find_doppler(filename_fil, kernels)
-    validate_voyager_hits(filename_dat, flipped=True)
+    validate_voyager_hits(filename_dat)
     plot_hits(filename_fil, filename_dat)
 
 
@@ -246,10 +246,10 @@ def test_make_waterfall_plots():
     f_stop  = 8419.274374 + 600e-6
     source_name_list = ['test_make_waterfall_plots'] * 6
     filter_level = "1"
-    plot_event.make_waterfall_plots(filenames_list, 
-                                    target, 
-                                    f_start, 
-                                    f_stop, 
+    plot_event.make_waterfall_plots(filenames_list,
+                                    target,
+                                    f_start,
+                                    f_stop,
                                     drate,
                                     fmid,
                                     filter_level,
@@ -269,18 +269,18 @@ def test_data_handler(kernels):
         out_dir = os.path.join(tempfile.mkdtemp()) + '/NO/SUCH/DIRECTORY'
         dh = data_handler.DATAHandle(filename=filename_fil,
                                      out_dir=out_dir,
-                                     n_coarse_chan=42, 
+                                     n_coarse_chan=42,
                                      coarse_chans=None,
                                      kernels=kernels)
     dh = data_handler.DATAHandle(filename=filename_fil,
                                  out_dir=os.path.join(tempfile.mkdtemp()),
-                                 n_coarse_chan=42, 
+                                 n_coarse_chan=42,
                                  coarse_chans=None,
                                  kernels=kernels)
     assert dh.status
     filename_h5 = os.path.join(HERE, VOYAH5)
-    dh = data_handler.DATAHandle(filename=filename_h5, 
-                                 n_coarse_chan=42, 
+    dh = data_handler.DATAHandle(filename=filename_h5,
+                                 n_coarse_chan=42,
                                  coarse_chans=(8300, 8400),
                                  kernels=kernels)
     assert dh.status

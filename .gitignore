@@ -12,6 +12,7 @@
 .coverage
 .virtualenv*/
 .venv*/
+.pytest_cache
 
 build/
 dist/

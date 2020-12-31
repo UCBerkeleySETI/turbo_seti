@@ -4,6 +4,7 @@ blimpy>=2.0.0
 pandas
 toolz
 fsspec
+pyyaml
 dask
 dask[bag]
 numba

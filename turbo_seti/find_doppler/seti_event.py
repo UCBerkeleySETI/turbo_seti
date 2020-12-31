@@ -28,6 +28,8 @@ def main(args=None):
     p.add_argument('filename', type=str, help='Name of filename to open (h5 or fil)')
     p.add_argument('-M', '--max_drift', dest='max_drift', type=float, default=10.0,
                    help='Set the drift rate to search. Unit: Hz/sec. Default: 10.0')
+    p.add_argument('-m', '--mask', dest='mask', type=str, default=None,
+                   help='Set the frequency masking file path.')
     p.add_argument('-s', '--snr', dest='snr', type=float, default=25.0,
                    help='SNR threshold. Default: 25.0')
     p.add_argument('-o', '--out_dir', dest='out_dir', type=str, default='./',
@@ -104,6 +106,7 @@ def exec(args):
                                       append_output=(args.flag_append_output == "y"),
                                       coarse_chans=coarse_chans,
                                       obs_info=None,
+                                      mask=args.mask,
                                       n_coarse_chan=args.n_coarse_chan,
                                       gpu_backend=(args.flag_gpu == "y"),
                                       precision=1 if args.flag_single_precision == "y" else 2,

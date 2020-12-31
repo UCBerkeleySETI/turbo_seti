@@ -56,8 +56,6 @@ class FindDoppler:
         Flags the edges of the PFF for BL data (with 3Hz res per channel).
     n_coarse_chan : int
         Number of coarse channels in file.
-    mask : str, optional
-        Used to specify the frequency masking file-path.
     kernels : Kernels, optional
         Pre-configured class of Kernels.
     gpu_backend : bool, optional
@@ -71,8 +69,8 @@ class FindDoppler:
 
     """
     def __init__(self, datafile, max_drift, min_drift=0, snr=25.0, out_dir='./', coarse_chans=None,
-                 obs_info=None, mask=None, flagging=False, n_coarse_chan=None, kernels=None,
-                 gpu_backend=False, precision=2, append_output=False, log_level_int=logging.INFO):
+                 obs_info=None, flagging=False, n_coarse_chan=None, kernels=None, gpu_backend=False,
+                 precision=2, append_output=False, log_level_int=logging.INFO):
         if not kernels:
             self.kernels = Kernels(gpu_backend, precision)
         else:
@@ -89,7 +87,6 @@ class FindDoppler:
                                       out_dir=out_dir,
                                       n_coarse_chan=n_coarse_chan,
                                       coarse_chans=coarse_chans,
-                                      mask=mask,
                                       kernels=self.kernels)
         if (self.data_handle is None) or (self.data_handle.status is False):
             raise IOError("File error, aborting...")

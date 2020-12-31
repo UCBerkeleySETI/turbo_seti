@@ -15,7 +15,7 @@ from blimpy import Waterfall
 from turbo_seti import FindDoppler, seti_event, find_event, plot_event
 from turbo_seti.find_doppler.kernels import Kernels
 from turbo_seti.find_doppler.find_doppler import search_coarse_channel
-from turbo_seti.find_doppler import data_handler, helper_functions, file_writers
+from turbo_seti.find_doppler import data_handler, helper_functions
 
 HERE = os.path.split(os.path.abspath(__file__))[0]
 VOYAH5 = 'Voyager1.single_coarse.fine_res.h5'
@@ -37,7 +37,7 @@ if Kernels.has_gpu():
 
 
 def find_doppler(filename_fil, kernels):
-    """ Run turboseti doppler search on filename with default params """
+    r""" Run turboseti doppler search on filename with default params """
     print("\n===== find_doppler =====")
     print("Searching %s" % filename_fil)
     filename_dat = filename_fil.replace('.h5', '.dat')
@@ -73,7 +73,7 @@ def find_doppler(filename_fil, kernels):
 
 
 def plot_hit(fil_filename, dat_filename, hit_id, bw=None, offset=0):
-    """Plot a candidate from a .dat file
+    r"""Plot a candidate from a .dat file
 
     Args:
       fil_filename(str): Path to filterbank file to plot
@@ -104,7 +104,7 @@ def plot_hit(fil_filename, dat_filename, hit_id, bw=None, offset=0):
 
 
 def plot_hits(filename_fil, filename_dat):
-    """ Plot the hits in a .dat file. """
+    r""" Plot the hits in a .dat file. """
     print("\n===== plot_hits =====")
     table = find_event.read_dat(filename_dat)
     print(table)
@@ -123,67 +123,61 @@ def plot_hits(filename_fil, filename_dat):
 
 
 def validate_voyager_hits(filename_dat):
-    """ This checks voyager hits against known values.
-
-    Known values:
-    # --------------------------
-    # ID  Drift_Rate SNR 	      Unc_Freq 	      Corr_Freq 	Index   	freq_start 	   freq_end 	...
-    # --------------------------
-    001	 -0.392226	 30.612128	   8419.319368	   8419.319368	739933	   8419.319779	   8419.318963	...
-    002	 -0.373093	245.707984	   8419.297028	   8419.297028	747929	   8419.297439	   8419.296623	...
-    003	 -0.392226	 31.220652	   8419.274374	   8419.274374	756037	   8419.274785	   8419.273969	...
-    (from flipped)
-    003	 -0.392226	 30.612118	   8419.319366	   8419.319366	308642	   8419.318955	   8419.319771	...
-    002	 -0.373093	245.707905	   8419.297025	   8419.297025	300646	   8419.296614	   8419.297430	...
-    001	 -0.392226	 31.220642	   8419.274372	   8419.274372	292538	   8419.273961	   8419.274777	...
+    r""" This checks voyager hits against known values.
     """
     print("\n===== validate_voyager_hits =====")
-    h = find_event.read_dat(filename_dat)
-    print(h)
+    df_hits = find_event.read_dat(filename_dat)
+    print(df_hits)
 
-    valid_data = [
-        {
+    valid_data = [ # in unflipped order
+        { # 001
             'Freq': 8419.319368,
             'FreqStart': 8419.319779,
             'FreqEnd': 8419.318963,
             'SNR': 30.612128,
-            'DriftRate': -0.392226,
         },
-        {
+        { # 002
             'Freq': 8419.297028,
             'FreqStart': 8419.297439,
             'FreqEnd': 8419.296623,
             'SNR': 245.707984,
-            'DriftRate': -0.373093,
         },
-        {
+        { # 003
             'Freq': 8419.274374,
             'FreqStart': 8419.274785,
             'FreqEnd': 8419.273969,
             'SNR': 31.220652,
-            'DriftRate': -0.392226,
         }
     ]
 
-    atols = {'Freq': 0.000005, 'FreqStart': 0.00001, 'FreqEnd': 0.00001, 'SNR': 0.001, 'DriftRate': 0.02}
+    atols = {'Freq': 0.00001, 'FreqStart': 0.00001, 'FreqEnd': 0.00001, 'SNR': 0.001}
 
     for vd in valid_data:
-        hmax = h[np.isclose(h['Freq'], vd['Freq'], rtol=0.000001)].iloc[0]
-
+        hmax = df_hits[np.isclose(df_hits['Freq'], vd['Freq'], rtol=0.000001)].iloc[0]
         for key in vd.keys():
-            print(key, hmax[key], vd[key])
+            #print('validate_voyager_hits: key, hmax[key], vd[key]: ', key, hmax[key], vd[key])
             if key in ('FreqStart', 'FreqEnd'):
                 upper = np.isclose(hmax[key], vd['FreqStart'], atol=atols[key], rtol=0)
                 lower = np.isclose(hmax[key], vd['FreqEnd'], atol=atols[key], rtol=0)
-                assert upper or lower
+                try:
+                    assert upper or lower
+                except AssertionError:
+                    raise ValueError('validate_voyager_hits: upper or lower: hmax[key]={}, vd[FreqStart]={}, vd[FreqStart]={}'
+                          .format(hmax[key], vd['FreqStart'], vd['FreqStart']))
             else:
-                assert np.isclose(hmax[key], vd[key], atol=atols[key], rtol=0)
+                try:
+                    assert np.isclose(hmax[key], vd[key], atol=atols[key], rtol=0)
+                except AssertionError:
+                    raise ValueError('validate_voyager_hits: other: key={}, hmax[key]={}, vd[key]={}'
+                          .format(key, hmax[key], vd[key]))
+
+    print('\nvalidate_voyager_hits: SUCCESS\n')
     return hmax
 
 
 @pytest.mark.parametrize("kernels", TESTS)
 def test_find_doppler_voyager(kernels):
-    """ Run turboseti on Voyager data """
+    r""" Run turboseti on Voyager data """
     print("\n===== test_find_doppler_voyager =====")
     filename_fil = os.path.join(HERE, VOYAH5)
     filename_dat = filename_fil.replace('.h5', '.dat')
@@ -194,7 +188,7 @@ def test_find_doppler_voyager(kernels):
 
 @pytest.mark.parametrize("kernels", TESTS)
 def test_find_doppler_voyager_flipped(kernels):
-    """ Run turboseti on Voyager data (flipped in frequency) """
+    r""" Run turboseti on Voyager data (flipped in frequency) """
     print("\n===== test_find_doppler_voyager_flipped =====")
     filename_fil = os.path.join(HERE, VOYAH5FLIPPED)
     filename_dat = filename_fil.replace('.h5', '.dat')
@@ -205,14 +199,14 @@ def test_find_doppler_voyager_flipped(kernels):
 
 @pytest.mark.parametrize("kernels", TESTS)
 def test_find_doppler_voyager_filterbank(kernels):
-    """ Run turboseti on Voyager data (filterbank version) """
+    r""" Run turboseti on Voyager data (filterbank version) """
     print("\n===== test_find_doppler_voyager_filterbank =====")
     filename_fil = os.path.join(HERE, VOYAH5)
     find_doppler(filename_fil, kernels)
 
 
 def test_turboSETI_entry_point():
-    """ Test the command line utility turboSETI """
+    r""" Test the command line utility turboSETI """
     print("\n===== test_turboSETI_entry_point 1 =====")
     h5_1 = os.path.join(HERE, VOYAH5FLIPPED)
     args = [h5_1, ]
@@ -236,7 +230,7 @@ def test_turboSETI_entry_point():
 
 
 def test_make_waterfall_plots():
-    """ Some basic plotting tests
+    r""" Some basic plotting tests
 
     TODO: Improve these tests (and the functions for that matter!
     """
@@ -252,10 +246,10 @@ def test_make_waterfall_plots():
     f_stop  = 8419.274374 + 600e-6
     source_name_list = ['test_make_waterfall_plots'] * 6
     filter_level = "1"
-    plot_event.make_waterfall_plots(filenames_list, 
-                                    target, 
-                                    f_start, 
-                                    f_stop, 
+    plot_event.make_waterfall_plots(filenames_list,
+                                    target,
+                                    f_start,
+                                    f_stop,
                                     drate,
                                     fmid,
                                     filter_level,
@@ -264,7 +258,7 @@ def test_make_waterfall_plots():
 
 @pytest.mark.parametrize("kernels", TESTS)
 def test_data_handler(kernels):
-    """ Basic data handler test """
+    r""" Basic data handler test """
     print("\n===== test_data_handler =====")
     with pytest.raises(IOError):
         data_handler.DATAHandle(filename='made_up_not_existing_file.h5', kernels=kernels)
@@ -275,18 +269,18 @@ def test_data_handler(kernels):
         out_dir = os.path.join(tempfile.mkdtemp()) + '/NO/SUCH/DIRECTORY'
         dh = data_handler.DATAHandle(filename=filename_fil,
                                      out_dir=out_dir,
-                                     n_coarse_chan=42, 
+                                     n_coarse_chan=42,
                                      coarse_chans=None,
                                      kernels=kernels)
     dh = data_handler.DATAHandle(filename=filename_fil,
                                  out_dir=os.path.join(tempfile.mkdtemp()),
-                                 n_coarse_chan=42, 
+                                 n_coarse_chan=42,
                                  coarse_chans=None,
                                  kernels=kernels)
     assert dh.status
     filename_h5 = os.path.join(HERE, VOYAH5)
-    dh = data_handler.DATAHandle(filename=filename_h5, 
-                                 n_coarse_chan=42, 
+    dh = data_handler.DATAHandle(filename=filename_h5,
+                                 n_coarse_chan=42,
                                  coarse_chans=(8300, 8400),
                                  kernels=kernels)
     assert dh.status
@@ -294,7 +288,7 @@ def test_data_handler(kernels):
 
 @pytest.mark.parametrize("kernels", TESTS)
 def test_dask(kernels):
-    """ Test dask capability on Voyager data """
+    r""" Test dask capability on Voyager data """
     print("\n===== test_dask ===== begin")
     filename_h5 = os.path.join(HERE, VOYAH5)
     FD = FindDoppler(datafile=filename_h5, max_drift=2, out_dir=HERE, kernels=kernels)
@@ -317,7 +311,7 @@ def test_dask(kernels):
 
 @pytest.mark.parametrize("kernels", TESTS)
 def test_bitrev(kernels):
-    '''compare Python and Numba bitrev functions'''
+    r'''compare Python and Numba bitrev functions'''
     print("\n===== test_bitrev")
     before = 32769
     nbits = 7

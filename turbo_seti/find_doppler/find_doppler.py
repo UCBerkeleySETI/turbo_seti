@@ -347,10 +347,12 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
                       -1 * tsteps_valid * (abs(drift_block)) + 1))
             sub_range = complete_drift_range[(complete_drift_range < min_drift) &
                                              (complete_drift_range >= -1 * max_drift)]
-            logger.debug('drift_block < 0: sub_range={}'.format(sub_range))
+            logger.debug('drift_block <= 0: sub_range={}'.format(sub_range))
         else:
+            ##complete_drift_range = data_obj.drift_rate_resolution * fd.kernels.np.array(
+            ##    range(tsteps_valid * drift_block, tsteps_valid * (drift_block + 1)))
             complete_drift_range = data_obj.drift_rate_resolution * fd.kernels.np.array(
-                range(tsteps_valid * drift_block, tsteps_valid * (drift_block + 1)))
+                range(1 + tsteps_valid * (drift_block - 1), 1 + tsteps_valid * (drift_block)))
             sub_range = complete_drift_range[(complete_drift_range >= min_drift) &
                                              (complete_drift_range <= max_drift)]
             logger.debug('drift_block > 0: sub_range={}'.format(sub_range))

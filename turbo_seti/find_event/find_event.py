@@ -414,7 +414,15 @@ def find_events(dat_file_list, SNR_cut=10, check_zero_drift=False, filter_thresh
 
     #Now find how much RFI is within a frequency range of the hit 
     #by comparing the ON to the OFF observations. Update RFI_in_range
-    snr_adjusted_table['RFI_in_range'] = snr_adjusted_table.apply(lambda hit: len(off_table[((off_table['Freq'] > calc_freq_range(hit)[0]) & (off_table['Freq'] < calc_freq_range(hit)[1]))]),axis=1)
+    if len(off_table) == 0:
+        print('Length of off_table = 0')
+        snr_adjusted_table['RFI_in_range'] = 0
+    else:
+        snr_adjusted_table['RFI_in_range'] = snr_adjusted_table.apply(
+            lambda hit: 
+                len(off_table[((off_table['Freq'] > calc_freq_range(hit)[0]) 
+                               & (off_table['Freq'] < calc_freq_range(hit)[1])
+                               )]), axis=1)
         
     #If there is no RFI in range of the hit, it graduates to the 
     #not_in_B_table

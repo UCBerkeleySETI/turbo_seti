@@ -1,10 +1,4 @@
 blacklist:
   - range:
-    - start: 2.4e6
-    - end: 2.4e9
-  - range:
-    - start: 4.8e9
-    - end: 9.6e9
-  - range:
     - start: 0
-    - end: 1.2e9
+    - stop: 3441

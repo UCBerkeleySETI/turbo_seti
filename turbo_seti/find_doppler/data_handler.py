@@ -114,6 +114,11 @@ class DATAHandle:
         Loads mask file from disk and creates the masking plan.
 
         """
+        def __get_by_key(d, key):
+            for k in d:
+                if key in k:
+                    return float(k[key])
+
         # Check if user specified a mask file
         if not mask_path:
             self.freq_mask = None
@@ -128,7 +133,7 @@ class DATAHandle:
         with open(mask_path) as f:
             mask_data = yaml.load(f, Loader=yaml.FullLoader)
 
-        # Verify if data from file is valid
+        # Verify if data from file is valid and generate masking plan
         if not "blacklist" in mask_data:
             error = "Can't file blacklist key. Check mask file."
             raise RuntimeError(error)
@@ -138,38 +143,28 @@ class DATAHandle:
                 error = "Invalid key inside blacklist. Check mask file."
                 raise RuntimeError(error)
 
-            start_keys = ["start"]
-            end_keys = ["end"]
             keys = r["range"]
 
             if len(keys) != 2:
                 error = "Invalid number of keys inside blacklist range item. Check mask file."
                 raise RuntimeError(error)
 
-            for s in keys:
-                if not any(n in s for n in (start_keys + end_keys)):
-                    error = "Invalid key inside blacklist range item. Check mask file"
-                    raise RuntimeError(error)
+            if not any("start" in n for n in keys):
+                error = f"The range type requires a `start` key. Check mask file."
+                raise RuntimeError(error)
 
-            for a, b in [(start_keys, end_keys), (end_keys, start_keys)]:
-                for key in a:
-                    if any(key in n for n in keys) and not any(n in x for n in b for x in keys):
-                        error = f"The key `{key}` requires the `{b[0]}` key. Check mask file."
-                        raise RuntimeError(error)
+            if not any("stop" in n for n in keys):
+                error = f"The range type requires an `stop` key. Check mask file."
+                raise RuntimeError(error)
 
-        def __get_by_key(d, key):
-            for k in d:
-                if key in k:
-                    return float(k[key])
+            f_start = __get_by_key(keys, "start")
+            f_stop = __get_by_key(keys, "stop")
 
-        # Generate mask tuple
-        for r in mask_data["blacklist"]:
-            f_start = __get_by_key(r["range"], "start")
-            f_end = __get_by_key(r["range"], "end")
+            if f_start > f_stop:
+                error = f"Invalid range. Start frequency is higher than stop frequency."
+                raise RuntimeError(error)
 
-            self.mask.append((f_start, f_end))
-
-        print(self.mask)
+            self.mask.append((f_start, f_stop))
 
     def __make_h5_file(self):
         r"""
@@ -195,6 +190,12 @@ class DATAHandle:
             for each of the coarse channels in the file.
 
         """
+        def __check_bounds(f_start, f_stop):
+            for m_start, m_stop in self.mask:
+                if m_start <= f_start and m_stop >= f_stop:
+                    return True
+            return False
+
         data_list = []
 
         #Instancing file.
@@ -229,6 +230,9 @@ class DATAHandle:
 
             if f_start > f_stop:
                 f_start, f_stop = f_stop, f_start
+
+            if __check_bounds(f_start, f_stop):
+                continue
 
             data_obj = {'filename': self.filename,
                         'f_start': f_start,
@@ -265,7 +269,7 @@ class DATAH5:
 
     """
     def __init__(self, filename, f_start=None, f_stop=None, t_start=None, t_stop=None,
-                 coarse_chan=1, n_coarse_chan=None, kernels=None):
+                 coarse_chan=1, n_coarse_chan=None, kernels=None, gpu_backend=False, precision=2):
         self.filename = filename
         self.closed = False
         self.f_start = f_start
@@ -273,7 +277,11 @@ class DATAH5:
         self.t_start = t_start
         self.t_stop = t_stop
         self.n_coarse_chan = n_coarse_chan
-        self.kernels = kernels
+
+        if not kernels:
+            self.kernels = Kernels(gpu_backend, precision)
+        else:
+            self.kernels = kernels
 
         #Instancing file.
         try:

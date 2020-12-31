@@ -159,7 +159,7 @@ class FindDoppler:
 
         # Run serial version
         if n_partitions == 1:
-            sched = Scheduler(load_data, [ (l, self.kernels) for l in self.data_handle.data_list ])
+            sched = Scheduler(load_data, [ (l, self.kernels.precision) for l in self.data_handle.data_list ])
             for dl in self.data_handle.data_list:
                 search_coarse_channel(dl, self, dataloader=sched, filewriter=filewriter, logwriter=logwriter)
         # Run Parallel version via dask
@@ -173,9 +173,14 @@ class FindDoppler:
             merge_dats_logs(filename_in, self.out_dir, 'dat', cleanup='y')
             merge_dats_logs(filename_in, self.out_dir, 'log', cleanup='y')
 
-def load_data(d, kernel):
-    data_obj = DATAH5(d['filename'], f_start=d['f_start'], f_stop=d['f_stop'],
-                      coarse_chan=d['coarse_chan'], n_coarse_chan=d['n_coarse_chan'], kernels=kernel)
+def load_data(d, precision):
+    data_obj = DATAH5(d['filename'],
+                      f_start=d['f_start'],
+                      f_stop=d['f_stop'],
+                      coarse_chan=d['coarse_chan'],
+                      n_coarse_chan=d['n_coarse_chan'],
+                      gpu_backend=False,
+                      precision=precision)
     spectra, drift_indices = data_obj.load_data()
     data_obj.close()
 
@@ -227,7 +232,10 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
     if dataloader:
         data_obj, spectra, drift_indices = dataloader.get()
     else:
-        data_obj, spectra, drift_indices = load_data(d, fd.kernels)
+        data_obj, spectra, drift_indices = load_data(d, fd.kernels.precision)
+
+    spectra = fd.kernels.xp.asarray(spectra)
+    drift_indices = fd.kernels.xp.asarray(drift_indices)
 
     fileroot_out = filename_in.split('/')[-1].replace('.h5', '').replace('.fits', '').replace('.fil', '')
     if logwriter is None:

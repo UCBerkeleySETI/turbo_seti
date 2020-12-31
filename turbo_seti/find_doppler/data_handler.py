@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import os
-import yaml
 import math
 import logging
 
@@ -36,8 +35,6 @@ class DATAHandle:
         Number of coarse channels.
     coarse_chans : list or None
         List of course channels.
-    mask : str, optional
-        Used to specify the frequency masking file-path.
     kernels : Kernels, optional
         Pre-configured class of Kernels.
     gpu_backend : bool, optional
@@ -47,7 +44,7 @@ class DATAHandle:
 
     """
     def __init__(self, filename=None, out_dir='./', n_coarse_chan=None, coarse_chans=None,
-                 kernels=None, gpu_backend=False, precision=2, mask=None):
+                 kernels=None, gpu_backend=False, precision=2):
         if not kernels:
             self.kernels = Kernels(gpu_backend, precision)
         else:
@@ -58,7 +55,6 @@ class DATAHandle:
             self.out_dir = out_dir
             self.n_coarse_chan = n_coarse_chan
             self.coarse_chans = coarse_chans
-            self.mask = []
 
             if not h5py.is_hdf5(filename):
                 if not sigproc.is_filterbank(filename):
@@ -83,9 +79,6 @@ class DATAHandle:
             self.header = dobj_master.header
             dobj_master.close()
 
-            # Load mask file from disk
-            self.__parse_mask_file(mask)
-
             # Split the file
             self.data_list = self.__split_h5()
             self.status = True
@@ -108,68 +101,6 @@ class DATAHandle:
         """
         fil_file = Waterfall(self.filename, load_data=False)
         return fil_file.header
-
-    def __parse_mask_file(self, mask_path):
-        r"""
-        Loads mask file from disk and creates the masking plan.
-
-        """
-        # Check if user specified a mask file
-        if not mask_path:
-            self.freq_mask = None
-            return
-
-        # Check if mask file exists and load data
-        if not os.path.isfile(mask_path):
-            error = f"Masking file ({mask_path}) not found."
-            logger.error(error)
-            raise RuntimeError(error)
-
-        with open(mask_path) as f:
-            mask_data = yaml.load(f, Loader=yaml.FullLoader)
-
-        # Verify if data from file is valid
-        if not "blacklist" in mask_data:
-            error = "Can't file blacklist key. Check mask file."
-            raise RuntimeError(error)
-
-        for r in mask_data["blacklist"]:
-            if not "range" in r:
-                error = "Invalid key inside blacklist. Check mask file."
-                raise RuntimeError(error)
-
-            start_keys = ["start"]
-            end_keys = ["end"]
-            keys = r["range"]
-
-            if len(keys) != 2:
-                error = "Invalid number of keys inside blacklist range item. Check mask file."
-                raise RuntimeError(error)
-
-            for s in keys:
-                if not any(n in s for n in (start_keys + end_keys)):
-                    error = "Invalid key inside blacklist range item. Check mask file"
-                    raise RuntimeError(error)
-
-            for a, b in [(start_keys, end_keys), (end_keys, start_keys)]:
-                for key in a:
-                    if any(key in n for n in keys) and not any(n in x for n in b for x in keys):
-                        error = f"The key `{key}` requires the `{b[0]}` key. Check mask file."
-                        raise RuntimeError(error)
-
-        def __get_by_key(d, key):
-            for k in d:
-                if key in k:
-                    return float(k[key])
-
-        # Generate mask tuple
-        for r in mask_data["blacklist"]:
-            f_start = __get_by_key(r["range"], "start")
-            f_end = __get_by_key(r["range"], "end")
-
-            self.mask.append((f_start, f_end))
-
-        print(self.mask)
 
     def __make_h5_file(self):
         r"""

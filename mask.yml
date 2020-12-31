@@ -6,11 +6,5 @@ blacklist:
     - start: 4.8e9
     - end: 9.6e9
   - range:
-    - START_FREQ
-    - START_FREQ
-  - range:
-    - START_FREQ
-    - END_FREQ
-  - range:
-    - START_FREQ
+    - start: 0
     - end: 1.2e9

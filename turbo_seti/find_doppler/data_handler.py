@@ -58,6 +58,7 @@ class DATAHandle:
             self.out_dir = out_dir
             self.n_coarse_chan = n_coarse_chan
             self.coarse_chans = coarse_chans
+            self.mask = []
 
             if not h5py.is_hdf5(filename):
                 if not sigproc.is_filterbank(filename):
@@ -137,8 +138,8 @@ class DATAHandle:
                 error = "Invalid key inside blacklist. Check mask file."
                 raise RuntimeError(error)
 
-            start_keys = ["start", "START_FREQ"]
-            end_keys = ["end", "END_FREQ"]
+            start_keys = ["start"]
+            end_keys = ["end"]
             keys = r["range"]
 
             if len(keys) != 2:
@@ -153,11 +154,22 @@ class DATAHandle:
             for a, b in [(start_keys, end_keys), (end_keys, start_keys)]:
                 for key in a:
                     if any(key in n for n in keys) and not any(n in x for n in b for x in keys):
-                        error = f"The key `{key}` requires either `{b[0]}` or `{b[1]}`. Check mask file."
+                        error = f"The key `{key}` requires the `{b[0]}` key. Check mask file."
                         raise RuntimeError(error)
 
-        print(mask_data)
-        print("loaded!")
+        def __get_by_key(d, key):
+            for k in d:
+                if key in k:
+                    return float(k[key])
+
+        # Generate mask tuple
+        for r in mask_data["blacklist"]:
+            f_start = __get_by_key(r["range"], "start")
+            f_end = __get_by_key(r["range"], "end")
+
+            self.mask.append((f_start, f_end))
+
+        print(self.mask)
 
     def __make_h5_file(self):
         r"""

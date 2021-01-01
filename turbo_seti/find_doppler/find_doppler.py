@@ -229,11 +229,13 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
     coarse_channel = d['coarse_chan']
     logger = logging.getLogger(logger_name + '.' + str(coarse_channel))
 
+    # Load data from file
     if dataloader:
         data_obj, spectra, drift_indices = dataloader.get()
     else:
         data_obj, spectra, drift_indices = load_data(d, fd.kernels.precision)
 
+    # Transfer data to device
     spectra = fd.kernels.xp.asarray(spectra)
     drift_indices = fd.kernels.xp.asarray(drift_indices)
 

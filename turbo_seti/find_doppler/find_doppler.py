@@ -317,8 +317,8 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
     drift_low = -1 * drift_rate_nblock
     drift_high = drift_rate_nblock + 1
     for drift_block in range(drift_low, drift_high):
-        logger.debug("Drift_block {} (in range {} to {})"
-                     .format(drift_block, drift_low, drift_high))
+        logger.debug("Drift_block {} (in range from {} through {})"
+                     .format(drift_block, drift_low, drift_rate_nblock))
 
         if drift_block <= 0:
             populate_tree(fd, spectra_flipped, tree_findoppler, nframes, tdwidth, tsteps, fftlen, shoulder_size,
@@ -350,7 +350,7 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
                 range(tsteps_valid * drift_block, tsteps_valid * (drift_block + 1)))
             sub_range = complete_drift_range[(complete_drift_range >= min_drift) &
                                              (complete_drift_range <= max_drift)]
-            logger.debug('drift_block > 0: sub_range={}'.format(sub_range))
+            logger.debug('drift_block >= 0: sub_range={}'.format(sub_range))
 
         for k, drift_rate in enumerate(sub_range):
             # DCP 2020.04 -- WAR to drift rate in flipped files

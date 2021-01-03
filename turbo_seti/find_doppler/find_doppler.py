@@ -338,19 +338,21 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
         tree_findoppler -= the_mean_val
         tree_findoppler /= the_stddev
 
-        if drift_block <= 0:
+        #=========== beginning of obtuse code =================================
+        if drift_block < 0:
             complete_drift_range = data_obj.drift_rate_resolution * fd.kernels.np.array(
                 range(-1 * tsteps_valid * (abs(drift_block) + 1) + 1,
                       -1 * tsteps_valid * (abs(drift_block)) + 1))
             sub_range = complete_drift_range[(complete_drift_range < min_drift) &
                                              (complete_drift_range >= -1 * max_drift)]
-            logger.debug('drift_block <= 0: sub_range={}'.format(sub_range))
-        if drift_block >= 0:
+            logger.debug('drift_block < 0: sub_range={}'.format(sub_range))
+        else: # drift_block >= 0
             complete_drift_range = data_obj.drift_rate_resolution * fd.kernels.np.array(
                 range(tsteps_valid * drift_block, tsteps_valid * (drift_block + 1)))
             sub_range = complete_drift_range[(complete_drift_range >= min_drift) &
                                              (complete_drift_range <= max_drift)]
             logger.debug('drift_block >= 0: sub_range={}'.format(sub_range))
+        #=========== end of obtuse code =======================================
 
         for k, drift_rate in enumerate(sub_range):
             # DCP 2020.04 -- WAR to drift rate in flipped files

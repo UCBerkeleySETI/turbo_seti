@@ -13,7 +13,8 @@ from .data_handler import DATAHandle, DATAH5
 from .file_writers import FileWriter, LogWriter
 from .helper_functions import chan_freq, comp_stats
 from .merge_dats_logs import merge_dats_logs
-VERSION = get_distribution('turbo_seti').version
+from importlib.metadata import version
+VERSION = version('turbo_seti')
 
 #For debugging
 #import pdb;# pdb.set_trace()

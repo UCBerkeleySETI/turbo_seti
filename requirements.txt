@@ -8,3 +8,4 @@ dask
 dask[bag]
 numba
 cloudpickle
+pkg_resources

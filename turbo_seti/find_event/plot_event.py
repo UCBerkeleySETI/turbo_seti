@@ -49,7 +49,7 @@ def overlay_drift(f_event, f_start, f_stop, drift_rate, t_duration, offset=0):
                  lw=2)
 
     # plots drift overlay line, with offset if desired
-    plt.plot((f_event + offset, f_event + drift_rate/1e6 * t_duration + offset),
+    plt.plot((f_event + offset, f_event - drift_rate/1e6 * t_duration + offset),
              (0, t_duration),
              c='#cc0000',
              ls='dashed', lw=2)
@@ -216,7 +216,7 @@ def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_r
         # calculate parameters for estimated drift line
         t_elapsed = Time(fil.header['tstart'], format='mjd').unix - Time(t0, format='mjd').unix
         t_duration = (fil.n_ints_in_file - 1) * fil.header['tsamp']
-        f_event = f_mid + drift_rate / 1e6 * t_elapsed
+        f_event = f_mid - drift_rate / 1e6 * t_elapsed
 
         # plot estimated drift line
         overlay_drift(f_event, f_start, f_stop, drift_rate, t_duration, offset)

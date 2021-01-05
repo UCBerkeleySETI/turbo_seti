@@ -2,6 +2,7 @@
 
 import os
 import logging
+from pkg_resources import get_distribution
 
 # Parallel python support
 import dask.bag as db
@@ -131,7 +132,6 @@ class FindDoppler:
         Can use dask to launch multiple drift searches in parallel.
 
         """
-        logger.debug("Start searching...")
         logger.debug(self.get_info())
 
         filename_in = self.data_handle.filename
@@ -317,8 +317,8 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
     drift_low = -1 * drift_rate_nblock
     drift_high = drift_rate_nblock + 1
     for drift_block in range(drift_low, drift_high):
-        logger.debug("Drift_block {} (in range {} to {})"
-                     .format(drift_block, drift_low, drift_high))
+        logger.debug("Drift_block {} (in range from {} through {})"
+                     .format(drift_block, drift_low, drift_rate_nblock))
 
         if drift_block <= 0:
             populate_tree(fd, spectra_flipped, tree_findoppler, nframes, tdwidth, tsteps, fftlen, shoulder_size,
@@ -338,6 +338,7 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
         tree_findoppler -= the_mean_val
         tree_findoppler /= the_stddev
 
+        #=========== beginning of fragile eye chart code ===
         if drift_block <= 0:
             complete_drift_range = data_obj.drift_rate_resolution * fd.kernels.np.array(
                 range(-1 * tsteps_valid * (abs(drift_block) + 1) + 1,
@@ -345,14 +346,14 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
             sub_range = complete_drift_range[(complete_drift_range < min_drift) &
                                              (complete_drift_range >= -1 * max_drift)]
             logger.debug('drift_block <= 0: sub_range={}'.format(sub_range))
-        else:
-            ##complete_drift_range = data_obj.drift_rate_resolution * fd.kernels.np.array(
-            ##    range(tsteps_valid * drift_block, tsteps_valid * (drift_block + 1)))
+        else: # drift_block > 0
             complete_drift_range = data_obj.drift_rate_resolution * fd.kernels.np.array(
-                range(1 + tsteps_valid * (drift_block - 1), 1 + tsteps_valid * (drift_block)))
+                range(tsteps_valid * drift_block, 
+                      tsteps_valid * (drift_block + 1)))
             sub_range = complete_drift_range[(complete_drift_range >= min_drift) &
                                              (complete_drift_range <= max_drift)]
             logger.debug('drift_block > 0: sub_range={}'.format(sub_range))
+        #=========== end of fragile eye chart code =======================================
 
         for k, drift_rate in enumerate(sub_range):
             # DCP 2020.04 -- WAR to drift rate in flipped files

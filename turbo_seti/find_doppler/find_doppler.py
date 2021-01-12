@@ -104,6 +104,12 @@ class FindDoppler:
         self.status = True
         self.flagging = flagging
         self.append_output = append_output
+        self.parms = 'datafile={}, max_drift={}, min_drift={}, snr={}, out_dir={}, coarse_chans={}' \
+                        .format(datafile, max_drift, min_drift, snr, out_dir, coarse_chans) \
+                    + ', flagging={}, n_coarse_chan={}, kernels={}, gpu_backend={}' \
+                        .format(flagging, n_coarse_chan, kernels, gpu_backend) \
+                    + ', precision={}, append_output={}, log_level_int={}, obs_info={}' \
+                        .format(precision, append_output, log_level_int, obs_info)
 
     def get_info(self):
         r"""
@@ -153,6 +159,8 @@ class FindDoppler:
 
         logger.info("Start ET search for %s" % filename_in)
         logwriter.info("Start ET search for %s" % filename_in)
+        logger.info('Parameters: ' + self.parms)
+        logwriter.info('Parameters: ' + self.parms)
 
         # Run serial version
         if n_partitions == 1:

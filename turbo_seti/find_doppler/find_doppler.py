@@ -12,7 +12,7 @@ from .data_handler import DATAHandle, DATAH5
 from .file_writers import FileWriter, LogWriter
 from .helper_functions import chan_freq, comp_stats
 from .merge_dats_logs import merge_dats_logs
-from .. import version
+from .version import VERSION
 
 #For debugging
 #import pdb;# pdb.set_trace()
@@ -77,7 +77,7 @@ class FindDoppler:
         else:
             self.kernels = kernels
 
-        logger.info('===== This is turbo_seti version {}'.format(version.VERSION))
+        logger.info('===== This is turbo_seti version {}'.format(VERSION))
         logger.setLevel(log_level_int)
 
         self.min_drift = min_drift
@@ -156,7 +156,7 @@ class FindDoppler:
             if os.path.exists(path_dat):
                 os.remove(path_dat)
         logwriter = LogWriter(path_log)
-        logwriter.info('===== This is turbo_seti version {}'.format(version.VERSION))
+        logwriter.info('===== This is turbo_seti version {}'.format(VERSION))
         filewriter = FileWriter(path_dat, header_in)
 
         logger.info("Start ET search for %s" % filename_in)

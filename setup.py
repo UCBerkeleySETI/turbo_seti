@@ -11,7 +11,7 @@ from setuptools import setup, find_packages
 import numpy
 from setuptools.extension import Extension
 
-__version__ = "2.0.6.2"
+__version__ = "2.0.6.3"
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -24,15 +24,11 @@ with open("requirements_test.txt", "r") as fh:
 
 entry_points = {
     'console_scripts' :
-        ['turboSETI = turbo_seti.find_doppler.seti_event:main',
-         'find_event = turbo_seti.find_event.find_event:main',
-         'find_scan_sets = turbo_seti.find_event.find_scan_sets:main',
-         'plot_event = turbo_seti.find_event.plot_event:main',
-     ]
+        ['turboSETI = turbo_seti.find_doppler.seti_event:main']
 }
 
 package_data={
-    'turbo_seti': ['drift_indexes/*.txt', 'find_doppler/kernels/**/*.cu'],
+    'turbo_seti': ['drift_indexes/*.txt', 'find_doppler/kernels/**/*.cu']
 }
 
 setup(

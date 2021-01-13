@@ -156,6 +156,7 @@ class FindDoppler:
             if os.path.exists(path_dat):
                 os.remove(path_dat)
         logwriter = LogWriter(path_log)
+        logwriter.info('===== This is turbo_seti version {}'.format(version.VERSION))
         filewriter = FileWriter(path_dat, header_in)
 
         logger.info("Start ET search for %s" % filename_in)

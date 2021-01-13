@@ -8,13 +8,8 @@
 # twine upload dist/*
 
 from setuptools import setup, find_packages
-import numpy
-from setuptools.extension import Extension
 
 __version__ = "2.0.6.4"
-
-with open("turbo_seti/find_doppler/version.py", "w") as fh:
-    fh.write("VERSION = '{}'".format(__version__))
 
 with open("README.md", "r") as fh:
     long_description = fh.read()

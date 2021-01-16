@@ -78,6 +78,7 @@ class FindDoppler:
             self.kernels = kernels
 
         logger.setLevel(log_level_int)
+        self.log_level_int = log_level_int
 
         self.min_drift = min_drift
         self.max_drift = max_drift
@@ -122,7 +123,7 @@ class FindDoppler:
         info_str = "File: %s\n drift rates (min, max): (%f, %f)\n SNR: %f\n"%(self.data_handle.filename, self.min_drift, self.max_drift, self.snr)
         return info_str
 
-    def search(self, n_partitions=1, progress_bar='y'):
+    def search(self, n_partitions=1, progress_bar='n'):
         r"""
         Top level search routine.
 
@@ -228,6 +229,7 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
     flagging = fd.flagging
     coarse_channel = d['coarse_chan']
     logger = logging.getLogger(logger_name + '.' + str(coarse_channel))
+    logger.setLevel(fd.log_level_int)
 
     if dataloader:
         data_obj, spectra, drift_indices = dataloader.get()

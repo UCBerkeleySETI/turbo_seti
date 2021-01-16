@@ -140,7 +140,7 @@ class FindDoppler:
         Can use dask to launch multiple drift searches in parallel.
 
         """
-        logger.debug(self.get_info())
+        logger.info(self.get_info())
 
         filename_in = self.data_handle.filename
         header_in   = self.data_handle.header
@@ -562,7 +562,7 @@ def tophitsearch(fd, tree_findoppler_original, max_val, tsteps, header, tdwidth,
             logger.debug("SNR not big enough... %f pass... index: %d"%(maxsnr[i], i))
         else:
             info_str = "Top hit found! SNR: %f ... index: %d"%(maxsnr[i], i)
-            logger.debug(info_str)
+            logger.info(info_str)
             if logwriter:
                 logwriter.info(info_str)
             if filewriter:

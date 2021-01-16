@@ -2,7 +2,6 @@
 
 import os
 import logging
-from pkg_resources import get_distribution
 
 # Parallel python support
 import dask.bag as db
@@ -170,6 +169,7 @@ class FindDoppler:
                 search_coarse_channel(dl, self, dataloader=sched, filewriter=filewriter, logwriter=logwriter)
         # Run Parallel version via dask
         else:
+            print("FindDoppler.search: Using {} dask partitions".format(n_partitions))
             b = db.from_sequence(self.data_handle.data_list, npartitions=n_partitions)
             if progress_bar == 'y':
                 with ProgressBar():

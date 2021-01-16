@@ -93,8 +93,6 @@ class FindDoppler:
         if (self.data_handle is None) or (self.data_handle.status is False):
             raise IOError("File error, aborting...")
 
-        logger.info(self.data_handle.get_info())
-
         if obs_info is None:
             obs_info = {'pulsar': 0, 'pulsar_found': 0, 'pulsar_dm': 0.0, 'pulsar_snr': 0.0,
                         'pulsar_stats': self.kernels.np.zeros(6), 'RFI_level': 0.0, 'Mean_SEFD': 0.0, 'psrflux_Sens': 0.0,
@@ -111,6 +109,10 @@ class FindDoppler:
                         .format(flagging, n_coarse_chan, kernels, gpu_backend) \
                     + ', precision={}, append_output={}, log_level_int={}, obs_info={}' \
                         .format(precision, append_output, log_level_int, obs_info)
+        print('FindDoppler Parameters: ' + self.parms)
+        logger.info(self.data_handle.get_info())
+        print("Start ET search for %s" % datafile)
+
 
     def get_info(self):
         r"""
@@ -148,9 +150,9 @@ class FindDoppler:
         path_log = '{}/{}.log'.format(self.out_dir.rstrip('/'), wfilename)
         path_dat = '{}/{}.dat'.format(self.out_dir.rstrip('/'), wfilename)
         if self.append_output:
-            logger.info('Appending DAT and LOG files')
+            logger.debug('Appending DAT and LOG files')
         else:
-            logger.info('Recreating DAT and LOG files')
+            logger.debug('Recreating DAT and LOG files')
             if os.path.exists(path_log):
                 os.remove(path_log)
             if os.path.exists(path_dat):
@@ -158,9 +160,7 @@ class FindDoppler:
         logwriter = LogWriter(path_log)
         filewriter = FileWriter(path_dat, header_in)
 
-        logger.info("Start ET search for %s" % filename_in)
         logwriter.info("Start ET search for %s" % filename_in)
-        logger.info('Parameters: ' + self.parms)
         logwriter.info('Parameters: ' + self.parms)
 
         # Run serial version
@@ -250,7 +250,7 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
     nframes = tsteps_valid
     shoulder_size = data_obj.shoulder_size
 
-    logger.info('===== coarse_channel={}, f_start={}, f_stop={}'
+    logger.debug('===== coarse_channel={}, f_start={}, f_stop={}'
                 .format(coarse_channel, d['f_start'], d['f_stop']))
     logger.debug('flagging={}, spectra_flipped={}, tsteps={}, tsteps_valid={}, tdwidth={}, fftlen={}, nframes={}, shoulder_size={}'
                  .format(flagging, spectra_flipped, tsteps, tsteps_valid, tdwidth, fftlen, nframes, shoulder_size))
@@ -382,7 +382,7 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
                               fftlen, max_drift, data_obj.obs_length,
                               logwriter=logwriter, filewriter=filewriter, obs_info=obs_info)
 
-    logger.info("Total number of candidates for coarse channel " +
+    logger.debug("Total number of candidates for coarse channel " +
                 str(data_obj.header['coarse_chan']) + " is: %i" % max_val.total_n_hits)
     filewriter.close()
     return True
@@ -562,7 +562,7 @@ def tophitsearch(fd, tree_findoppler_original, max_val, tsteps, header, tdwidth,
             logger.debug("SNR not big enough... %f pass... index: %d"%(maxsnr[i], i))
         else:
             info_str = "Top hit found! SNR: %f ... index: %d"%(maxsnr[i], i)
-            logger.info(info_str)
+            logger.debug(info_str)
             if logwriter:
                 logwriter.info(info_str)
             if filewriter:

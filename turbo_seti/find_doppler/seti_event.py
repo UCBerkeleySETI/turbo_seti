@@ -40,7 +40,7 @@ def main(args=None):
                    help='Number of coarse channels in file.')
     p.add_argument('-p', '--n_parallel', dest='n_parallel', type=int, default=1,
                    help='Number of partitions to run in parallel. Default to 1 (single partition)')
-    p.add_argument('-b', '--progress_bar', dest='flag_progress_bar', type=str, default='y',
+    p.add_argument('-b', '--progress_bar', dest='flag_progress_bar', type=str, default='n',
                    help='Use a progress bar? (y/n)')
     p.add_argument('-g', '--gpu', dest='flag_gpu', type=str, default='n',
                    help='Compute on the GPU? (y/n)')
@@ -98,7 +98,8 @@ def exec(args):
         t0 = time.time()
 
 
-        find_seti_event = FindDoppler(args.filename, max_drift=args.max_drift,
+        find_seti_event = FindDoppler(args.filename,
+                                      max_drift=args.max_drift,
                                       snr=args.snr,
                                       out_dir=args.out_dir,
                                       append_output=(args.flag_append_output == "y"),

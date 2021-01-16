@@ -11,7 +11,7 @@ from setuptools import setup, find_packages
 import numpy
 from setuptools.extension import Extension
 
-__version__ = "2.0.6.3"
+__version__ = "2.0.6.4"
 
 with open("README.md", "r") as fh:
     long_description = fh.read()

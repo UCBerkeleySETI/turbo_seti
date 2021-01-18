@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import time
 import logging
 
 # Parallel python support
@@ -124,6 +125,26 @@ class FindDoppler:
         info_str = "File: %s\n drift rates (min, max): (%f, %f)\n SNR: %f\n"%(self.data_handle.filename, self.min_drift, self.max_drift, self.snr)
         return info_str
 
+
+    def last_logwriter(self, arg_path, arg_text):
+        r'''
+        Write the last LogWriter entry
+
+        Parameters
+        ----------
+        arg_text : TYPE
+            Text message to include at end of file.
+
+        Returns
+        -------
+        None.
+
+        '''
+        logwriter = LogWriter(arg_path)
+        logwriter.info(arg_text)
+        logwriter.info('===== END OF LOG')
+
+
     def search(self, n_partitions=1, progress_bar='n'):
         r"""
         Top level search routine.
@@ -140,6 +161,7 @@ class FindDoppler:
         Can use dask to launch multiple drift searches in parallel.
 
         """
+        t0 = time.time()
         logger.info(self.get_info())
 
         filename_in = self.data_handle.filename
@@ -178,6 +200,9 @@ class FindDoppler:
                 b.map(search_coarse_channel, self).compute()
             merge_dats_logs(filename_in, self.out_dir, 'dat', cleanup='y')
             merge_dats_logs(filename_in, self.out_dir, 'log', cleanup='y')
+
+        t1 = time.time()
+        self.last_logwriter(path_log, '\n===== Search time: {:.2f} minutes'.format((t1 - t0)/60.0))
 
 def load_data(d, kernel):
     data_obj = DATAH5(d['filename'], f_start=d['f_start'], f_stop=d['f_stop'],
@@ -358,7 +383,7 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
             logger.debug('drift_block <= 0: sub_range={}'.format(sub_range))
         else: # drift_block > 0
             complete_drift_range = data_obj.drift_rate_resolution * fd.kernels.np.array(
-                range(tsteps_valid * drift_block, 
+                range(tsteps_valid * drift_block,
                       tsteps_valid * (drift_block + 1)))
             sub_range = complete_drift_range[(complete_drift_range >= min_drift) &
                                              (complete_drift_range <= max_drift)]
@@ -385,6 +410,7 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
     logger.debug("Total number of candidates for coarse channel " +
                 str(data_obj.header['coarse_chan']) + " is: %i" % max_val.total_n_hits)
     filewriter.close()
+    logwriter.close()
     return True
 
 

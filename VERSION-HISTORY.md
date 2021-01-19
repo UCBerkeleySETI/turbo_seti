@@ -4,6 +4,7 @@ This file is a version history of turbo_seti amendments, beginning with version 
 | Version | Contents |
 | :--: | -- |
 | 2.1.0 **coming soon** | Add frequency channel masking capability. See issue #125. |
+| 2.0.6.6 | Fix issue #169 - Fixed find_event_pipeline IndexError crash |
 | 2.0.6.5 | Fix issue #167 - log support for unattended testing on data centre compute nodes |
 | 2.0.6.4 | Fix issue #164 - progress bar in dask partitioning should be OFF by default |
 | 2.0.6.3 | Fix issue #159 - remove invalid bash script generation in setup.py |

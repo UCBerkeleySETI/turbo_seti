@@ -21,7 +21,7 @@ class Kernels():
         if not self.has_gpu() and self.gpu_backend:
             print("Warning: Cupy not installed. The GPU will be disabled.")
             self.gpu_backend = False
-        
+
         self._base_lib = "turbo_seti.find_doppler.kernels"
 
         self._load_base()
@@ -58,7 +58,7 @@ class Kernels():
     def _load_hitsearch(self):
         if self.gpu_backend:
             self.hitsearch = importlib.import_module(self._base_lib + '._hitsearch').hitsearch
-    
+
     def _load_bitrev(self):
         self.bitrev = importlib.import_module(self._base_lib + '._bitrev').bitrev
 
@@ -70,7 +70,7 @@ class Kernels():
         Note
         ----
         Modules are listed on `requirements_gpu.txt`.
-        
+
         Returns
         -------
         has_gpu : bool

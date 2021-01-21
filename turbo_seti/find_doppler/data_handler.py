@@ -196,7 +196,7 @@ class DATAH5:
 
     """
     def __init__(self, filename, f_start=None, f_stop=None, t_start=None, t_stop=None,
-                 coarse_chan=1, n_coarse_chan=None, kernels=None):
+                 coarse_chan=1, n_coarse_chan=None, kernels=None, gpu_backend=False, precision=2):
         self.filename = filename
         self.closed = False
         self.f_start = f_start
@@ -204,7 +204,11 @@ class DATAH5:
         self.t_start = t_start
         self.t_stop = t_stop
         self.n_coarse_chan = n_coarse_chan
-        self.kernels = kernels
+
+        if not kernels:
+            self.kernels = Kernels(gpu_backend, precision)
+        else:
+            self.kernels = kernels
 
         #Instancing file.
         try:

@@ -186,7 +186,7 @@ class FindDoppler:
 
         # Run serial version
         if n_partitions == 1:
-            sched = Scheduler(load_data, [ (l, self.kernels) for l in self.data_handle.data_list ])
+            sched = Scheduler(load_data, [ (l, self.kernels.precision) for l in self.data_handle.data_list ])
             for dl in self.data_handle.data_list:
                 search_coarse_channel(dl, self, dataloader=sched, filewriter=filewriter, logwriter=logwriter)
         # Run Parallel version via dask
@@ -204,9 +204,14 @@ class FindDoppler:
         t1 = time.time()
         self.last_logwriter(path_log, '\n===== Search time: {:.2f} minutes'.format((t1 - t0)/60.0))
 
-def load_data(d, kernel):
-    data_obj = DATAH5(d['filename'], f_start=d['f_start'], f_stop=d['f_stop'],
-                      coarse_chan=d['coarse_chan'], n_coarse_chan=d['n_coarse_chan'], kernels=kernel)
+def load_data(d, precision):
+    data_obj = DATAH5(d['filename'],
+                  f_start=d['f_start'],
+                  f_stop=d['f_stop'],
+                  coarse_chan=d['coarse_chan'],
+                  n_coarse_chan=d['n_coarse_chan'],
+                  gpu_backend=False,
+                  precision=precision)
     spectra, drift_indices = data_obj.load_data()
     data_obj.close()
 
@@ -256,10 +261,15 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
     logger = logging.getLogger(logger_name + '.' + str(coarse_channel))
     logger.setLevel(fd.log_level_int)
 
+    # Load data from file
     if dataloader:
         data_obj, spectra, drift_indices = dataloader.get()
     else:
-        data_obj, spectra, drift_indices = load_data(d, fd.kernels)
+        data_obj, spectra, drift_indices = load_data(d, fd.kernels.precision)
+
+    # Transfer data to device
+    spectra = fd.kernels.xp.asarray(spectra)
+    drift_indices = fd.kernels.xp.asarray(drift_indices)
 
     fileroot_out = filename_in.split('/')[-1].replace('.h5', '').replace('.fits', '').replace('.fil', '')
     if logwriter is None:
@@ -551,7 +561,8 @@ def hitsearch(fd, spectrum, specstart, specend, hitthresh, drift_rate, header, t
         blockSize = 512
         length = specend - specstart
         numBlocks = (length + blockSize - 1) // blockSize
-        call = (length, spectrum[specstart:specend], hitthresh, drift_rate,
+        spectrum_tmp = fd.kernels.xp.copy(spectrum[specstart:specend])
+        call = (length, spectrum_tmp, float(hitthresh), float(drift_rate),
                 max_val.maxsnr, max_val.maxdrift, max_val.total_n_hits)
         fd.kernels.hitsearch((numBlocks,), (blockSize,), call)
 

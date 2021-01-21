@@ -13,7 +13,7 @@ A clear and concise description of what enhancement you would like to occur. Exa
 
 **Any more details?**
 
-If you have source code or support file in mind, please provide a clear and concise description.
+If you have source code or support file(s) ideas in mind, please provide a clear and concise description.
 
 **Describe alternatives you've considered**
 

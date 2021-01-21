@@ -4,12 +4,12 @@ about: Suggest an idea for this project
 
 ---
 
-**Is your feature request related to a problem? Please describe.**
+**Please describe your new feature request.**
 
-A clear and concise description of what the problem is or what enhancement you would like to occur. Examples:
-* A new type of plot would be of benefit [...]
-* More testing is need for this situation [...]
-* It is disconcerning when this happens [...]
+A clear and concise description of what enhancement you would like to occur. Examples:
+* This new type of plot would be of benefit [...]
+* More testing should be developed for this situation [...]
+* More information should be provided when this happens [...]
 
 **Describe the solution you'd like**
 

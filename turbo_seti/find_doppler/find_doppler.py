@@ -267,7 +267,6 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
     if filewriter is None:
         filewriter = FileWriter('%s/%s_%i.dat' % (out_dir.rstrip('/'), fileroot_out, coarse_channel), header_in)
 
-    spectra_flipped = fd.kernels.xp.copy(spectra)[:, ::-1]
     tsteps = data_obj.tsteps
     tsteps_valid = data_obj.tsteps_valid
     tdwidth = data_obj.tdwidth
@@ -277,8 +276,8 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
 
     logger.debug('===== coarse_channel={}, f_start={}, f_stop={}'
                 .format(coarse_channel, d['f_start'], d['f_stop']))
-    logger.debug('flagging={}, spectra_flipped={}, tsteps={}, tsteps_valid={}, tdwidth={}, fftlen={}, nframes={}, shoulder_size={}'
-                 .format(flagging, spectra_flipped, tsteps, tsteps_valid, tdwidth, fftlen, nframes, shoulder_size))
+    logger.debug('flagging={}, tsteps={}, tsteps_valid={}, tdwidth={}, fftlen={}, nframes={}, shoulder_size={}'
+                 .format(flagging, tsteps, tsteps_valid, tdwidth, fftlen, nframes, shoulder_size))
 
     if flagging:
         ##EE This flags the edges of the PFF for BL data (with 3Hz res per channel).
@@ -311,7 +310,8 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
     # Allocates array in a fast way (without initialize)
     tree_findoppler_original = fd.kernels.xp.empty_like(tree_findoppler, dtype=fd.kernels.float_type)
 
-    hitsearch_buf = fd.kernels.xp.empty(tdwidth, dtype=fd.kernels.float_type)
+    # allocate array for negative doppler rates
+    tree_findoppler_flip = fd.kernels.xp.empty_like(tree_findoppler, dtype=fd.kernels.float_type)
 
     # build index mask for in-place tree doppler correction
     ibrev = fd.kernels.xp.zeros(tsteps, dtype=fd.kernels.xp.int32)
@@ -355,51 +355,95 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
         logger.debug("Drift_block {} (in range from {} through {})"
                      .format(drift_block, drift_low, drift_rate_nblock))
 
+        # ----------------------------------------------------------------------
+        # Negative drift rates search.
+        # ----------------------------------------------------------------------
         if drift_block <= 0:
-            populate_tree(fd, spectra_flipped, tree_findoppler, nframes, tdwidth, tsteps, fftlen, shoulder_size,
-                          roll=drift_block, reverse=0)
-        else:
+
+            # Populates the find_doppler tree with the spectra
             populate_tree(fd, spectra, tree_findoppler, nframes, tdwidth, tsteps, fftlen, shoulder_size,
                           roll=drift_block, reverse=1)
 
-        if drift_block == drift_rate_nblock:
+            # populate original array
             fd.kernels.xp.copyto(tree_findoppler_original, tree_findoppler)
-        fd.kernels.tt.flt(tree_findoppler, tsteps * tdwidth, tsteps)
 
-        if drift_block <= 0:
-            tree_findoppler = tree_findoppler[::-1]
-            logger.debug("Un-flipped corrected negative drift_block")
+            # populate neg doppler array
+            fd.kernels.xp.copyto(tree_findoppler_flip, tree_findoppler_original)
 
-        tree_findoppler -= the_mean_val
-        tree_findoppler /= the_stddev
+            # Flip matrix across X dimension to search negative doppler drift rates
+            fd.kernels.xp.copyto(tree_findoppler_flip, tree_findoppler_flip.reshape((tsteps, tdwidth))[:, ::-1].ravel())
+            fd.kernels.tt.flt(tree_findoppler_flip, tsteps * tdwidth, tsteps)
+            logger.debug("done...")
 
-        #=========== beginning of fragile eye chart code ===
-        if drift_block <= 0:
-            complete_drift_range = data_obj.drift_rate_resolution * fd.kernels.np.array(
+            complete_drift_range = data_obj.drift_rate_resolution * fd.kernels.xp.array(
                 range(-1 * tsteps_valid * (abs(drift_block) + 1) + 1,
                       -1 * tsteps_valid * (abs(drift_block)) + 1))
-            sub_range = complete_drift_range[(complete_drift_range < min_drift) &
-                                             (complete_drift_range >= -1 * max_drift)]
-            logger.debug('drift_block <= 0: sub_range={}'.format(sub_range))
-        else: # drift_block > 0
-            complete_drift_range = data_obj.drift_rate_resolution * fd.kernels.np.array(
-                range(tsteps_valid * drift_block,
-                      tsteps_valid * (drift_block + 1)))
-            sub_range = complete_drift_range[(complete_drift_range >= min_drift) &
-                                             (complete_drift_range <= max_drift)]
-            logger.debug('drift_block > 0: sub_range={}'.format(sub_range))
-        #=========== end of fragile eye chart code =======================================
+            for k, drift_rate in enumerate(complete_drift_range[(complete_drift_range < min_drift) & (
+                    complete_drift_range >= -1 * max_drift)]):
+                # indx  = ibrev[drift_indices[::-1][k]] * tdwidth
 
-        for k, drift_rate in enumerate(sub_range):
-            # DCP 2020.04 -- WAR to drift rate in flipped files
-            if data_obj.header['DELTAF'] < 0:
-                drift_rate *= -1
+                # DCP 2020.04 -- WAR to drift rate in flipped files
+                if data_obj.header['DELTAF'] < 0:
+                    drift_rate *= -1
 
-            # Grab correct bit of spectrum out of the dedoppler tree output
-            indx = ibrev[drift_indices[k]] * tdwidth
-            fd.kernels.xp.copyto(hitsearch_buf, tree_findoppler[indx: indx + tdwidth])
-            hitsearch(fd, hitsearch_buf, specstart, specend, snr,
-                      drift_rate, data_obj.header, tdwidth, max_val, 0)
+                indx = ibrev[drift_indices[::-1][
+                    (complete_drift_range < min_drift)
+                    & (complete_drift_range >= -1 * max_drift)][k]] * tdwidth
+
+                # SEARCH NEGATIVE DRIFT RATES
+                spectrum = tree_findoppler_flip[indx: indx + tdwidth]
+
+                # normalize
+                spectrum -= the_mean_val
+                spectrum /= the_stddev
+
+                # Reverse spectrum back
+                spectrum = spectrum[::-1]
+
+                hitsearch(fd, spectrum, specstart, specend, snr, drift_rate, data_obj.header,
+                          tdwidth, max_val, 0)
+
+        # ----------------------------------------------------------------------
+        # Positive drift rates search.
+        # ----------------------------------------------------------------------
+        if drift_block >= 0:
+
+            # Populates the find_doppler tree with the spectra
+            populate_tree(fd, spectra, tree_findoppler, nframes, tdwidth, tsteps, fftlen, shoulder_size,
+                          roll=drift_block, reverse=1)
+
+            # populate original array
+            fd.kernels.xp.copyto(tree_findoppler_original, tree_findoppler)
+
+            fd.kernels.tt.flt(tree_findoppler, tsteps * tdwidth, tsteps)
+            logger.debug("done...")
+            if (tree_findoppler == tree_findoppler_original).all():
+                logger.error("taylor_flt has no effect?")
+            else:
+                logger.debug("tree_findoppler changed")
+
+            ##EE: Calculates the range of drift rates for a full drift block.
+            complete_drift_range = data_obj.drift_rate_resolution * fd.kernels.xp.array(
+                range(tsteps_valid * (drift_block), tsteps_valid * (drift_block + 1)))
+
+            for k, drift_rate in enumerate(complete_drift_range[(complete_drift_range >= min_drift)
+                                                                & (complete_drift_range <= max_drift)]):
+
+                indx = ibrev[drift_indices[k]] * tdwidth
+
+                # DCP 2020.04 -- WAR to drift rate in flipped files
+                if data_obj.header['DELTAF'] < 0:
+                    drift_rate *= -1
+
+                # SEARCH POSITIVE DRIFT RATES
+                spectrum = tree_findoppler[indx: indx + tdwidth]
+
+                # normalize
+                spectrum -= the_mean_val
+                spectrum /= the_stddev
+
+                hitsearch(fd, spectrum, specstart, specend, snr, drift_rate, data_obj.header,
+                          tdwidth, max_val, 0)
 
     # Writing the top hits to file.
     logger.debug('END looping over drift_rate_nblock.')

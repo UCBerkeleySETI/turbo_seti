@@ -11,9 +11,9 @@ A clear and concise description of what enhancement you would like to occur. Exa
 * More testing should be developed for this situation [...]
 * More information should be provided when this happens [...]
 
-**Describe the solution you'd like**
+**Any more details?**
 
-A clear and concise description of what you want to happen.
+If you have source code or support file in mind, please provide a clear and concise description.
 
 **Describe alternatives you've considered**
 

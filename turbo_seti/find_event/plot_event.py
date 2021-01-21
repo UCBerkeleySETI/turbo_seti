@@ -322,7 +322,14 @@ def plot_candidate_events(candidate_event_dataframe, fil_file_list, filter_level
     global logger_plot_event
     
     # load in the data for each individual hit
-    for i in range(0, len(candidate_event_dataframe)):
+    if candidate_event_dataframe is None:
+        print('*** plot_candidate_events: candidate_event_dataframe is None, nothing to do.')
+        return
+    len_df = len(candidate_event_dataframe)
+    if len_df < 1:
+        print('*** plot_candidate_events: len(candidate_event_dataframe) = 0, nothing to do.')
+        return
+    for i in range(0, len_df):
         candidate = candidate_event_dataframe.iloc[i]
         on_source_name = candidate['Source']
         f_mid = candidate['Freq']
@@ -363,3 +370,4 @@ def plot_candidate_events(candidate_event_dataframe, fil_file_list, filter_level
                              source_name_list,
                              offset=offset,
                              **kwargs)
+

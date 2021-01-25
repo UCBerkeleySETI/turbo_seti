@@ -7,7 +7,7 @@ from tempfile import gettempdir
 from astropy import units as u
 
 #---------- Constants ------------
-TESTDIR = '{}/{}/{}/'.format(gettempdir(), 'test_fb_cases', os.getpid())
+TESTDIR = '{}/{}_{}/'.format(gettempdir(), 'test_fb_cases', os.getpid())
 HERE = os.path.split(os.path.abspath(__file__))[0]
 PATH_FIL_FILE = TESTDIR + 'abc.fil'
 MIN_SNR = 50

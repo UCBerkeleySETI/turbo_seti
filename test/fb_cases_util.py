@@ -2,7 +2,7 @@ r'''
 Utility functions for test_fb_cases.py
 '''
 
-from os import makedirs, system
+from os import mkdir, system
 from os.path import dirname
 from shutil import rmtree
 import pandas as pd
@@ -20,7 +20,7 @@ def initialize(arg_dir):
     Load result reference tables (2).
     '''
     rmtree(arg_dir, ignore_errors=True)
-    makedirs(arg_dir, exist_ok=True)
+    mkdir(arg_dir)
     df = pd.read_csv(DF_REFERENCE, sep=SEP, engine='python', comment='#')
     nrows = len(df)
     if nrows < 1:
@@ -144,7 +144,7 @@ def generate_fil_file(outpath, flag_fascending, flag_sign_drift_rate):
     del frame
 
 
-def make_one_dat_file(fil_path, max_drift=None, min_snr=None):
+def make_one_dat_file(arg_path_fil, max_drift=None, min_snr=None):
     r'''
     Make a single DAT file:
     * Instantiate the FindDoppler class object.
@@ -153,9 +153,9 @@ def make_one_dat_file(fil_path, max_drift=None, min_snr=None):
     '''
     if max_drift is None:
         raise ValueError('make_one_dat_file: max_drift not set')
-    woutdir = dirname(fil_path)
-    cmd = 'turboSETI -l warning -M {} -s {} -o {} {} > /dev/null' \
-            .format(max_drift, min_snr, woutdir, fil_path)
+    woutdir = dirname(arg_path_fil)
+    cmd = 'turboSETI -l info -M {} -s {} -o {} {}' \
+            .format(max_drift, min_snr, woutdir, arg_path_fil)
     system(cmd)
 
 
@@ -211,6 +211,6 @@ if __name__ == '__main__':
     # __main__ is a developer unit test, not normally to be executed.
     from fb_cases_def import TESTDIR, PATH_FIL_FILE, MIN_SNR
     rmtree(TESTDIR, ignore_errors=True)
-    makedirs(TESTDIR, exist_ok=True)
+    mkdir(TESTDIR)
     generate_fil_file(PATH_FIL_FILE, -1, -1)
     make_one_dat_file(PATH_FIL_FILE, max_drift=5, min_snr=MIN_SNR)

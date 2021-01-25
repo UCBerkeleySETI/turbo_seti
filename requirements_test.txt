@@ -4,3 +4,4 @@ pytest-runner
 codecov
 coverage
 wget
+setigen

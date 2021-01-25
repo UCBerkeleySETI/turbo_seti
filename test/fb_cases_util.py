@@ -2,12 +2,14 @@ r'''
 Utility functions for test_fb_cases.py
 '''
 
-from os import mkdir, system
+from os import mkdir, remove
 from os.path import dirname
 from shutil import rmtree
+import logging
 import pandas as pd
 import numpy as np
 import setigen as stg
+from turbo_seti.find_doppler.find_doppler import FindDoppler
 from fb_cases_def import HERE, DEBUGGING, PCT_DIFF, TestResultRecord, SetigenParms
 
 DF_REFERENCE = HERE + '/fb_dat_reference.txt'
@@ -154,9 +156,14 @@ def make_one_dat_file(arg_path_fil, max_drift=None, min_snr=None):
     if max_drift is None:
         raise ValueError('make_one_dat_file: max_drift not set')
     woutdir = dirname(arg_path_fil)
-    cmd = 'turboSETI -l info -M {} -s {} -o {} {}' \
-            .format(max_drift, min_snr, woutdir, arg_path_fil)
-    system(cmd)
+    fdop = FindDoppler(datafile=arg_path_fil,
+                       max_drift=max_drift,
+                       snr=min_snr,
+                       log_level_int=logging.WARNING,
+                       out_dir=woutdir)
+    fdop.search()
+    path_h5_file = arg_path_fil.replace('.fil', '.h5')
+    remove(path_h5_file)
 
 
 def get_case_results(arg_path_dat):

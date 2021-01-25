@@ -2,6 +2,12 @@ r'''
 Package turbo_seti
 test/test_fb_cases.py
 
+IMPORTANT:  If the parameters are changed in fb_cases_def.py,
+then the following must be done:
+1) `python3 fb_genref.py`
+2) Copy /tmp/test_fb_cases/fb_dat_reference.txt to the `test` directory,
+   replacing the old version.
+
 System concept
 --------------
 Use setigen to generate small-ish but effective filterbank files.

@@ -12,6 +12,7 @@ from fb_cases_def import HERE, DEBUGGING, TestResultRecord, SetigenParms
 
 DF_REFERENCE = HERE + '/fb_dat_reference.txt'
 SEP = r'\s+'
+PCT_DIFF = 0.05
 
 
 def initialize(arg_dir):
@@ -78,66 +79,66 @@ def generate_fil_file(outpath, flag_fascending, flag_sign_drift_rate):
               .format(flag_fascending, flag_sign_drift_rate))
 
     # Set up setigne parameters
-    stgp = SetigenParms()
+    stg_parms = SetigenParms()
     if flag_sign_drift_rate < 0:
-        stgp.drift_rate_1 = -stgp.drift_rate_1
-        stgp.drift_rate_2 = -stgp.drift_rate_2
-        stgp.drift_rate_3 = -stgp.drift_rate_3
-        stgp.drift_rate_4 = -stgp.drift_rate_4
-        stgp.drift_rate_5 = -stgp.drift_rate_5
+        stg_parms.drift_rate_1 = -stg_parms.drift_rate_1
+        stg_parms.drift_rate_2 = -stg_parms.drift_rate_2
+        stg_parms.drift_rate_3 = -stg_parms.drift_rate_3
+        stg_parms.drift_rate_4 = -stg_parms.drift_rate_4
+        stg_parms.drift_rate_5 = -stg_parms.drift_rate_5
 
     # Instantiate a setigen Frame object
-    frame = stg.Frame(fchans=stgp.fchans,
-                      tchans=stgp.tchans,
-                      df=stgp.df,
-                      dt=stgp.dt,
-                      fch1=stgp.fch1,
+    frame = stg.Frame(fchans=stg_parms.fchans,
+                      tchans=stg_parms.tchans,
+                      df=stg_parms.df,
+                      dt=stg_parms.dt,
+                      fch1=stg_parms.fch1,
                       ascending=(flag_fascending > 0))
     # Add noise to stg object.
-    frame.add_noise(x_mean=0, x_std=2, noise_type='gaussian')
+    frame.add_noise(x_mean=0, x_std=0.5, noise_type='gaussian')
 
     # Signal 1 will be detected.
-    signal_1_intensity = frame.get_intensity(snr=stgp.snr_1)
-    frame.add_constant_signal(f_start=frame.get_frequency(stgp.signal_start_1),
-                              drift_rate=stgp.drift_rate_1,
+    signal_1_intensity = frame.get_intensity(snr=stg_parms.snr_1)
+    frame.add_constant_signal(f_start=frame.get_frequency(stg_parms.signal_start_1),
+                              drift_rate=stg_parms.drift_rate_1,
                               level=signal_1_intensity,
-                              width=stgp.width_1,
+                              width=stg_parms.width_1,
                               f_profile_type='gaussian')
 
     # Signal 2 will be detected.
-    signal_2_intensity = frame.get_intensity(snr=stgp.snr_2)
-    frame.add_constant_signal(f_start=frame.get_frequency(stgp.signal_start_2),
-                              drift_rate=stgp.drift_rate_2,
+    signal_2_intensity = frame.get_intensity(snr=stg_parms.snr_2)
+    frame.add_constant_signal(f_start=frame.get_frequency(stg_parms.signal_start_2),
+                              drift_rate=stg_parms.drift_rate_2,
                               level=signal_2_intensity,
-                              width=stgp.width_2,
+                              width=stg_parms.width_2,
                               f_profile_type='gaussian')
 
-    # Signal 3 is a symmetric signal with three Gaussians 
+    # Signal 3 is a symmetric signal with three Gaussians
     # that will fall below the SNR requirements.
-    signal_3_intensity = frame.get_intensity(snr=stgp.snr_3)
-    frame.add_signal(stg.constant_path(f_start=frame.get_frequency(stgp.signal_start_3),
-                                       drift_rate=stgp.drift_rate_3),
+    signal_3_intensity = frame.get_intensity(snr=stg_parms.snr_3)
+    frame.add_signal(stg.constant_path(f_start=frame.get_frequency(stg_parms.signal_start_3),
+                                       drift_rate=stg_parms.drift_rate_3),
                      stg.constant_t_profile(level=1),
-                     stg.multiple_gaussian_f_profile(width=stgp.width_3),
+                     stg.multiple_gaussian_f_profile(width=stg_parms.width_3),
                      stg.constant_bp_profile(level=signal_3_intensity))
-    
-    # Signal 4 is a symmetric signal with three Gaussians 
+
+    # Signal 4 is a symmetric signal with three Gaussians
     # that will be drifting too quickly.
-    signal_4_intensity = frame.get_intensity(snr=stgp.snr_4)
-    frame.add_signal(stg.constant_path(f_start=frame.get_frequency(stgp.signal_start_4),
-                                       drift_rate=stgp.drift_rate_4),
+    signal_4_intensity = frame.get_intensity(snr=stg_parms.snr_4)
+    frame.add_signal(stg.constant_path(f_start=frame.get_frequency(stg_parms.signal_start_4),
+                                       drift_rate=stg_parms.drift_rate_4),
                      stg.constant_t_profile(level=1),
-                     stg.multiple_gaussian_f_profile(width=stgp.width_4),
+                     stg.multiple_gaussian_f_profile(width=stg_parms.width_4),
                      stg.constant_bp_profile(level=signal_4_intensity))
-    
-    # Signal 5 is similar to signal 4 but drifting in the opposite direction. 
-    signal_5_intensity = frame.get_intensity(snr=stgp.snr_5)
-    frame.add_signal(stg.constant_path(f_start=frame.get_frequency(stgp.signal_start_5),
-                                       drift_rate=stgp.drift_rate_5),
+
+    # Signal 5 is similar to signal 4 but drifting in the opposite direction.
+    signal_5_intensity = frame.get_intensity(snr=stg_parms.snr_5)
+    frame.add_signal(stg.constant_path(f_start=frame.get_frequency(stg_parms.signal_start_5),
+                                       drift_rate=stg_parms.drift_rate_5),
                      stg.constant_t_profile(level=1),
-                     stg.multiple_gaussian_f_profile(width=stgp.width_5),
+                     stg.multiple_gaussian_f_profile(width=stg_parms.width_5),
                      stg.constant_bp_profile(level=signal_5_intensity))
-    
+
     # Save the frame as a filterbank file.
     frame.save_fil(filename=outpath)
 
@@ -195,9 +196,9 @@ def case_comparison(obs_tophit, ref_tophit, max_drift):
                              .format(max_drift, obs_tophit.to_string()))
 
     if obs_tophit.tophit_id == ref_tophit.tophit_id \
-    and np.isclose(obs_tophit.drate, ref_tophit.drate, rtol=0.02) \
-    and np.isclose(obs_tophit.snr, ref_tophit.snr, rtol=0.02) \
-    and np.isclose(obs_tophit.freq, ref_tophit.freq, rtol=0.02) \
+    and np.isclose(obs_tophit.drate, ref_tophit.drate, rtol=PCT_DIFF) \
+    and np.isclose(obs_tophit.snr, ref_tophit.snr, rtol=PCT_DIFF) \
+    and np.isclose(obs_tophit.freq, ref_tophit.freq, rtol=PCT_DIFF) \
     and obs_tophit.index == ref_tophit.index:
         return # success
 

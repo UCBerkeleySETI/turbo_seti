@@ -27,7 +27,7 @@ def add_one(arg_case_num, arg_fh, arg_fdir, arg_drsign):
     arg_fh.write('# Case {}: frequency {}, drift rate {}\n'
                  .format(arg_case_num, arg_fdir, arg_drsign))
     FMT_RECORD = '{}       {}     {}          {}        {}      {}    {}    {}\n'
-    
+
     record_1 = FMT_RECORD \
         .format(arg_case_num, arg_fdir, arg_drsign, obs_tophit_1.tophit_id, obs_tophit_1.drate,
                 obs_tophit_1.snr, obs_tophit_1.freq, obs_tophit_1.index)
@@ -57,4 +57,4 @@ with open(PATH_REF, 'w') as file_handle:
     file_handle.close()
 
 et = (time.time() - t1) / 60.0
-print('fb_genref: Elapsed time = {:.2f} min'.format(et))
+print('fb_genref: Created {}, elapsed time = {:.2f} min'.format(PATH_REF, et))

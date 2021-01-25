@@ -69,8 +69,8 @@ def test_main(cleanup=True):
     print('test_main: PATH_FIL_FILE = {}'.format(PATH_FIL_FILE))
     ref_tophit_1, ref_tophit_2 = initialize(TESTDIR)
     run_test_cases(ref_tophit_1, ref_tophit_2, max_drift=5)
-    ### run_test_cases(ref_tophit_1, ref_tophit_2, max_drift=10)
-    ### run_test_cases(ref_tophit_1, ref_tophit_2, max_drift=20)
+    run_test_cases(ref_tophit_1, ref_tophit_2, max_drift=10)
+    run_test_cases(ref_tophit_1, ref_tophit_2, max_drift=20)
     run_test_cases(ref_tophit_1, ref_tophit_2, max_drift=30)
     if cleanup:
         rmtree(TESTDIR)

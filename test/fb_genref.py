@@ -5,14 +5,17 @@ test/fb_genref.py
 Generate a reference file for subsequent use by test_fb_cases.py.
 '''
 
-from os import mkdir
+from os import makedirs
+from tempfile import gettempdir
 from shutil import rmtree
 import time
 import numpy as np
-from fb_cases_def import THE_MEANING_OF_LIFE, TESTDIR, PATH_FIL_FILE, MIN_SNR
+from fb_cases_def import THE_MEANING_OF_LIFE, HERE, MIN_SNR
 from fb_cases_util import generate_fil_file, make_one_dat_file, get_case_results
 
-PATH_REF = TESTDIR + 'fb_dat_reference.txt'
+TESTDIR = '{}/{}/'.format(gettempdir(), 'test_fb_cases')
+PATH_FIL_FILE = TESTDIR + 'abc.fil'
+PATH_REF = HERE + '/fb_dat_reference.txt'
 MAX_DRIFT = 5
 
 
@@ -39,9 +42,9 @@ def add_one(arg_case_num, arg_fh, arg_fdir, arg_drsign):
     arg_fh.write(record_2)
 
 
-np.random.seed(THE_MEANING_OF_LIFE) # setigen uses this.
 rmtree(TESTDIR, ignore_errors=True)
-mkdir(TESTDIR)
+makedirs(TESTDIR, exist_ok=True)
+np.random.seed(THE_MEANING_OF_LIFE) # setigen uses this.
 t1 = time.time()
 print('fb_genref: Begin generating {}'.format(PATH_REF))
 
@@ -53,7 +56,8 @@ with open(PATH_REF, 'w') as file_handle:
     add_one(3, file_handle, -1, +1)
     add_one(4, file_handle, -1, -1)
     file_handle.write('#\n')
-    file_handle.write('#---------END---------------------------------------\n')
+    now = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+    file_handle.write('#---------END {} ---------------------------\n'.format(now))
     file_handle.close()
 
 et = (time.time() - t1) / 60.0

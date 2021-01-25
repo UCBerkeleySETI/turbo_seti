@@ -3,10 +3,7 @@ Package turbo_seti
 test/test_fb_cases.py
 
 IMPORTANT:  If the parameters are changed in fb_cases_def.py,
-then the following must be done:
-1) `python3 fb_genref.py`
-2) Copy /tmp/test_fb_cases/fb_dat_reference.txt to the `test` directory,
-   replacing the old version.
+then the following must be executed:  `python3 fb_genref.py`
 
 System concept
 --------------
@@ -28,6 +25,8 @@ For each maximum drift rate entertained,
 
 
 import time
+import gc
+from shutil import rmtree
 import numpy as np
 from fb_cases_def import THE_MEANING_OF_LIFE, DEBUGGING, TESTDIR, PATH_FIL_FILE, MIN_SNR
 from fb_cases_util import generate_fil_file, initialize, make_one_dat_file, \
@@ -52,6 +51,7 @@ def exec_one_case(case_num, path_fil_file, max_drift, ref_tophit_1, ref_tophit_2
               .format(obs_tophit_1.to_string(), obs_tophit_2.to_string()))
     case_comparison(obs_tophit_1, ref_tophit_1, max_drift)
     case_comparison(obs_tophit_2, ref_tophit_2, max_drift)
+    gc.collect()
     print('=== CASE {} at max drift {} success'.format(case_num, max_drift))
 
 
@@ -63,18 +63,21 @@ def run_test_cases(ref_tophit_1, ref_tophit_2, max_drift=None):
         exec_one_case(jj + 1, PATH_FIL_FILE, max_drift, ref_tophit_1[jj], ref_tophit_2[jj])
 
 
-def test_main():
+def test_main(cleanup=True):
     r'''Pytest Entry Point'''
     np.random.seed(THE_MEANING_OF_LIFE) # setigen uses this.
+    print('test_main: PATH_FIL_FILE = {}'.format(PATH_FIL_FILE))
     ref_tophit_1, ref_tophit_2 = initialize(TESTDIR)
     run_test_cases(ref_tophit_1, ref_tophit_2, max_drift=5)
     run_test_cases(ref_tophit_1, ref_tophit_2, max_drift=10)
     run_test_cases(ref_tophit_1, ref_tophit_2, max_drift=20)
     run_test_cases(ref_tophit_1, ref_tophit_2, max_drift=30)
+    if cleanup:
+        rmtree(TESTDIR)
 
 
 if __name__ == '__main__':
     t1 = time.time()
-    test_main()
+    test_main(cleanup=False)
     et = (time.time() - t1) / 60.0
     print('test_fb_cases: Elapsed time = {:.2f} min'.format(et))

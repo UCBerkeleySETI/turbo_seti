@@ -2,17 +2,16 @@ r'''
 Utility functions for test_fb_cases.py
 '''
 
-from os import mkdir, system
+from os import makedirs, system
 from os.path import dirname
 from shutil import rmtree
 import pandas as pd
 import numpy as np
 import setigen as stg
-from fb_cases_def import HERE, DEBUGGING, TestResultRecord, SetigenParms
+from fb_cases_def import HERE, DEBUGGING, PCT_DIFF, TestResultRecord, SetigenParms
 
 DF_REFERENCE = HERE + '/fb_dat_reference.txt'
 SEP = r'\s+'
-PCT_DIFF = 0.05
 
 
 def initialize(arg_dir):
@@ -21,7 +20,7 @@ def initialize(arg_dir):
     Load result reference tables (2).
     '''
     rmtree(arg_dir, ignore_errors=True)
-    mkdir(arg_dir)
+    makedirs(arg_dir, exist_ok=True)
     df = pd.read_csv(DF_REFERENCE, sep=SEP, engine='python', comment='#')
     nrows = len(df)
     if nrows < 1:
@@ -94,8 +93,9 @@ def generate_fil_file(outpath, flag_fascending, flag_sign_drift_rate):
                       dt=stg_parms.dt,
                       fch1=stg_parms.fch1,
                       ascending=(flag_fascending > 0))
+
     # Add noise to stg object.
-    frame.add_noise(x_mean=0, x_std=0.5, noise_type='gaussian')
+    frame.add_noise(x_mean=0, x_std=stg_parms.noise_std, noise_type='gaussian')
 
     # Signal 1 will be detected.
     signal_1_intensity = frame.get_intensity(snr=stg_parms.snr_1)
@@ -141,6 +141,7 @@ def generate_fil_file(outpath, flag_fascending, flag_sign_drift_rate):
 
     # Save the frame as a filterbank file.
     frame.save_fil(filename=outpath)
+    del frame
 
 
 def make_one_dat_file(fil_path, max_drift=None, min_snr=None):
@@ -207,8 +208,9 @@ def case_comparison(obs_tophit, ref_tophit, max_drift):
                      .format(max_drift, obs_tophit.to_string(), ref_tophit.to_string()))
 
 if __name__ == '__main__':
+    # __main__ is a developer unit test, not normally to be executed.
     from fb_cases_def import TESTDIR, PATH_FIL_FILE, MIN_SNR
     rmtree(TESTDIR, ignore_errors=True)
-    mkdir(TESTDIR)
+    makedirs(TESTDIR, exist_ok=True)
     generate_fil_file(PATH_FIL_FILE, -1, -1)
     make_one_dat_file(PATH_FIL_FILE, max_drift=5, min_snr=MIN_SNR)

@@ -7,19 +7,17 @@ from tempfile import gettempdir
 from astropy import units as u
 
 #---------- Constants ------------
-TESTDIR = gettempdir() + '/test_fb_cases/'
+TESTDIR = '{}/{}/{}/'.format(gettempdir(), 'test_fb_cases', os.getpid())
+HERE = os.path.split(os.path.abspath(__file__))[0]
 PATH_FIL_FILE = TESTDIR + 'abc.fil'
 MIN_SNR = 50
-DEBUGGING = False
-GENREF = False
-HERE = os.path.split(os.path.abspath(__file__))[0]
 THE_MEANING_OF_LIFE = 42
+DEBUGGING = False
+PCT_DIFF = 0.5
+
 
 class TestResultRecord:
-    r'''
-    Object definition for a test result record
-    '''
-
+    r'''    Object definition for a test result record '''
 
     def __init__(self):
         self.fdir = 0 # frequency direction: +1 is ascending, -1 is descending
@@ -42,16 +40,17 @@ class TestResultRecord:
 
 
 class SetigenParms:
-
+    r'''Object definition for setigen parameters'''
 
     def __init__(self):
 
-        # Parameters for all hits
+        # Parameters for all signals
         self.fchans = 1048576 # number of (fine) channels
         self.tchans = 60 # number of time samples
         self.df = 1.0 * u.Hz # fine channel width in Hz
         self.dt = 1.0 * u.s #sampling time in seconds
         self.fch1 = 8421.386717353016 * u.MHz # Starting frequency in MHz
+        self.noise_std = 0.05 # Gaussian standard deviation
 
         # Signal 1 parameters
         self.signal_start_1 = self.fchans / 5 # index to frequency columns

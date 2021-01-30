@@ -27,21 +27,23 @@ def main(args=None):
 
     p.add_argument('filename', type=str, help='Name of filename to open (h5 or fil)')
     p.add_argument('-M', '--max_drift', dest='max_drift', type=float, default=10.0,
-                   help='Set the drift rate to search. Unit: Hz/sec. Default: 10.0')
+                   help='Set the maximum drift rate threshold. Unit: Hz/sec. Default: 10.0')
+    p.add_argument('-m', '--min_drift', dest='min_drift', type=float, default=0.0,
+                   help='Set the minimum drift rate threshold. Unit: Hz/sec. Default: 0.0')
     p.add_argument('-s', '--snr', dest='snr', type=float, default=25.0,
-                   help='SNR threshold. Default: 25.0')
+                   help='Set the minimum SNR threshold. Default: 25.0')
     p.add_argument('-o', '--out_dir', dest='out_dir', type=str, default='./',
                    help='Location for output files. Default: local dir. ')
     p.add_argument('-l', '--loglevel', dest='log_level', type=str, default='info',
                    help='Specify log level (info, debug, warning)')
     p.add_argument('-c', '--coarse_chans', dest='coarse_chans', type=str, default=None,
-                   help='Comma separated list of coarse channels to analyze.')
+                   help='Comma separated string list of coarse channels to analyze.')
     p.add_argument('-n', '--n_coarse_chan', dest='n_coarse_chan', type=int, default=None,
-                   help='Number of coarse channels in file.')
+                   help='Number of coarse channels to use.')
     p.add_argument('-p', '--n_parallel', dest='n_parallel', type=int, default=1,
-                   help='Number of partitions to run in parallel. Default to 1 (single partition)')
+                   help='Number of dask partitions to run in parallel. Default to 1 (dask not in use)')
     p.add_argument('-b', '--progress_bar', dest='flag_progress_bar', type=str, default='n',
-                   help='Use a progress bar? (y/n)')
+                   help='Use a progress bar with dask? (y/n)')
     p.add_argument('-g', '--gpu', dest='flag_gpu', type=str, default='n',
                    help='Compute on the GPU? (y/n)')
     p.add_argument('-P', '--profile', dest='flag_profile', type=str, default='n',
@@ -97,9 +99,9 @@ def exec(args):
     try:
         t0 = time.time()
 
-
         find_seti_event = FindDoppler(args.filename,
                                       max_drift=args.max_drift,
+                                      min_drift=args.min_drift,
                                       snr=args.snr,
                                       out_dir=args.out_dir,
                                       append_output=(args.flag_append_output == "y"),

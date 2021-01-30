@@ -69,7 +69,7 @@ class FindDoppler:
         Python logging threshold level (INFO, DEBUG, or WARNING)
 
     """
-    def __init__(self, datafile, max_drift, min_drift=0, snr=25.0, out_dir='./', coarse_chans=None,
+    def __init__(self, datafile, max_drift=4.0, min_drift=0.0, snr=25.0, out_dir='./', coarse_chans=None,
                  obs_info=None, flagging=False, n_coarse_chan=None, kernels=None, gpu_backend=False,
                  precision=2, append_output=False, log_level_int=logging.INFO):
         if not kernels:
@@ -109,9 +109,10 @@ class FindDoppler:
                         .format(flagging, n_coarse_chan, kernels, gpu_backend) \
                     + ', precision={}, append_output={}, log_level_int={}, obs_info={}' \
                         .format(precision, append_output, log_level_int, obs_info)
-        print('FindDoppler Parameters: ' + self.parms)
         logger.info(self.data_handle.get_info())
-        print("Start ET search for %s" % datafile)
+        if min_drift < 0 or max_drift < 0:
+            raise ValueError('Both min_drift({}) and max_drift({}) must be nonnegative'
+                             .format(min_drift, max_drift))
 
 
     def get_info(self):
@@ -181,8 +182,13 @@ class FindDoppler:
         logwriter = LogWriter(path_log)
         filewriter = FileWriter(path_dat, header_in)
 
-        logwriter.info("Start ET search for %s" % filename_in)
-        logwriter.info('Parameters: ' + self.parms)
+        msg = "Starting ET search using {}".format(filename_in)
+        logwriter.info(msg)
+        print(msg)
+
+        msg = 'Parameters: ' + self.parms
+        logwriter.info(msg)
+        logger.info(msg)
 
         # Run serial version
         if n_partitions == 1:
@@ -388,17 +394,16 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
             complete_drift_range = data_obj.drift_rate_resolution * fd.kernels.xp.array(
                 range(-1 * tsteps_valid * (abs(drift_block) + 1) + 1,
                       -1 * tsteps_valid * (abs(drift_block)) + 1))
-            for k, drift_rate in enumerate(complete_drift_range[(complete_drift_range < min_drift) & (
-                    complete_drift_range >= -1 * max_drift)]):
-                # indx  = ibrev[drift_indices[::-1][k]] * tdwidth
+            bool_selected = (complete_drift_range <= -min_drift) & (complete_drift_range >= -max_drift)
+            logger.debug('***** drift_block <= 0 selected drift range:\n{}'
+                         .format(complete_drift_range[bool_selected]))
+            for k, drift_rate in enumerate(complete_drift_range[bool_selected]):
 
                 # DCP 2020.04 -- WAR to drift rate in flipped files
                 if data_obj.header['DELTAF'] < 0:
                     drift_rate *= -1
 
-                indx = ibrev[drift_indices[::-1][
-                    (complete_drift_range < min_drift)
-                    & (complete_drift_range >= -1 * max_drift)][k]] * tdwidth
+                indx = ibrev[drift_indices[::-1][bool_selected][k]] * tdwidth
 
                 # SEARCH NEGATIVE DRIFT RATES
                 spectrum = tree_findoppler_flip[indx: indx + tdwidth]
@@ -435,9 +440,10 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
             ##EE: Calculates the range of drift rates for a full drift block.
             complete_drift_range = data_obj.drift_rate_resolution * fd.kernels.xp.array(
                 range(tsteps_valid * (drift_block), tsteps_valid * (drift_block + 1)))
-
-            for k, drift_rate in enumerate(complete_drift_range[(complete_drift_range >= min_drift)
-                                                                & (complete_drift_range <= max_drift)]):
+            bool_selected = (complete_drift_range >= min_drift) & (complete_drift_range <= max_drift)
+            logger.debug('***** drift_block >= 0 selected drift range:\n{}'
+                         .format(complete_drift_range[bool_selected]))
+            for k, drift_rate in enumerate(complete_drift_range[bool_selected]):
 
                 indx = ibrev[drift_indices[k]] * tdwidth
 
@@ -642,7 +648,9 @@ def tophitsearch(fd, tree_findoppler_original, max_val, tsteps, header, tdwidth,
         if skip:
             logger.debug("SNR not big enough... %f pass... index: %d"%(maxsnr[i], i))
         else:
-            info_str = "Top hit found! SNR: %f ... index: %d"%(maxsnr[i], i)
+            drate = max_val.maxdrift[i]
+            info_str = "Top hit found! SNR {:f}, Drift Rate {:f}, index {}" \
+                       .format(maxsnr[i], drate, i)
             logger.info(info_str)
             if logwriter:
                 logwriter.info(info_str)

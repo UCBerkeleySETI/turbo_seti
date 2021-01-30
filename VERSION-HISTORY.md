@@ -3,7 +3,11 @@ This file is a version history of turbo_seti amendments, beginning with version 
 <br>
 | Version | Contents |
 | :--: | -- |
-| 2.1.0 **coming soon** | Add frequency channel masking capability. See issue #125. |
+| 2.1.0 **future** | Add frequency channel masking capability. See issue #125. |
+| 2.0.8 | Added test/{test_fb_cases.py, fb_*} to implement checking against known valid DAT file results |
+| | Added a --min_drift parameter to turboSETI (issue #178) |
+| | Fixed the min_drift parameter contribution to search_coarse_channel() (issue #89) |
+| | Fixed the DAT file formatting and top hit numbering when multipatitioning with dask (issue #179) |
 | 2.0.7 | Fixing code-structure in find_doppler.py search_coarse_channel() to be more like v1.3.0. |
 | 2.0.6.6 | Fix issue #169 - Fixed find_event_pipeline IndexError crash |
 | 2.0.6.5 | Fix issue #167 - log support for unattended testing on data centre compute nodes |

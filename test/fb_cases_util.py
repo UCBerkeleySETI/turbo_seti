@@ -10,7 +10,7 @@ import pandas as pd
 import numpy as np
 import setigen as stg
 from turbo_seti.find_doppler.find_doppler import FindDoppler
-from fb_cases_def import HERE, DEBUGGING, PCT_DIFF, TestResultRecord, SetigenParms
+from fb_cases_def import HERE, DEBUGGING, RTOL_DIFF, TestResultRecord, SetigenParms
 
 DF_REFERENCE = HERE + '/fb_dat_reference.txt'
 SEP = r'\s+'
@@ -204,9 +204,9 @@ def case_comparison(obs_tophit, ref_tophit, max_drift):
                              .format(max_drift, obs_tophit.to_string()))
 
     if obs_tophit.tophit_id == ref_tophit.tophit_id \
-    and np.isclose(obs_tophit.drate, ref_tophit.drate, rtol=PCT_DIFF) \
-    and np.isclose(obs_tophit.snr, ref_tophit.snr, rtol=PCT_DIFF) \
-    and np.isclose(obs_tophit.freq, ref_tophit.freq, rtol=PCT_DIFF) \
+    and np.isclose(obs_tophit.drate, ref_tophit.drate, rtol=RTOL_DIFF) \
+    and np.isclose(obs_tophit.snr, ref_tophit.snr, rtol=RTOL_DIFF) \
+    and np.isclose(obs_tophit.freq, ref_tophit.freq, rtol=RTOL_DIFF) \
     and obs_tophit.index == ref_tophit.index:
         return # success
 

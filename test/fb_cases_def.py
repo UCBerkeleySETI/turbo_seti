@@ -13,7 +13,7 @@ PATH_FIL_FILE = TESTDIR + 'abc.fil'
 MIN_SNR = 50
 THE_MEANING_OF_LIFE = 42
 DEBUGGING = False
-PCT_DIFF = 0.5
+RTOL_DIFF = 0.05 # 5%
 
 
 class TestResultRecord:

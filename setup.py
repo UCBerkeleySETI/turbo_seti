@@ -8,8 +8,6 @@
 # twine upload dist/*
 
 from setuptools import setup, find_packages
-import numpy
-from setuptools.extension import Extension
 
 __version__ = "2.0.8"
 

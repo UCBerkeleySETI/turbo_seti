@@ -44,7 +44,11 @@ It was originally based on `dedoppler` [dedoppler](http://github.com/cs150bf/gbt
 
 ## Installation
 
-The latest release can be installed via pip directly from this repository:
+If you have not yet installed blimpy, do so in this manner:
+
+`python3 -m pip install -U git+https://github.com/UCBerkeleySETI/blimpy`
+
+Then, install turbo_seti directly from this repository:
 
 `python3 -m pip install -U git+https://github.com/UCBerkeleySETI/turbo_seti`
 

@@ -257,7 +257,7 @@ def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_r
     # show figure before closing if this is an interactive context
     mplbe = matplotlib.get_backend()
     logger_plot_event.debug('make_waterfall_plots: backend = {}'.format(mplbe))
-    if mplbe != 'agg':
+    if mplbe in matplotlib.rcsetup.interactive_bk:
         plt.show()
 
     # close all figure windows

@@ -4,6 +4,8 @@ This file is a version history of turbo_seti amendments, beginning with version 
 | Version | Contents |
 | :--: | -- |
 | 2.1.0 **future** | Add frequency channel masking capability. See issue #125. |
+| 2.0.8.1 | Address issue #188 - Enhance plot_event.py to handle both interactive and noninteractive matplotlib backends |
+| | Removed references to numpy from setup.py |
 | 2.0.8 | Added test/{test_fb_cases.py, fb_*} to implement checking against known valid DAT file results |
 | | Added a --min_drift parameter to turboSETI (issue #178) |
 | | Fixed the min_drift parameter contribution to search_coarse_channel() (issue #89) |

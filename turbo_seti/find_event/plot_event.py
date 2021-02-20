@@ -254,8 +254,13 @@ def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_r
     plt.savefig(path_png, bbox_inches='tight')
     logger_plot_event.debug('make_waterfall_plots: Saved file {}'.format(path_png))
 
-    # show and close all figure windows
-    plt.show()
+    # show figure before closing if this is an interactive context
+    mplbe = matplotlib.get_backend()
+    logger_plot_event.debug('make_waterfall_plots: backend = {}'.format(mplbe))
+    if mplbe != 'agg':
+        plt.show()
+
+    # close all figure windows
     plt.close('all')
 
     return subplots

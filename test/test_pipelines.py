@@ -2,16 +2,6 @@ r'''
 Package turbo_seti
 test_pipelines.py - Expand coverage for individual files in the
                     turbo_seti/find_event folder, especially pipelines.
-
-Date         Who            Description
-----------   -------------  --------------------------------------------
-2020-07-30   R. Elkins      Initial version as 'test_pipelines.py'
-2020-08-01   R. Elkins      Renamed to 'test_pipelines.py'
-2020-08-01   R. Elkins      Expand filter threshold coverage to 1, 2, & 3
-2020-08-18   R. Elkins      Fix test_pipelines execution to re-clean-up
-                            between find_plot_pipelines() executions.
-2020-12-12   R. Elkins      Issue #127 - use new filter_spec parameter.
-2021-01-05   R. Elkins      Re-work to use Voyager 2020 files.
 '''
 
 from time import time
@@ -22,10 +12,10 @@ from tempfile import gettempdir
 import sys
 from urllib.error import HTTPError
 from argparse import ArgumentParser
+import imghdr
 import wget
 import pandas as pd
 import numpy as np
-import imghdr
 
 from turbo_seti.find_doppler.find_doppler import FindDoppler
 from turbo_seti.find_event.find_event_pipeline import find_event_pipeline
@@ -141,12 +131,14 @@ def make_all_dat_files():
 def validate_csvf(arg_csvf):
     r'''
     Validate the given CSV file.
+
+    Read in the CSV file into a raw Pandas DataFrame.
+    Check that specific columns have the expected values:
+      Source, TopHitNum, status, ChanIndx, and SNR.
+    Return the Pandas dataframe.
     '''
-    # Read in the CSV file into a raw Pandas DataFrame.
-    # Check that specific columns have the expected values:
-    #   Source, TopHitNum, status, ChanIndx, and SNR.
-    # Return the Pandas dataframe.
     df = pd.read_csv(arg_csvf, sep=CSV_DELIM)
+    #df.drop('Unnamed: 0')
     nrows = len(df)
     if nrows != 6:
         raise ValueError('validate_csvf: Expected 6 rows but observed {} rows'
@@ -172,7 +164,7 @@ def validate_csvf(arg_csvf):
     if np.any(obs_snr > SNR_HIGH) or np.any(obs_snr < SNR_LOW):
         raise ValueError('validate_csvf: Expected SNR column in range of {}:{} but observed {}'
                          .format(SNR_LOW, SNR_HIGH, obs_snr))
-    return df
+    return df['SNR'].values
 
 
 def find_plot_pipelines(need_init=True, filter_threshold=3):
@@ -182,19 +174,16 @@ def find_plot_pipelines(need_init=True, filter_threshold=3):
 
     main_time_start = time()
 
-    # If configured to do so, initialize temp directory.
+    # If configured to do so, initialize temp directory
+    # and fetch all of the HDF5 files from the Internet.
     if need_init:
         initialize()
-
-    # If configured to do so, fetch all of the HDF5 files from the Internet.
-    if need_init:
         for filename_h5 in H5_FILE_LIST:
             wgetter(filename_h5)
 
     # Make all of the DAT files.
     make_all_dat_files()
 
-    # Create the CSV file used by plot_event_pipeline.
     print('find_plot_pipelines: Filter threshold = ', filter_threshold)
     number_in_cadence = len(H5_FILE_LIST)
     print('find_plot_pipelines: Cadence length = ', number_in_cadence)
@@ -221,10 +210,14 @@ def find_plot_pipelines(need_init=True, filter_threshold=3):
 
     # An event CSV was created.
     # Validate CSV file.
-    df_validate = validate_csvf(PATH_CSVF)
-    if df_validate.equals(df_event):
-        raise ValueError('find_plot_pipelines: Expected df_validate to be identical to df_event but observed\n{}'
-                         .format(df_validate))
+    snr_validate = validate_csvf(PATH_CSVF)
+    snr_event = df_event['SNR'].values
+    print('\n*** snr_event:\n', snr_event)
+    print('\n*** snr_validate:\n', snr_validate, '\n')
+    if not np.all(snr_validate == snr_event):
+        print('\n*** snr_event:\n', snr_event)
+        print('\n*** snr_validate:\n', snr_validate, '\n')
+        raise ValueError('find_plot_pipelines: df_validate != df_event')
 
     # Make a list of the HDF5 files.
     print('find_plot_pipelines: making a list of HDF5 files in ({}) ...'
@@ -291,7 +284,7 @@ def main(args=None):
     else:
         args = pobj.parse_args(args)
     test_pipelines(need_init=(args.flag_init == 'y'),
-                   cleanup=(args.flag_cleanup == 'y'))
+                   cleanup=(args.flag_cleanup == 'n'))
 
 
 if __name__ == '__main__':

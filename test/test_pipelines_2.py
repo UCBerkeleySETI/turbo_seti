@@ -14,7 +14,6 @@ from tempfile import gettempdir
 import sys
 import numpy as np
 import pandas as pd
-import collections
 
 from turbo_seti.find_event.find_event_pipeline import find_event_pipeline
 from turbo_seti.find_event.plot_event_pipeline import plot_event_pipeline

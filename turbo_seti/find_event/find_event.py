@@ -21,6 +21,8 @@ pd.options.mode.chained_assignment = None
 MAX_DRIFT_RATE = 2.0    # NOTE: these two values need to be updated.
 OBS_LENGTH = 300.
 #------
+
+
 def end_search(t0):
     r"""
     Ends the search when there are no candidates left, or when the filter
@@ -35,7 +37,7 @@ def end_search(t0):
     t1 = time.time()
     print('Search time: %.2f sec' % ((t1-t0)))
     print('------   o   -------')
-    return
+
 
 def read_dat(filename):
     r"""
@@ -117,6 +119,7 @@ def read_dat(filename):
 
     return df_data
 
+
 def make_table(filename, init=False):
     r"""
     Creates a pandas dataframe with column names standard for turboSETI .dat
@@ -145,6 +148,7 @@ def make_table(filename, init=False):
     else:
         df_data = read_dat(filename)
     return df_data
+
 
 def calc_freq_range(hit, delta_t=0, max_dr=True, follow=False):
     r"""
@@ -183,6 +187,7 @@ def calc_freq_range(hit, delta_t=0, max_dr=True, follow=False):
 
     return [low_bound,high_bound]
 
+
 def follow_event(hit, on_table, get_count=True):
     r"""
     Follows a given hit to the next observation of the same target and
@@ -215,10 +220,10 @@ def follow_event(hit, on_table, get_count=True):
         #Avoiding cases where multiple hits in one obs, and none in the other.
         if n_hits_in_range:
             return 1
-        else:
-            return 0
-    else:
-        return new_on_table
+        return 0
+
+    return new_on_table
+
 
 def find_events(dat_file_list, SNR_cut=10, check_zero_drift=False, filter_threshold=3, on_off_first='ON', complex_cadence=False):
     r"""
@@ -303,19 +308,23 @@ def find_events(dat_file_list, SNR_cut=10, check_zero_drift=False, filter_thresh
         
     odd_even_indicator = 0
     on_off_indicator = 0
-    if complex_cadence == False:
+    if complex_cadence: # One source name was provided.
+        number_of_ons = 0
+    else: # complex_cadence=False
         number_of_ons = int(np.floor(len(dat_file_list) / 2.0))
         if on_off_first == 'ON':
             odd_even_indicator = 1
-            number_of_ons = int(np.ceil(len(dat_file_list) / 2.0))  
-    
+            number_of_ons = int(np.ceil(len(dat_file_list) / 2.0)) 
+     
     #reading in the list of files 
-    for i,dat_file in enumerate(dat_file_list):
-        if complex_cadence != False:
+    for i, dat_file in enumerate(dat_file_list):
+        if complex_cadence:
             on_off_indicator = int(complex_cadence[i])
+            number_of_ons += on_off_indicator
         #Checking if the file is an on or off observation
         #if off
-        if (i%2 == odd_even_indicator and complex_cadence == False) or (on_off_indicator == 0 and complex_cadence != False):
+        if (i%2 == odd_even_indicator and complex_cadence == False) \
+        or (on_off_indicator == 0 and complex_cadence != False):
             #Using make_table function to read the .dat file 
             #and create the pandas hit table for off sources
             off_table_i = make_table(dat_file)
@@ -341,10 +350,10 @@ def find_events(dat_file_list, SNR_cut=10, check_zero_drift=False, filter_thresh
                 on_count+=1
                     
     #If there are no hits on any on target, return to caller
-    if not len(on_table_list):
+    if len(on_table_list) < 1:
         print('There are no hits in this cadence :(')
         end_search(t0)
-        return
+        return None
     
     #Concatenating the on and off tables into a giant on table 
     #and a giant off table
@@ -401,14 +410,13 @@ def find_events(dat_file_list, SNR_cut=10, check_zero_drift=False, filter_thresh
     if (len(snr_adjusted_table) == 0):
         print('Found no hits above the SNR cut :(')
         end_search(t0)
-        return
+        return None
     if filter_threshold == 1:
         print('Found a total of %i hits above the SNR cut in this cadence!'%len(snr_adjusted_table))
         print('Filter level is 1 - returning this table...')
         end_search(t0)
         return snr_adjusted_table
-    else:
-        print('Found a total of %i hits above the SNR cut in this cadence!'%len(snr_adjusted_table))
+    print('Found a total of %i hits above the SNR cut in this cadence!'%len(snr_adjusted_table))
     
     #----------------------------------------------------------------------
 
@@ -431,14 +439,13 @@ def find_events(dat_file_list, SNR_cut=10, check_zero_drift=False, filter_thresh
     if (len(not_in_off_table) == 0):
         print('Found no hits present in only the on observations in this cadence :(')
         end_search(t0)
-        return
+        return None
     if filter_threshold == 2:    
         print('Found a total of %i hits in only the on observations in this cadence!'%len(not_in_off_table))
         print('Filter level is 2 - returning this table...')
         end_search(t0)
         return not_in_off_table
-    else:
-        print('Found a total of %i hits in only the on observations in this cadence!'%len(not_in_off_table))
+    print('Found a total of %i hits in only the on observations in this cadence!'%len(not_in_off_table))
         
     #----------------------------------------------------------------------
     
@@ -484,17 +491,14 @@ def find_events(dat_file_list, SNR_cut=10, check_zero_drift=False, filter_thresh
     else:
         print('NOTE: At least one of the on tables is empty - no events across this cadence :(')
         end_search(t0)
-        return
+        return None
 
     if len(in_all_ons_table) > 0:
         best_events_table = pd.concat(filter_3_event_list)
         print('Found a total of %i events across this cadence!'%(int(len(best_events_table)/3)))
         end_search(t0)
         return best_events_table
-    
-    else:
-        print('NOTE: Found no events across this cadence :(')
-        end_search(t0)
-        return
-    
-    #----------------------------------------------------------------------
+
+    print('NOTE: Found no events across this cadence :(')
+    end_search(t0)
+    return None

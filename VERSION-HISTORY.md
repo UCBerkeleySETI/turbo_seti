@@ -4,6 +4,7 @@ This file is a version history of turbo_seti amendments, beginning with version 
 | Version | Contents |
 | :--: | -- |
 | 2.1.0 **future** | Add frequency channel masking capability. See issue #125. |
+| 2.0.8.2 | Fix issue #190 - Stop find_events() from crashing when a complex cadence has been specified. |
 | 2.0.8.1 | Address issue #188 - Enhance plot_event.py to handle both interactive and noninteractive matplotlib backends |
 | | Removed references to numpy from setup.py |
 | 2.0.8 | Added test/{test_fb_cases.py, fb_*} to implement checking against known valid DAT file results |

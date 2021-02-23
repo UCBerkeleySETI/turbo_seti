@@ -220,10 +220,9 @@ def follow_event(hit, on_table, get_count=True):
         #Avoiding cases where multiple hits in one obs, and none in the other.
         if n_hits_in_range:
             return 1
-        else:
-            return 0
-    else:
-        return new_on_table
+        return 0
+
+    return new_on_table
 
 
 def find_events(dat_file_list, SNR_cut=10, check_zero_drift=False, filter_threshold=3, on_off_first='ON', complex_cadence=False):
@@ -417,8 +416,7 @@ def find_events(dat_file_list, SNR_cut=10, check_zero_drift=False, filter_thresh
         print('Filter level is 1 - returning this table...')
         end_search(t0)
         return snr_adjusted_table
-    else:
-        print('Found a total of %i hits above the SNR cut in this cadence!'%len(snr_adjusted_table))
+    print('Found a total of %i hits above the SNR cut in this cadence!'%len(snr_adjusted_table))
     
     #----------------------------------------------------------------------
 
@@ -447,8 +445,7 @@ def find_events(dat_file_list, SNR_cut=10, check_zero_drift=False, filter_thresh
         print('Filter level is 2 - returning this table...')
         end_search(t0)
         return not_in_off_table
-    else:
-        print('Found a total of %i hits in only the on observations in this cadence!'%len(not_in_off_table))
+    print('Found a total of %i hits in only the on observations in this cadence!'%len(not_in_off_table))
         
     #----------------------------------------------------------------------
     
@@ -501,8 +498,7 @@ def find_events(dat_file_list, SNR_cut=10, check_zero_drift=False, filter_thresh
         print('Found a total of %i events across this cadence!'%(int(len(best_events_table)/3)))
         end_search(t0)
         return best_events_table
-    
-    else:
-        print('NOTE: Found no events across this cadence :(')
-        end_search(t0)
-        return None
+
+    print('NOTE: Found no events across this cadence :(')
+    end_search(t0)
+    return None

@@ -79,6 +79,7 @@ def find_plot_pipelines(filter_threshold=3,
 
     # With the list of DAT files, do find_event_pipeline()
     df_event = find_event_pipeline(PATH_DAT_LIST_FILE,
+                                   sortby_tstart=False,
                                    filter_threshold=filter_threshold,
                                    number_in_cadence=number_in_cadence,
                                    user_validation=False,

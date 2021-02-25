@@ -148,6 +148,7 @@ def try_mixed(arg_list, init_needed=True):
 
     # With the list of DAT files, do find_event_pipeline()
     df_event = find_event_pipeline(PATH_DAT_LIST_FILE,
+                                   sortby_tstart=False,
                                    filter_threshold=3,
                                    number_in_cadence=len(arg_list),
                                    user_validation=False,

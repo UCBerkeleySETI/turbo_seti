@@ -7,7 +7,7 @@ This file is a version history of turbo_seti amendments, beginning with version 
 |  **==future==** | **TBD** | Add frequency channel masking capability. See issue #125. |
 | 2021-02-25 | 2.0.9 | Fixed issue #195 - Stop find_event_pipeline() from crashing when there are no complex cadence matches. |
 | | | Fixed issue #194 - Implemented complex cadence testing.
-| | | Addressed issue #197 - Add file path ordering by header.tstart in {find,plot}_event_pipeline.py. |
+| | | Addressed issue #197 - Added file path ordering by header.tstart in {find,plot}_event_pipeline.py. |
 | | | **Still outstanding**: Issue #89 (min_drift parameter is broken). |
 | 2021-02-23 | 2.0.8.2 | Fixed issue #190 - Stop find_events() from crashing when a complex cadence has been specified. |
 | 2021-02-20 | 2.0.8.1 | Address issue #188 - Enhance plot_event.py to handle both interactive and noninteractive matplotlib backends. |

@@ -146,7 +146,7 @@ def generate_fil_file(outpath, flag_fascending, flag_sign_drift_rate):
     del frame
 
 
-def make_one_dat_file(arg_path_fil, max_drift=None, min_snr=None):
+def make_one_dat_file(arg_path_fil, max_drift=None, min_snr=None, remove_h5=True):
     r'''
     Make a single DAT file:
     * Instantiate the FindDoppler class object.
@@ -163,7 +163,8 @@ def make_one_dat_file(arg_path_fil, max_drift=None, min_snr=None):
                        out_dir=woutdir)
     fdop.search()
     path_h5_file = arg_path_fil.replace('.fil', '.h5')
-    remove(path_h5_file)
+    if remove_h5:
+        remove(path_h5_file)
 
 
 def get_case_results(arg_path_dat):

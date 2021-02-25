@@ -1,7 +1,8 @@
 r'''
-Package turbo_seti
-test_pipelines_2.py - Expand coverage for individual files in the
-                      turbo_seti/find_event folder, especially pipelines.
+test_pipelines.py
+
+Same as test_pipelines except that the cadence order is reveresed
+OFF-ON-... instead of ON-OFF-...
 '''
 
 from time import time
@@ -12,65 +13,15 @@ import imghdr
 import glob
 from tempfile import gettempdir
 import sys
-import numpy as np
-import pandas as pd
 
 from turbo_seti.find_event.find_event_pipeline import find_event_pipeline
 from turbo_seti.find_event.plot_event_pipeline import plot_event_pipeline
+import pipelines_util as utl
 
 TESTDIR = gettempdir() + '/pipeline_testing/'
 PATH_DAT_LIST_FILE = TESTDIR + 'dat_files_2.lst'
 PATH_H5_LIST_FILE = TESTDIR + 'h5_files_2.lst'
 PATH_CSVF = TESTDIR + 'found_event_table_2.csv'
-CSV_DELIM = ','
-
-EXP_SOURCE = ['VOYAGER-1'] * 6
-EXP_TOPHITNUM = [1, 1, 1, 2, 2, 2]
-EXP_STATUS = ['on_table_1', 'on_table_2', 'on_table_3',
-              'on_table_1', 'on_table_2', 'on_table_3']
-EXP_CHANINDX = [651879, 651964, 652058, 659989, 660074, 660166]
-SNR_LOW = np.array([21.0, 10.0, 17.0, 185.0, 78.0, 140.0])
-SNR_HIGH = np.array([24.0, 12.0, 20.0, 199.0, 85.0, 148.0])
-
-
-
-def validate_csvf(arg_csvf):
-    r'''
-    Validate the given CSV file.
-
-    Read in the CSV file into a raw Pandas DataFrame.
-    Check that specific columns have the expected values:
-      Source, TopHitNum, status, ChanIndx, and SNR.
-    Return the Pandas dataframe.
-    '''
-    df = pd.read_csv(arg_csvf, sep=CSV_DELIM)
-    #df.drop('Unnamed: 0')
-    nrows = len(df)
-    if nrows != 6:
-        raise ValueError('validate_csvf: Expected 6 rows but observed {} rows'
-                         .format(nrows))
-
-    obs_source = df['Source'].tolist()
-    obs_tophitnum = df['TopHitNum'].tolist()
-    obs_status = df['status'].tolist()
-    obs_chanindx = df['ChanIndx'].tolist()
-    obs_snr = df['SNR'].tolist()
-    if obs_source != EXP_SOURCE:
-        raise ValueError('validate_csvf: Expected source column {} but observed {}'
-                         .format(EXP_SOURCE, obs_source))
-    if obs_tophitnum != EXP_TOPHITNUM:
-        raise ValueError('validate_csvf: Expected TopHitNum column {} but observed {}'
-                         .format(EXP_TOPHITNUM, obs_tophitnum))
-    if obs_status != EXP_STATUS:
-        raise ValueError('validate_csvf: Expected status column {} but observed {}'
-                         .format(EXP_STATUS, obs_status))
-    if obs_chanindx != EXP_CHANINDX:
-        raise ValueError('validate_csvf: Expected channel index column {} but observed {}'
-                         .format(EXP_CHANINDX, obs_chanindx))
-    if np.any(obs_snr > SNR_HIGH) or np.any(obs_snr < SNR_LOW):
-        raise ValueError('validate_csvf: Expected SNR column in range of {}:{} but observed {}'
-                         .format(SNR_LOW, SNR_HIGH, obs_snr))
-    return df['SNR'].values
 
 
 def oops(arg_text):
@@ -90,13 +41,20 @@ def find_plot_pipelines(filter_threshold=3,
 
     main_time_start = time()
 
-    print('find_plot_pipelines: Filter threshold = ', filter_threshold)
-    h5_file_list = sorted(glob.glob(TESTDIR + '*.h5'))
-    dat_file_list = sorted(glob.glob(TESTDIR + '*.dat'))
+    print('find_plot_pipelines_2: Filter threshold = ', filter_threshold)
+    h5_file_list = sorted(glob.glob(TESTDIR + 'single*.h5'))
+    dat_file_list = sorted(glob.glob(TESTDIR + 'single*.dat'))
     number_in_cadence = len(h5_file_list)
     if number_in_cadence != 6:
-        raise ValueError('find_plot_pipelines: Expected to find 6 h5 files but observed {}'
+        raise ValueError('find_plot_pipelines_2: Expected to find 6 h5 files but observed {}'
                          .format(number_in_cadence))
+    number_in_cadence = len(dat_file_list)
+    if number_in_cadence != 6:
+        raise ValueError('find_plot_pipelines_2: Expected to find 6 dat files but observed {}'
+                         .format(number_in_cadence))
+    
+    # Re-order the H5 and DAT files into OFF-ON-...
+    # In the 2 lists, switch 1 and 2, 3 and 4, 5 and 6
     for ix in [0, 2, 4]:
         temp = h5_file_list[ix]
         h5_file_list[ix] = h5_file_list[ix + 1]
@@ -111,7 +69,7 @@ def find_plot_pipelines(filter_threshold=3,
         fh_dat.write(dat_file_list[ix] + '\n')
     fh_h5.close()
     fh_dat.close()
-    print('find_plot_pipelines: H5/dat cadence length = ', number_in_cadence)
+    print('find_plot_pipelines_2: H5/dat cadence length = ', number_in_cadence)
 
     # If CSV exists from a previous execution, remove it.
     try:
@@ -131,18 +89,11 @@ def find_plot_pipelines(filter_threshold=3,
 
     # CSV file created?
     if not Path(PATH_CSVF).exists():
-        raise ValueError('find_plot_pipelines: No CSV of events created')
+        raise ValueError('find_plot_pipelines_2: No CSV of events created')
 
     # An event CSV was created.
-    # Validate CSV file.
-    snr_validate = validate_csvf(PATH_CSVF)
-    snr_event = df_event['SNR'].values
-    print('\n*** snr_event:\n', snr_event)
-    print('\n*** snr_validate:\n', snr_validate, '\n')
-    if not np.all(snr_validate == snr_event):
-        print('\n*** snr_event:\n', snr_event)
-        print('\n*** snr_validate:\n', snr_validate, '\n')
-        raise ValueError('find_plot_pipelines: df_validate != df_event')
+    # Validate the hit table file.
+    utl.validate_hittbl(df_event, PATH_CSVF, 'test_pipe_lines_2')
 
     # Do the plots for all of the HDF5/DAT file pairs.
     png_file_list = sorted(glob.glob(TESTDIR + '*.png'))
@@ -159,21 +110,21 @@ def find_plot_pipelines(filter_threshold=3,
     for cur_file in outdir_list:
         if cur_file.split('.')[-1] == 'png':
             if imghdr.what(TESTDIR + cur_file) != 'png':
-                raise ValueError('find_plot_pipelines: File {} is not a PNG file'
+                raise ValueError('find_plot_pipelines_2: File {} is not a PNG file'
                                  .format(cur_file))
             npngs += 1
     if npngs != 6:
-        raise ValueError('find_plot_pipelines: Expected to find 6 PNG files but observed {}'
+        raise ValueError('find_plot_pipelines_2: Expected to find 6 PNG files but observed {}'
                          .format(npngs))
 
     # Stop the clock - we're done.
     main_time_stop = time()
 
-    print('find_plot_pipelines: End, et = {:.1f} seconds'
+    print('find_plot_pipelines_2: End, et = {:.1f} seconds'
           .format(main_time_stop - main_time_start))
 
 
-def test_pipelines(cleanup=True):
+def test_pipelines_2(cleanup=False):
     r'''
     This is the pytest entry point.
     Test filter threshold 3 in find_plot_pipelines().
@@ -194,4 +145,4 @@ def test_pipelines(cleanup=True):
 
 
 if __name__ == '__main__':
-    test_pipelines(cleanup=False)
+    test_pipelines_2(cleanup=False)

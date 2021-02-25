@@ -1,39 +1,34 @@
 r'''
-Package turbo_seti
-test_pipelines.py - Expand coverage for individual files in the
-                    turbo_seti/find_event folder, especially pipelines.
+test_pipelines.py
+
+Using the 0000.h5 Voyager 2020 set of HDF5 files
+from http://blpd14.ssl.berkeley.edu/voyager_2020/single_coarse_channel/
+test the following:
+* FindDoppler seaarch
+* find_event_pipeline
+* plot_event_pipeline
 '''
 
 from time import time
 from shutil import rmtree
 from pathlib import Path
-from os import mkdir, remove, listdir
+from os import mkdir, listdir
 from tempfile import gettempdir
 import sys
 from urllib.error import HTTPError
 from argparse import ArgumentParser
 import imghdr
 import wget
-import pandas as pd
-import numpy as np
 
 from turbo_seti.find_doppler.find_doppler import FindDoppler
 from turbo_seti.find_event.find_event_pipeline import find_event_pipeline
 from turbo_seti.find_event.plot_event_pipeline import plot_event_pipeline
+import pipelines_util as utl
 
 TESTDIR = gettempdir() + '/pipeline_testing/'
 PATH_DAT_LIST_FILE = TESTDIR + 'dat_files.lst'
 PATH_H5_LIST_FILE = TESTDIR + 'h5_files.lst'
 PATH_CSVF = TESTDIR + 'found_event_table.csv'
-CSV_DELIM = ','
-EXP_SOURCE = ['VOYAGER-1'] * 6
-EXP_TOPHITNUM = [1, 1, 1, 2, 2, 2]
-EXP_STATUS = ['on_table_1', 'on_table_2', 'on_table_3',
-              'on_table_1', 'on_table_2', 'on_table_3']
-EXP_CHANINDX = [651879, 651964, 652058, 659989, 660074, 660166]
-SNR_LOW = np.array([21.0, 10.0, 17.0, 185.0, 78.0, 140.0])
-SNR_HIGH = np.array([24.0, 12.0, 20.0, 199.0, 85.0, 148.0])
-
 
 URL_DIR = 'http://blpd14.ssl.berkeley.edu/voyager_2020/single_coarse_channel/'
 H5_FILE_LIST = ['single_coarse_guppi_59046_80036_DIAG_VOYAGER-1_0011.rawspec.0000.h5',
@@ -58,7 +53,7 @@ def initialize():
     '''
     rmtree(TESTDIR, ignore_errors=True)
     mkdir(TESTDIR)
-    print('test_pipelines: Initialized')
+    print('test_pipelines_1: Initialized')
 
 
 def wgetter(arg_h5_name):
@@ -68,14 +63,14 @@ def wgetter(arg_h5_name):
     '''
     url_h5 = URL_DIR + arg_h5_name
     path_h5 = TESTDIR + arg_h5_name
-    print('test_pipelines: Begin wget {} -> {} .....'.format(url_h5, path_h5))
+    print('test_pipelines_1: Begin wget {} -> {} .....'.format(url_h5, path_h5))
     time_start = time()
     try:
         wget.download(url_h5, path_h5, bar=False)
     except HTTPError as ex:
-        oops('test_pipelines: wget {}, failed: {}'.format(url_h5, repr(ex)))
+        oops('test_pipelines_1: wget {}, failed: {}'.format(url_h5, repr(ex)))
     time_stop = time()
-    print('test_pipelines: End wget ({}), et = {:.1f} seconds'
+    print('test_pipelines_1: End wget ({}), et = {:.1f} seconds'
           .format(arg_h5_name, time_stop - time_start))
 
 
@@ -128,45 +123,6 @@ def make_all_dat_files():
             file_handle.write('{}\n'.format(TESTDIR + filename_dat))
 
 
-def validate_csvf(arg_csvf):
-    r'''
-    Validate the given CSV file.
-
-    Read in the CSV file into a raw Pandas DataFrame.
-    Check that specific columns have the expected values:
-      Source, TopHitNum, status, ChanIndx, and SNR.
-    Return the Pandas dataframe.
-    '''
-    df = pd.read_csv(arg_csvf, sep=CSV_DELIM)
-    #df.drop('Unnamed: 0')
-    nrows = len(df)
-    if nrows != 6:
-        raise ValueError('validate_csvf: Expected 6 rows but observed {} rows'
-                         .format(nrows))
-
-    obs_source = df['Source'].tolist()
-    obs_tophitnum = df['TopHitNum'].tolist()
-    obs_status = df['status'].tolist()
-    obs_chanindx = df['ChanIndx'].tolist()
-    obs_snr = df['SNR'].tolist()
-    if obs_source != EXP_SOURCE:
-        raise ValueError('validate_csvf: Expected source column {} but observed {}'
-                         .format(EXP_SOURCE, obs_source))
-    if obs_tophitnum != EXP_TOPHITNUM:
-        raise ValueError('validate_csvf: Expected TopHitNum column {} but observed {}'
-                         .format(EXP_TOPHITNUM, obs_tophitnum))
-    if obs_status != EXP_STATUS:
-        raise ValueError('validate_csvf: Expected status column {} but observed {}'
-                         .format(EXP_STATUS, obs_status))
-    if obs_chanindx != EXP_CHANINDX:
-        raise ValueError('validate_csvf: Expected channel index column {} but observed {}'
-                         .format(EXP_CHANINDX, obs_chanindx))
-    if np.any(obs_snr > SNR_HIGH) or np.any(obs_snr < SNR_LOW):
-        raise ValueError('validate_csvf: Expected SNR column in range of {}:{} but observed {}'
-                         .format(SNR_LOW, SNR_HIGH, obs_snr))
-    return df['SNR'].values
-
-
 def find_plot_pipelines(need_init=True, filter_threshold=3):
     r'''
     Exercise find_event_pipeline() and plot_event_pipeline()
@@ -190,12 +146,6 @@ def find_plot_pipelines(need_init=True, filter_threshold=3):
     print('find_plot_pipelines: find_event_pipeline({}) ...'
           .format(PATH_DAT_LIST_FILE))
 
-    # If CSV exists from a previous execution, remove it.
-    try:
-        remove(PATH_CSVF)
-    except:
-        pass
-
     # With the list of DAT files, do find_event_pipeline()
     df_event = find_event_pipeline(PATH_DAT_LIST_FILE,
                                    filter_threshold=filter_threshold,
@@ -209,15 +159,8 @@ def find_plot_pipelines(need_init=True, filter_threshold=3):
         raise ValueError('find_plot_pipelines: No CSV of events created')
 
     # An event CSV was created.
-    # Validate CSV file.
-    snr_validate = validate_csvf(PATH_CSVF)
-    snr_event = df_event['SNR'].values
-    print('\n*** snr_event:\n', snr_event)
-    print('\n*** snr_validate:\n', snr_validate, '\n')
-    if not np.all(snr_validate == snr_event):
-        print('\n*** snr_event:\n', snr_event)
-        print('\n*** snr_validate:\n', snr_validate, '\n')
-        raise ValueError('find_plot_pipelines: df_validate != df_event')
+    # Validate the hit table file.
+    utl.validate_hittbl(df_event, PATH_CSVF, 'test_pipe_lines')
 
     # Make a list of the HDF5 files.
     print('find_plot_pipelines: making a list of HDF5 files in ({}) ...'
@@ -262,14 +205,14 @@ def test_pipelines(need_init=True, cleanup=False):
     * Initialization is done only once.
     * Cleanup is not performed at end.
     '''
-    print('\n===== test_pipelines: BEGIN =====')
+    print('\n===== test_pipelines_1: BEGIN =====')
 
     find_plot_pipelines(need_init=need_init, filter_threshold=3)
 
     if cleanup:
         rmtree(TESTDIR, ignore_errors=True)
 
-    print('\n===== test_pipelines: END =====')
+    print('\n===== test_pipelines_1: END =====')
 
 
 def main(args=None):

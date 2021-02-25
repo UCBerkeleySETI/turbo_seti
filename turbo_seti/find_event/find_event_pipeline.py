@@ -145,13 +145,20 @@ def find_event_pipeline(dat_file_list_str, SNR_cut=10, check_zero_drift=False, f
         
     if on_source_complex_cadence:
         complex_cadence = []
+        count_cadence = 0
         for i in range(0, len(source_name_list)):
             source = source_name_list[i]
             if source == on_source_complex_cadence:
                 complex_cadence.append(1)
+                count_cadence += 1
             else:
                 complex_cadence.append(0)
-        print("The derived cadence is: " + str(complex_cadence))
+        if count_cadence > 0:
+            print("The derived complex cadence is: " + str(complex_cadence))
+        else:
+            print("Sorry, no potential candidates with your given on_source_complex_cadence={}  :("
+                  .format(on_source_complex_cadence))
+            return None
     
     num_of_sets = int(n_files / number_in_cadence)
     print("There are " + str(len(dat_file_list)) + " total files in the filelist " + dat_file_list_str)

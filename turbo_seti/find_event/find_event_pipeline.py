@@ -11,6 +11,7 @@ It then finds events within this group of files.
 
 #required packages and programs
 import os
+from operator import attrgetter
 try:
     import find_event
 except:
@@ -20,7 +21,17 @@ import pandas as pd
 from blimpy import Waterfall
 
 
-def get_source_name(dat_path):
+class PathRecord:
+    r''' Definition of a DAT record '''
+    def __init__(self, path_dat, tstart, source_name):
+        self.path_dat = path_dat
+        self.tstart = tstart
+        self.source_name = source_name
+    def __repr__(self):
+        return repr((self.path_dat, self.tstart, self.source_name))
+    
+
+def get_file_header(dat_path):
     r'''
     Extract and return the target's source name from the DAT file path.
     
@@ -31,24 +42,24 @@ def get_source_name(dat_path):
 
     Returns
     -------
-    source_name : str
-        Field from the header of the corresponding HDF5 file.
+    header : Waterfall header object
 
     Notes
     -----
-    The HDF5 file is resident in the same directory of the DAT file.
+    The HDF5 file is ASSUMED(!!) to be resident in the same directory of the DAT file.
     The file name of the HDF5 file is identical to that of the DAT file 
     except for the file extension (.h5 instead of .dat).
 
     '''
     filepath_h5 = dat_path.replace('.dat', '.h5')
     wf = Waterfall(filepath_h5)
-    return wf.container.header["source_name"]
+    return wf.container.header
 
 
 def find_event_pipeline(dat_file_list_str, SNR_cut=10, check_zero_drift=False, filter_threshold=3, 
                         on_off_first='ON', number_in_cadence=6, on_source_complex_cadence=False,
-                        saving=True, csv_name=None, user_validation=False): 
+                        saving=True, csv_name=None, user_validation=False,
+                        sortby_tstart=True): 
     """
     Find event pipeline.
 
@@ -110,6 +121,8 @@ def find_event_pipeline(dat_file_list_str, SNR_cut=10, check_zero_drift=False, f
         before beginning to run the program. Recommended when
         first learning the program, not recommended for 
         automated scripts.
+    sortby_tstart : bool
+        If True, the input file list is sorted by header.tstart.
 
     Examples
     --------
@@ -130,19 +143,38 @@ def find_event_pipeline(dat_file_list_str, SNR_cut=10, check_zero_drift=False, f
         print("Assuming the first observation is an " + on_off_first)
         complex_cadence = on_source_complex_cadence
         
-    #Opening list of files
+    # Get a list of the DAT files.
     dat_file_list = open(dat_file_list_str).readlines()
     dat_file_list = [files.replace('\n','') for files in dat_file_list]
     dat_file_list = [files.replace(',','') for files in dat_file_list]
     n_files = len(dat_file_list)
     
-    #Getting source names
+    # Get source names and build path_record list.
     source_name_list = []
+    path_record = []
     for dat in dat_file_list:
-        source_name = get_source_name(dat)
-        print("find_event_pipeline: source_name =", source_name)
+        header = get_file_header(dat)
+        source_name = header["source_name"]
+        tstart = header["tstart"]
+        path_record.append(PathRecord(dat, tstart, source_name))
         source_name_list.append(source_name)
-        
+
+    # If sorting by header.tstart, then rewrite the dat_file_list in header.tstart order.
+    if sortby_tstart:
+        path_record = sorted(path_record, key=attrgetter('tstart'))
+        dat_file_list = []
+        for obj in path_record:
+            dat_file_list.append(obj.path_dat)
+            print("find_event_pipeline: file = {}, tstart = {}, source_name = {}"
+                  .format(os.path.basename(obj.path_dat), obj.tstart, obj.source_name))
+    else:
+        for obj in path_record:
+            print("find_event_pipeline: file = {}, tstart = {}, source_name = {}"
+                  .format(os.path.basename(obj.path_dat), obj.tstart, obj.source_name))      
+
+    # If this is a complex cadence, 
+    # * construct a complex_cadence list of 1s and 0s.
+    # * compute count_cadence = number of matches on on_source_complex_cadence.
     if on_source_complex_cadence:
         complex_cadence = []
         count_cadence = 0

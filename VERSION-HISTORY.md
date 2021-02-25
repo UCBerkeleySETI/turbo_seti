@@ -4,14 +4,15 @@ This file is a version history of turbo_seti amendments, beginning with version 
 
 |    Date    | Version | Contents |
 | :--: | :--: | :-- |
-|  **==future==** | 2.1.0 | Add frequency channel masking capability. See issue #125. |
+|  **==future==** | **TBD** | Add frequency channel masking capability. See issue #125. |
 | 2021-02-25 | 2.0.9 | Fixed issue #195 - Stop find_event_pipeline() from crashing when there are no complex cadence matches. |
 | | | Fixed issue #194 - Implemented complex cadence testing.
+| | | **Still outstanding**: Issue #89 (min_drift parameter is broken). |
 | 2021-02-23 | 2.0.8.2 | Fixed issue #190 - Stop find_events() from crashing when a complex cadence has been specified. |
 | 2021-02-20 | 2.0.8.1 | Address issue #188 - Enhance plot_event.py to handle both interactive and noninteractive matplotlib backends. |
 | | | Removed references to numpy from setup.py. |
 | 2021-01-30 | 2.0.8 | Added test/{test_fb_cases.py, fb_*} to implement checking against known valid DAT file results. |
-| | | Added a --min_drift parameter to turboSETI (issue #178).  Alas, issue #89 has been re-opened. |
+| | | Added a --min_drift parameter to turboSETI (issue #178).  **Alas, issue #89 has been re-opened.** |
 | | | Fixed the DAT file formatting and top hit numbering when multipatitioning with dask (issue #179). |
 | 2021-01-20 | 2.0.7 | Fixed issues #135 & #150 (confirmed) by making code-structure in find_doppler.py search_coarse_channel() to be more like version 1.3.0. |
 | 2021-01-19 | 2.0.6.6 | Fixed issue #169 - Fixed find_event_pipeline IndexError crash. |

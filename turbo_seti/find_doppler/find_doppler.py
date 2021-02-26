@@ -399,9 +399,15 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
                          .format(complete_drift_range[bool_selected]))
             for k, drift_rate in enumerate(complete_drift_range[bool_selected]):
 
+                # Ignore drift rates that are out of bounds.
+                if abs(drift_rate) < min_drift:
+                    continue
+                if abs(drift_rate) > max_drift:
+                    continue
+
                 # DCP 2020.04 -- WAR to drift rate in flipped files
                 if data_obj.header['DELTAF'] < 0:
-                    drift_rate *= -1
+                    drift_rate = -drift_rate
 
                 indx = ibrev[drift_indices[::-1][bool_selected][k]] * tdwidth
 
@@ -445,11 +451,17 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
                          .format(complete_drift_range[bool_selected]))
             for k, drift_rate in enumerate(complete_drift_range[bool_selected]):
 
+                # Ignore drift rates that are out of bounds.
+                if abs(drift_rate) < min_drift:
+                    continue
+                if abs(drift_rate) > max_drift:
+                    continue
+
                 indx = ibrev[drift_indices[k]] * tdwidth
 
                 # DCP 2020.04 -- WAR to drift rate in flipped files
                 if data_obj.header['DELTAF'] < 0:
-                    drift_rate *= -1
+                    drift_rate = -drift_rate
 
                 # SEARCH POSITIVE DRIFT RATES
                 spectrum = tree_findoppler[indx: indx + tdwidth]

@@ -38,6 +38,7 @@ def flip_data(filename):
         fchN      = fch1_orig + (foff_orig * nchans)
         h['data'].attrs['foff'] = foff_orig * -1
         h['data'].attrs['fch1'] = fchN
+        h['data'].attrs['source_name'] = 'Voyager1Flipped'
 
         for ii in range(h['data'].shape[0]):
             print('\tFlipping %i/%i' % (ii+1, h['data'].shape[0]))
@@ -45,7 +46,7 @@ def flip_data(filename):
     print("Done.")
 
 if __name__ == "__main__":
-    download_test_data()
+    #download_test_data()
     voyager_fp = os.path.join(HERE, 'Voyager1.single_coarse.fine_res.h5')
     flip_data(voyager_fp)
     create_fil_from_voyager_h5(voyager_fp)

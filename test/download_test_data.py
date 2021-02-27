@@ -46,7 +46,7 @@ def flip_data(filename):
     print("Done.")
 
 if __name__ == "__main__":
-    #download_test_data()
+    download_test_data()
     voyager_fp = os.path.join(HERE, 'Voyager1.single_coarse.fine_res.h5')
     flip_data(voyager_fp)
     create_fil_from_voyager_h5(voyager_fp)

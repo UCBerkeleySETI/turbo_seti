@@ -5,6 +5,8 @@ This file is a version history of turbo_seti amendments, beginning with version 
 |    Date    | Version | Contents |
 | :--: | :--: | :-- |
 |  **==future==** | **TBD** | Add frequency channel masking capability. See issue #125. |
+| 2021-02-27 | 2.0.11 | Fixed issue #89 (min/max drift rate boundaries). |
+| | | Fixed issue #200 - testing cleanup and speedup. |
 | 2021-02-25 | 2.0.10 | Addressed issue #197 - Added file path ordering by header.tstart in {find,plot}_event_pipeline.py. |
 | 2021-02-25 | 2.0.9 | Fixed issue #195 - Stop find_event_pipeline() from crashing when there are no complex cadence matches. |
 | | | Fixed issue #194 - Implemented complex cadence testing.

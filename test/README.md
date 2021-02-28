@@ -37,6 +37,7 @@ The primary method of launching regression testing is through the use of the `py
 | `README.md` | This file. |
 | `run_benchmark.sh` | A bash script used for measuring performance in the Seti BL data centre. |
 | `run_tests.sh` | A bash script used in Github Actions. |
+| `test_drift_rates.py` | Test source for generating multiple min_drift and max_drift tests, employing the `setigen` tool. |
 | `test_fb_cases.py` | Test source for generating multiple Filterbank tests, employing the `setigen` tool. |
 | `test_find_event.py` | Test source for generating multiple tests of the `find_event.py` module. |
 | `test_pipelines_1.py` | Test source for exercising/validation of `find_event_pipeline.py` and `plot_event_pipeline.py`. |

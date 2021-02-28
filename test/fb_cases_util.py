@@ -146,7 +146,7 @@ def generate_fil_file(outpath, flag_fascending, flag_sign_drift_rate):
     del frame
 
 
-def make_one_dat_file(arg_path_fil, min_drift=0.0 max_drift=4.0, min_snr=25.0, remove_h5=True):
+def make_one_dat_file(arg_path_fil, min_drift=0.0, max_drift=4.0, min_snr=25.0, remove_h5=True):
     r'''
     Make a single DAT file:
     * Instantiate the FindDoppler class object.

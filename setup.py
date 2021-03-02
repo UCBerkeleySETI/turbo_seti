@@ -11,6 +11,9 @@ from setuptools import setup, find_packages
 
 __version__ = "2.0.11"
 
+with open("turbo_seti/find_doppler/turbo_seti_version.py", "w") as fh:
+    fh.write("TURBO_SETI_VERSION = '{}'\n".format(__version__))
+
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
@@ -38,8 +41,8 @@ setup(
     install_requires=install_requires,
     tests_require=test_requirements,
     entry_points=entry_points,
-    author='Danny Price, Emilio Enriquez, Yuhong Chen, Mark Siebert, and BL contributors',
-    author_email='dancpr@berkeley.edu',
+    author="Emilio Enriquez",
+    author_email="e.enriquez@berkeley.edu",
     description="Analysis tool for the search of narrow band drifting signals in filterbank data",
     long_description=long_description,
     long_description_content_type='text/markdown',

@@ -29,13 +29,16 @@ It was originally based on `dedoppler` [dedoppler](http://github.com/cs150bf/gbt
 
 ### Dependencies
 
-- Python 3.6+
+- Python 3.7+
 - astropy
-- numba
 - numpy
+- blimpy (Breakthrough Listen I/O Methods for Python :  https://github.com/UCBerkeleySETI/blimpy)
+- pandas
+- toolz
+- fsspec
 - dask
 - dask[bag]
-- blimpy (Breakthrough Listen I/O Methods for Python :  https://github.com/UCBerkeleySETI/blimpy)
+- numba
 - cupy (NVIDIA GPU mode only)
 
 &nbsp;

@@ -98,7 +98,7 @@ def plot_event_pipeline(event_csv_string, fils_list_string, user_validation=Fals
     source_name_list = []
     path_record = []
     for fil in fil_file_list:
-        wf = Waterfall(fil)
+        wf = Waterfall(fil, load_data=False)
         source_name = wf.container.header["source_name"]
         source_name_list.append(source_name)
         tstart = wf.container.header["tstart"]

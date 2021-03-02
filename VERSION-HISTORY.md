@@ -7,6 +7,8 @@ This file is a version history of turbo_seti amendments, beginning with version 
 |  **==future==** | **TBD** | Add frequency channel masking capability. See issue #125. |
 | 2021-03-02 | 2.0.11 | Fixed issue #89 - min_drift & max_drift in find_doppler.py. |
 | | | Fixed issue #162 - Announce turbo_seti and blimpy versions in use at start of Doppler search (find_doppler.py). |
+| | | Fixed issue #200 - Cleanup/speedup of test_turbo_seti.py. |
+| | | Fixed issue #201 - Created test_drift_rates for testing find_doppler.py min and max drift rates. |
 | | | Fixed issue #202 - Amend plot_event.py to compute the blimpy Waterfall max_load parameter value for data arrays exceeding 1 GB in size. |
 | | | Fixed issue #203 - Show turbo_seti version as part of turboSETI --help. Add a -v/--version parameter. |
 | | | Fixed issue #204 - Stop the pipelines from loading data when they are only interested in Waterfall header fields. |

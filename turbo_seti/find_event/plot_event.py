@@ -57,14 +57,14 @@ def overlay_drift(f_event, f_start, f_stop, drift_rate, t_duration, offset=0):
              ls='dashed', lw=2)
 
 
-def plot_waterfall(fil, source_name, f_start=None, f_stop=None, **kwargs):
+def plot_waterfall(wf, source_name, f_start=None, f_stop=None, **kwargs):
     r"""
     Plot waterfall of data in a .fil or .h5 file.
 
     Parameters
     ----------
-    fil : str
-        Filterbank file containing the dynamic spectrum data.
+    wf : blimpy.Waterfall object
+        Waterfall object of an H5 or Filterbank file containing the dynamic spectrum data.
     source_name : str
         Name of the target.
     f_start : float
@@ -85,7 +85,7 @@ def plot_waterfall(fil, source_name, f_start=None, f_stop=None, **kwargs):
     matplotlib.rc('font', **font)
 
     # Load in the data from fil
-    plot_f, plot_data = fil.grab_data(f_start=f_start, f_stop=f_stop)
+    plot_f, plot_data = wf.grab_data(f_start=f_start, f_stop=f_stop)
 
     # Make sure waterfall plot is under 4k*4k
     dec_fac_x, dec_fac_y = 1, 1
@@ -100,14 +100,14 @@ def plot_waterfall(fil, source_name, f_start=None, f_stop=None, **kwargs):
     except Exception as ex:
         print('\n*** Oops, grab_data returned plot_data.shape={}, plot_f.shape={}'
               .format(plot_data.shape, plot_f.shape))
-        print('Waterfall for {}:'.format(fil.filename))
-        fil.info()
+        print('Waterfall info for {}:'.format(wf.filename))
+        wf.info()
         raise ValueError('*** Something is wrong with the grab_data output!') from ex
 
     # Rolled back PR #82
 
     # determine extent of the plotting panel for imshow
-    extent=(plot_f[0], plot_f[-1], (fil.timestamps[-1]-fil.timestamps[0])*24.*60.*60, 0.0)
+    extent=(plot_f[0], plot_f[-1], (wf.timestamps[-1]-wf.timestamps[0])*24.*60.*60, 0.0)
 
     # plot and scale intensity (log vs. linear)
     kwargs['cmap'] = kwargs.get('cmap', 'viridis')
@@ -139,6 +139,7 @@ def plot_waterfall(fil, source_name, f_start=None, f_stop=None, **kwargs):
     # return plot
     
     del plot_f, plot_data
+
     return this_plot
 
 
@@ -206,9 +207,9 @@ def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_r
 
     # read in data for the first panel
     max_load = calc_max_load(fil_file_list[0])
-    fil1 = bl.Waterfall(fil_file_list[0], f_start=f_start, f_stop=f_stop, max_load=max_load)
-    t0 = fil1.header['tstart']
-    dummy, plot_data1 = fil1.grab_data()
+    wf1 = bl.Waterfall(fil_file_list[0], f_start=f_start, f_stop=f_stop, max_load=max_load)
+    t0 = wf1.header['tstart']
+    plot_f1, plot_data1 = wf1.grab_data()
 
     # rebin data to plot correctly with fewer points
     dec_fac_x, dec_fac_y = 1, 1
@@ -223,7 +224,7 @@ def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_r
     mid_f = np.abs(f_start+f_stop)/2.
 
     subplots = []
-    del fil1, dummy, plot_data1
+    del wf1, plot_f1, plot_data1
     gc.collect()
 
     # Fill in each subplot for the full plot
@@ -235,18 +236,18 @@ def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_r
 
         # read in data
         max_load = calc_max_load(filename)
-        fil = bl.Waterfall(filename, f_start=f_start, f_stop=f_stop, max_load=max_load)
+        wf = bl.Waterfall(filename, f_start=f_start, f_stop=f_stop, max_load=max_load)
         # make plot with plot_waterfall
         source_name = source_name_list[ii]
-        this_plot = plot_waterfall(fil,
+        this_plot = plot_waterfall(wf,
                                    source_name,
                                    f_start=f_start,
                                    f_stop=f_stop,
                                    **kwargs)
 
         # calculate parameters for estimated drift line
-        t_elapsed = Time(fil.header['tstart'], format='mjd').unix - Time(t0, format='mjd').unix
-        t_duration = (fil.n_ints_in_file - 1) * fil.header['tsamp']
+        t_elapsed = Time(wf.header['tstart'], format='mjd').unix - Time(t0, format='mjd').unix
+        t_duration = (wf.n_ints_in_file - 1) * wf.header['tsamp']
         f_event = f_mid + drift_rate / 1e6 * t_elapsed
 
         # plot estimated drift line
@@ -261,7 +262,7 @@ def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_r
         if ii < len(fil_file_list)-1:
             plt.xticks(np.linspace(f_start, f_stop, num=4), ['','','',''])
             
-        del fil
+        del wf
         gc.collect()
 
 

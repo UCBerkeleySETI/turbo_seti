@@ -91,11 +91,18 @@ def plot_waterfall(fil, source_name, f_start=None, f_stop=None, **kwargs):
     dec_fac_x, dec_fac_y = 1, 1
 
     # rebinning data to plot correctly with fewer points
-    if plot_data.shape[0] > MAX_IMSHOW_POINTS[0]:
-        dec_fac_x = plot_data.shape[0] / MAX_IMSHOW_POINTS[0]
-    if plot_data.shape[1] > MAX_IMSHOW_POINTS[1]:
-        dec_fac_y =  int(np.ceil(plot_data.shape[1] /  MAX_IMSHOW_POINTS[1]))
-    plot_data = rebin(plot_data, dec_fac_x, dec_fac_y)
+    try:
+        if plot_data.shape[0] > MAX_IMSHOW_POINTS[0]:
+            dec_fac_x = plot_data.shape[0] / MAX_IMSHOW_POINTS[0]
+        if plot_data.shape[1] > MAX_IMSHOW_POINTS[1]:
+            dec_fac_y =  int(np.ceil(plot_data.shape[1] /  MAX_IMSHOW_POINTS[1]))
+        plot_data = rebin(plot_data, dec_fac_x, dec_fac_y)
+    except Exception as ex:
+        print('\n*** Oops, grab_data returned plot_data.shape={}, plot_f.shape={}'
+              .format(plot_data.shape, plot_f.shape))
+        print('Waterfall for {}:'.format(fil.filename))
+        fil.info()
+        raise ValueError('*** Something is wrong with the grab_data output!') from ex
 
     # Rolled back PR #82
 
@@ -140,7 +147,7 @@ def calc_max_load(arg_path):
     
     Algorithm:
         * A = file size.
-        * B = data array size (blimpy currently makes a copy of data array)
+        * B = data array size (blimpy currently makes a copy of the data array)
         * Return ceil(A + B in GB)
     '''
     wf = bl.Waterfall(arg_path, load_data=False)
@@ -228,7 +235,7 @@ def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_r
 
         # read in data
         max_load = calc_max_load(filename)
-        fil = bl.Waterfall(filename, f_start=f_start, f_stop=f_stop, max_load=10)
+        fil = bl.Waterfall(filename, f_start=f_start, f_stop=f_stop, max_load=max_load)
         # make plot with plot_waterfall
         source_name = source_name_list[ii]
         this_plot = plot_waterfall(fil,

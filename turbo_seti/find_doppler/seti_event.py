@@ -3,14 +3,17 @@
 Main program module for executable turboSETI
 '''
 
+import sys
 import logging
 import time
 import cProfile
 import pstats
 from argparse import ArgumentParser
 
+from blimpy import __version__ as BLIMPY_VERSION
 from .find_doppler import FindDoppler
 from .kernels import Kernels
+from .turbo_seti_version import TURBO_SETI_VERSION
 
 
 def main(args=None):
@@ -23,9 +26,12 @@ def main(args=None):
 
     """
     # Create an option parser to get command-line input/arguments
-    p = ArgumentParser(description='turboSETI doppler drift narrowband search utility.')
+    p = ArgumentParser(description='turboSETI doppler drift narrowband search utility version {}.'
+                                    .format(TURBO_SETI_VERSION))
 
-    p.add_argument('filename', type=str, help='Name of filename to open (h5 or fil)')
+    p.add_argument('filename', type=str, default='', nargs="?", help='Name of filename to open (h5 or fil)')
+    p.add_argument('-v', '--version', dest='show_version', default=False, action='store_true',
+                   help='show the turbo_seti and blimpy versions and exit')
     p.add_argument('-M', '--max_drift', dest='max_drift', type=float, default=10.0,
                    help='Set the maximum drift rate threshold. Unit: Hz/sec. Default: 10.0')
     p.add_argument('-m', '--min_drift', dest='min_drift', type=float, default=0.0,
@@ -57,6 +63,11 @@ def main(args=None):
         args = p.parse_args()
     else:
         args = p.parse_args(args)
+
+    if args.show_version:
+        print('turbo_seti: {}'.format(TURBO_SETI_VERSION))
+        print('blimpy: {}'.format(BLIMPY_VERSION))
+        sys.exit(0)
 
     if args.flag_profile == "y":
         cProfile.runctx('exec(args)', {'args': args, 'exec': exec}, {}, 'exec')

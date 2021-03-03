@@ -4,10 +4,11 @@ import os
 import time
 import logging
 
-# Parallel python support
 import dask.bag as db
 from dask.diagnostics import ProgressBar
 
+from blimpy import __version__ as BLIMPY_VERSION
+from .turbo_seti_version import TURBO_SETI_VERSION
 from .kernels import Kernels, Scheduler
 from .data_handler import DATAHandle, DATAH5
 from .file_writers import FileWriter, LogWriter
@@ -18,6 +19,8 @@ from .merge_dats_logs import merge_dats_logs
 #import pdb;# pdb.set_trace()
 logger_name = 'find_doppler'
 logger = logging.getLogger(logger_name)
+version_announcements = '\nturbo_seti version {}\nblimpy version {}\n' \
+                        .format(TURBO_SETI_VERSION, BLIMPY_VERSION)
 
 class max_vals:
     r"""
@@ -72,6 +75,9 @@ class FindDoppler:
     def __init__(self, datafile, max_drift=4.0, min_drift=0.0, snr=25.0, out_dir='./', coarse_chans=None,
                  obs_info=None, flagging=False, n_coarse_chan=None, kernels=None, gpu_backend=False,
                  precision=2, append_output=False, log_level_int=logging.INFO):
+
+        print(version_announcements)
+
         if not kernels:
             self.kernels = Kernels(gpu_backend, precision)
         else:
@@ -182,6 +188,7 @@ class FindDoppler:
         logwriter = LogWriter(path_log)
         filewriter = FileWriter(path_dat, header_in)
 
+        logwriter.info(version_announcements)
         msg = "Starting ET search using {}".format(filename_in)
         logwriter.info(msg)
         print(msg)
@@ -399,9 +406,15 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
                          .format(complete_drift_range[bool_selected]))
             for k, drift_rate in enumerate(complete_drift_range[bool_selected]):
 
+                # Ignore drift rates that are out of bounds.
+                if abs(drift_rate) < min_drift:
+                    continue
+                if abs(drift_rate) > max_drift:
+                    continue
+
                 # DCP 2020.04 -- WAR to drift rate in flipped files
                 if data_obj.header['DELTAF'] < 0:
-                    drift_rate *= -1
+                    drift_rate = -drift_rate
 
                 indx = ibrev[drift_indices[::-1][bool_selected][k]] * tdwidth
 
@@ -445,11 +458,17 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
                          .format(complete_drift_range[bool_selected]))
             for k, drift_rate in enumerate(complete_drift_range[bool_selected]):
 
+                # Ignore drift rates that are out of bounds.
+                if abs(drift_rate) < min_drift:
+                    continue
+                if abs(drift_rate) > max_drift:
+                    continue
+
                 indx = ibrev[drift_indices[k]] * tdwidth
 
                 # DCP 2020.04 -- WAR to drift rate in flipped files
                 if data_obj.header['DELTAF'] < 0:
-                    drift_rate *= -1
+                    drift_rate = -drift_rate
 
                 # SEARCH POSITIVE DRIFT RATES
                 spectrum = tree_findoppler[indx: indx + tdwidth]

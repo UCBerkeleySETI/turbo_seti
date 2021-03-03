@@ -52,7 +52,7 @@ def get_file_header(dat_path):
 
     '''
     filepath_h5 = dat_path.replace('.dat', '.h5')
-    wf = Waterfall(filepath_h5)
+    wf = Waterfall(filepath_h5, load_data=False)
     return wf.container.header
 
 

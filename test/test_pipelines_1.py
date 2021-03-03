@@ -37,6 +37,8 @@ H5_FILE_LIST = ['single_coarse_guppi_59046_80036_DIAG_VOYAGER-1_0011.rawspec.000
                 'single_coarse_guppi_59046_80989_DIAG_VOYAGER-1_0014.rawspec.0000.h5',
                 'single_coarse_guppi_59046_81310_DIAG_VOYAGER-1_0015.rawspec.0000.h5',
                 'single_coarse_guppi_59046_81628_DIAG_VOYAGER-1_0016.rawspec.0000.h5']
+MAX_DRIFT = 2.0
+MIN_SNR = 10.0
 
 
 def oops(arg_text):
@@ -88,8 +90,8 @@ def make_one_dat_file(arg_h5_name):
     h5_path = TESTDIR + arg_h5_name
     time_start = time()
     doppler = FindDoppler(h5_path,
-                          max_drift=4,
-                          snr=10,
+                          max_drift=MAX_DRIFT,
+                          snr=MIN_SNR,
                           out_dir=TESTDIR)
     time_stop = time()
     print('make_one_dat_file: End FindDoppler({}), et = {:.1f} seconds'

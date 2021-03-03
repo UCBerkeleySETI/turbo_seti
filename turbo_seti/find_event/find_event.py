@@ -12,6 +12,7 @@ files. It then finds events within this group of files.
 import pandas as pd
 import numpy as np
 import time
+import re
 
 pd.options.mode.chained_assignment = None  
 #^To remove pandas warnings: default='warn'
@@ -69,7 +70,10 @@ def read_dat(filename):
     DELTAF = hits[5].strip().split('\t')[1].split(':')[-1].strip()  # Hz
 
     # Get info from individual hits (the body of the .dat file)
-    all_hits = [hit.strip().split('\t') for hit in hits[9:]]
+    all_hits = []
+    for hit_line in hits[9:]:
+        hit_fields = re.split(r'\s+', re.sub(r'[\t]', ' ', hit_line).strip())
+        all_hits.append(hit_fields)
 
     # Now reorganize that info to be grouped by column (parameter)
     # not row (individual hit)

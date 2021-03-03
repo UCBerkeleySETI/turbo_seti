@@ -12,6 +12,7 @@ files. It then finds events within this group of files.
 import pandas as pd
 import numpy as np
 import time
+import re
 
 pd.options.mode.chained_assignment = None  
 #^To remove pandas warnings: default='warn'

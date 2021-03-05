@@ -5,6 +5,7 @@ This file is a version history of turbo_seti amendments, beginning with version 
 |    Date    | Version | Contents |
 | :--: | :--: | :-- |
 |  **==future==** | **TBD** | Add frequency channel masking capability. See issue #125. |
+| 2021-03-05 | 2.0.13 | Support very large data arrays.  See blimpy issue #180. |
 | 2021-03-03 | 2.0.12 | Fixed issue #207 - flexible DAT line scanning in find_event.py read_dat(). |
 | 2021-03-02 | 2.0.11 | Fixed issue #89 - min_drift & max_drift in find_doppler.py. |
 | | | Fixed issue #162 - Announce turbo_seti and blimpy versions in use at start of Doppler search (find_doppler.py). |

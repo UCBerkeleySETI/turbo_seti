@@ -7,7 +7,7 @@ ON-OFF radio SETI observations. The main function contained in this file is
 in this file (described below) to plot events from a turboSETI event .csv file.
 '''
 
-from os.path import dirname, getsize
+from os.path import dirname
 import gc
 import logging
 logger_plot_event_name = 'plot_event'
@@ -139,24 +139,9 @@ def plot_waterfall(wf, source_name, f_start=None, f_stop=None, **kwargs):
     # return plot
     
     del plot_f, plot_data
+    gc.collect()
 
     return this_plot
-
-
-def calc_max_load(arg_path):
-    r''' Calculate the max_load parameter value for a subsequent Waterfall instantiation.
-    
-    Algorithm:
-        * A = file size.
-        * B = data array size (blimpy currently makes a copy of the data array)
-        * Return ceil(A + B in GB)
-    '''
-    wf = bl.Waterfall(arg_path, load_data=False)
-    data_size = float(wf.header['nchans'] * wf.n_ints_in_file * wf.header['nbits']) / 8.0
-    ngbytes = (float(getsize(arg_path)) + data_size) / 1e9
-    max_load = np.ceil(ngbytes)
-    print('plot_event calc_max_load: max_load={} is required for {}'.format(max_load, arg_path))
-    return max_load
 
 
 def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_rate, f_mid,
@@ -206,7 +191,8 @@ def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_r
     dirpath = dirname(fil_file_list[0]) + '/'
 
     # read in data for the first panel
-    max_load = calc_max_load(fil_file_list[0])
+    max_load = bl.calcload.calc_max_load(fil_file_list[0])
+    print('plot_event make_waterfall_plots: max_load={} is required for {}'.format(max_load, fil_file_list[0]))
     wf1 = bl.Waterfall(fil_file_list[0], f_start=f_start, f_stop=f_stop, max_load=max_load)
     t0 = wf1.header['tstart']
     plot_f1, plot_data1 = wf1.grab_data()
@@ -235,7 +221,8 @@ def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_r
         subplots.append(subplot)
 
         # read in data
-        max_load = calc_max_load(filename)
+        max_load = bl.calcload.calc_max_load(filename)
+        print('plot_event make_waterfall_plots: max_load={} is required for {}'.format(max_load, filename))
         wf = bl.Waterfall(filename, f_start=f_start, f_stop=f_stop, max_load=max_load)
         # make plot with plot_waterfall
         source_name = source_name_list[ii]

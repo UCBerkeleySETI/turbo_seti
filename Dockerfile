@@ -13,6 +13,7 @@ RUN python3 -m pip install -r requirements.txt
 RUN python3 -m pip install pytest pyslalib
 RUN python3 setup.py install
 
+RUN python3 -m pip install git+https://github.com/UCBerkeleySETI/blimpy
 RUN python3 -m pip install -r requirements_test.txt
 RUN cd test && python3 download_test_data.py && cd ..
 RUN cd test && bash run_tests.sh && cd ..

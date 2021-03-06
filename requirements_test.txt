@@ -5,3 +5,4 @@ codecov
 coverage
 wget
 setigen
+pyslalib

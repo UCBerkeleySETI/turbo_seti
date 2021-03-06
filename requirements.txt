@@ -1,6 +1,6 @@
 astropy
 numpy
-git+https://github.com/UCBerkeleySETI/blimpy
+blimpy>=2.0.0
 pandas
 toolz
 fsspec

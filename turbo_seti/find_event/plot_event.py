@@ -361,7 +361,6 @@ def plot_candidate_events(candidate_event_dataframe, fil_file_list, filter_level
     '''
     global logger_plot_event
 
-
     # load in the data for each individual hit
     if candidate_event_dataframe is None:
         print('*** plot_candidate_events: candidate_event_dataframe is None, nothing to do.')

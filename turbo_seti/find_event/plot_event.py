@@ -7,17 +7,13 @@ ON-OFF radio SETI observations. The main function contained in this file is
 in this file (described below) to plot events from a turboSETI event .csv file.
 '''
 
-<<<<<<< HEAD
-import os
-from os.path import dirname, abspath
-=======
-from os.path import dirname
+from os import mkdir
+from os.path import dirname, abspath, isdir
 import gc
 import logging
 logger_plot_event_name = 'plot_event'
 logger_plot_event = logging.getLogger(logger_plot_event_name)
 logger_plot_event.setLevel(logging.INFO)
->>>>>>> 8281e5fabed2f5b9c82ef45adfd4ddccf8153a26
 
 # Plotting packages import
 import matplotlib
@@ -196,8 +192,8 @@ def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_r
     if plot_dir is None:
         dirpath = dirname(abspath(fil_file_list[0])) + '/'
     else:
-        if not os.path.isdir(plot_dir):
-            os.mkdir(plot_dir)
+        if not isdir(plot_dir):
+            mkdir(plot_dir)
         dirpath = plot_dir
 
 

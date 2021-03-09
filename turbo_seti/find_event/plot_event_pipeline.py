@@ -11,6 +11,17 @@ import pandas
 from blimpy import Waterfall
 from . import plot_event
 
+
+class PathRecord:
+    r''' Definition of an H5 path record '''
+    def __init__(self, path_h5, tstart, source_name):
+        self.path_h5 = path_h5
+        self.tstart = tstart
+        self.source_name = source_name
+    def __repr__(self):
+        return repr((self.path_h5, self.tstart, self.source_name))
+
+
 def plot_event_pipeline(event_csv_string, fils_list_string, user_validation=False,
                         offset=0, filter_spec=None, sortby_tstart=True, plot_dir=None):
     r"""

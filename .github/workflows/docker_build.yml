@@ -1,0 +1,26 @@
+name: Test Dockerfile
+
+on:
+  push:
+    paths-ignore:
+      - '**.ipynb'
+      - '**.png'
+      - '**.rst'
+      - '**.md'
+  pull_request:
+    paths-ignore:
+      - '**.ipynb'
+      - '**.png'
+      - '**.rst'
+      - '**.md'
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build the Docker image
+        run: docker build . --file Dockerfile --tag turboseti-docker:$(date +%s)
+

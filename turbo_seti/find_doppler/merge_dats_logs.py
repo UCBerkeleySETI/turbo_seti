@@ -1,14 +1,15 @@
-#!/usr/bin/env python
+r''' Source file for merge_dats_logs() '''
 
 from os import chdir, getcwd, listdir, remove, rename
-from argparse import ArgumentParser
 
 PREFIX = "_c_"
 DEBUGGING = False
+DATLNFMT = '{:>4s}  {:>12s}  {:>12s}  {:>12s}  {:>12s}  {:>9s}  {:>12s}  {:>12s}' \
+    + '{:>4s}  {:>12s}  {:>5s}  {:>9s}\n'
 
 def merge_dats_logs(arg_h5: str, arg_dir: str, arg_type: str, cleanup='n'):
     r"""
-    Combine DAT or LOG files.
+    Merge multiple DAT (or LOG) files.
 
     Parameters
     ----------
@@ -60,17 +61,27 @@ def merge_dats_logs(arg_h5: str, arg_dir: str, arg_type: str, cleanup='n'):
             for line in fd:
                 outfile.write(line)
         # Write subsequent files, filtering out comment lines (start with '#')
+        if arg_type == 'dat':
+            tophit_counter = 0
         for cur_file in files[1:]:
             with open(cur_file, "r") as fd:
-                for line in fd:
-                    if not line.startswith("#"):
-                        outfile.write(line)
-                        
+                for inline in fd:
+                    if not inline.startswith("#"): # not a comment
+                        if arg_type == 'dat': # renumber tophit number field
+                            tophit_counter += 1
+                            outlist = inline.split()
+                            if DEBUGGING:
+                                print('DEBUG outlst:', outlist)
+                            outlist[0] = str(tophit_counter)
+                            outfile.write(DATLNFMT.format(*outlist))
+                        else: # log file
+                            outfile.write(inline)
+
     # if cleanup is requested, do it now.
     if cleanup == 'y':
         # Remove all of the partitions.
         for cur_file in files:
-            remove(cur_file)        
+            remove(cur_file)
             if DEBUGGING:
                 print("merge_dats_logs: Removed: ", cur_file)
         # Rename the merged file
@@ -84,35 +95,3 @@ def merge_dats_logs(arg_h5: str, arg_dir: str, arg_type: str, cleanup='n'):
 
     # Change back to caller's current directory
     chdir(RETURN_TO)
-
-def main(args=None):
-    r"""
-    Utility for combining multiple DAT and LOG files after a turboSETI run.
-    Main procedure for cleaning up after turboSETI.
-    
-    Parameters
-    ----------
-    args : dict
-        Command line parameters.
-
-    Version 1:
-    - Karen Perez
-    - Richard Elkins
-
-    """
-    p = ArgumentParser(description='Merge DATs & LOGs after turboSETI.')
-    p.add_argument('h5_file', type=str, help='Path of HDF5 file used to create DAT & LOG files.')
-    p.add_argument('directory', type=str, help='Path of directory containing the DAT & LOG files.')
-    p.add_argument('-c', '--cleanup', dest='flag_cleanup', type=str, default='n',
-                   help='Cleanup after merging DAT and LOG files? (y/n)')
-    
-    if args is None:
-        args = p.parse_args()
-    else:
-        args = p.parse_args(args)
-
-    merge_dats_logs(args.h5_file, args.directory, 'dat', cleanup=args.flag_cleanup)
-    merge_dats_logs(args.h5_file, args.directory, 'log', cleanup=args.flag_cleanup)
-
-if __name__ == '__main__':
-    main()

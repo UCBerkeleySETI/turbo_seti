@@ -1,4 +1,4 @@
-import os 
+import os
 import cupy as cp
 
 kernels_file = os.path.join(os.path.dirname(__file__), 'kernels.cu')
@@ -14,7 +14,7 @@ def hitsearch(numBlocks, blockSize, call):
     r"""
     Performs hitsearch on the GPU with CUDA. Automatically chooses
     the right floating point precision based on the kernel configuration.
- 
+
     Parameters
     ----------
     numBlocks : tuple

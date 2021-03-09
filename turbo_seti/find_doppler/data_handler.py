@@ -13,7 +13,7 @@ from blimpy.io import sigproc
 
 from .kernels import Kernels
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('data_handler')
 
 #For debugging
 #import cProfile
@@ -75,7 +75,7 @@ class DATAHandle:
             self.filesize = self.filestat.st_size/(1024.0**2)
 
             # Grab header from DATAH5
-            dobj_master = DATAH5(filename, n_coarse_chan=self.n_coarse_chan, kernels=self.kernels)
+            dobj_master = DATAH5(filename, kernels=self.kernels)
             self.header = dobj_master.header
             dobj_master.close()
 
@@ -196,7 +196,7 @@ class DATAH5:
 
     """
     def __init__(self, filename, f_start=None, f_stop=None, t_start=None, t_stop=None,
-                 coarse_chan=1, n_coarse_chan=None, kernels=None):
+                 coarse_chan=1, n_coarse_chan=None, kernels=None, gpu_backend=False, precision=2):
         self.filename = filename
         self.closed = False
         self.f_start = f_start
@@ -204,7 +204,11 @@ class DATAH5:
         self.t_start = t_start
         self.t_stop = t_stop
         self.n_coarse_chan = n_coarse_chan
-        self.kernels = kernels
+
+        if not kernels:
+            self.kernels = Kernels(gpu_backend, precision)
+        else:
+            self.kernels = kernels
 
         #Instancing file.
         try:
@@ -265,8 +269,7 @@ class DATAH5:
             n_coarse_chan = int(self.fil_file.calc_n_coarse_chan())
         self.fil_file.blank_dc(n_coarse_chan)
 
-        spec = self.kernels.xp.squeeze(self.fil_file.data)
-        spectra = self.kernels.xp.array(spec, dtype=self.kernels.float_type)
+        spectra = self.kernels.np.squeeze(self.fil_file.data)
 
         # DCP APR 2020 -- COMMENTED OUT. THIS IS BREAKING STUFF IN CURRENT VERSION.
         #Arrange data in ascending order in freq if not already in that format.
@@ -276,8 +279,8 @@ class DATAH5:
         # This check will add rows of zeros if the obs is too short
         # (and thus not a power of two rows).
         if spectra.shape[0] != self.tsteps:
-            padding = self.kernels.xp.zeros((self.tsteps-spectra.shape[0], self.fftlen))
-            spectra = self.kernels.xp.concatenate((spectra, padding), axis=0)
+            padding = self.kernels.np.zeros((self.tsteps-spectra.shape[0], self.fftlen))
+            spectra = self.kernels.np.concatenate((spectra, padding), axis=0)
 
         self.tsteps_valid = self.tsteps
         self.obs_length = self.tsteps * self.header['DELTAT']
@@ -288,6 +291,7 @@ class DATAH5:
 
         drift_indexes = self.load_drift_indexes()
 
+        spectra = self.kernels.xp.array(spectra, dtype=self.kernels.float_type)
         return spectra, drift_indexes
 
     def load_drift_indexes(self):
@@ -345,9 +349,11 @@ class DATAH5:
         #used by helper_functions.py
         if coarse:
             base_header['NAXIS1'] = int(header['nchans']/self.n_coarse_chan)
+            base_header['FCNTR'] = self.kernels.xp.abs(self.f_stop - self.f_start) / 2. + self.kernels.xp.fmin(
+                self.f_start, self.f_stop)
         else:
             base_header['NAXIS1'] = int(header['nchans'])
-        base_header['FCNTR'] = float(header['fch1']) + header['foff'] * base_header['NAXIS1'] / 2
+            base_header['FCNTR'] = float(header['fch1']) + header['foff'] * base_header['NAXIS1'] / 2
 
         #other header values.
         base_header['NAXIS'] = 2
@@ -362,6 +368,10 @@ class DATAH5:
 
         """
         # Call file object destructor which should close the file
-        del self.fil_file
+        if hasattr(self, 'fil_file'):
+            del self.fil_file
+
+        if hasattr(self, 'kernels'):
+            del self.kernels
 
         self.closed = True

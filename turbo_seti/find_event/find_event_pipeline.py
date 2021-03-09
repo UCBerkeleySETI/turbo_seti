@@ -10,6 +10,8 @@ It then finds events within this group of files.
 """
 
 #required packages and programs
+import os
+from operator import attrgetter
 try:
     import find_event
 except:
@@ -19,7 +21,17 @@ import pandas as pd
 from blimpy import Waterfall
 
 
-def get_source_name(dat_path):
+class PathRecord:
+    r''' Definition of a DAT record '''
+    def __init__(self, path_dat, tstart, source_name):
+        self.path_dat = path_dat
+        self.tstart = tstart
+        self.source_name = source_name
+    def __repr__(self):
+        return repr((self.path_dat, self.tstart, self.source_name))
+    
+
+def get_file_header(dat_path):
     r'''
     Extract and return the target's source name from the DAT file path.
     
@@ -30,24 +42,24 @@ def get_source_name(dat_path):
 
     Returns
     -------
-    source_name : str
-        Field from the header of the corresponding HDF5 file.
+    header : Waterfall header object
 
     Notes
     -----
-    The HDF5 file is resident in the same directory of the DAT file.
+    The HDF5 file is ASSUMED(!!) to be resident in the same directory of the DAT file.
     The file name of the HDF5 file is identical to that of the DAT file 
     except for the file extension (.h5 instead of .dat).
 
     '''
     filepath_h5 = dat_path.replace('.dat', '.h5')
-    wf = Waterfall(filepath_h5)
-    return wf.container.header["source_name"]
+    wf = Waterfall(filepath_h5, load_data=False)
+    return wf.container.header
 
 
 def find_event_pipeline(dat_file_list_str, SNR_cut=10, check_zero_drift=False, filter_threshold=3, 
                         on_off_first='ON', number_in_cadence=6, on_source_complex_cadence=False,
-                        saving=True, csv_name=None, user_validation=False): 
+                        saving=True, csv_name=None, user_validation=False,
+                        sortby_tstart=True): 
     """
     Find event pipeline.
 
@@ -109,6 +121,8 @@ def find_event_pipeline(dat_file_list_str, SNR_cut=10, check_zero_drift=False, f
         before beginning to run the program. Recommended when
         first learning the program, not recommended for 
         automated scripts.
+    sortby_tstart : bool
+        If True, the input file list is sorted by header.tstart.
 
     Examples
     --------
@@ -123,46 +137,72 @@ def find_event_pipeline(dat_file_list_str, SNR_cut=10, check_zero_drift=False, f
     print("************   BEGINNING FIND_EVENT PIPELINE   **************")
     print()
     
-    if not on_source_complex_cadence:
+    if on_source_complex_cadence:
+        print("Assuming a complex cadence for the following on source: " + on_source_complex_cadence)
+    else: # not on_source_complex_cadence:
         print("Assuming the first observation is an " + on_off_first)
         complex_cadence = on_source_complex_cadence
         
-    if on_source_complex_cadence:
-        print("Assuming a complex cadence for the following on source: " + on_source_complex_cadence)
-        
-    #Opening list of files
+    # Get a list of the DAT files.
     dat_file_list = open(dat_file_list_str).readlines()
     dat_file_list = [files.replace('\n','') for files in dat_file_list]
     dat_file_list = [files.replace(',','') for files in dat_file_list]
     n_files = len(dat_file_list)
     
-    #Getting source names
+    # Get source names and build path_record list.
     source_name_list = []
+    path_record = []
     for dat in dat_file_list:
-        source_name = get_source_name(dat)
-        print("find_event_pipeline: source_name =", source_name)
+        header = get_file_header(dat)
+        source_name = header["source_name"]
+        tstart = header["tstart"]
+        path_record.append(PathRecord(dat, tstart, source_name))
         source_name_list.append(source_name)
-        
+
+    # If sorting by header.tstart, then rewrite the dat_file_list in header.tstart order.
+    if sortby_tstart:
+        path_record = sorted(path_record, key=attrgetter('tstart'))
+        dat_file_list = []
+        for obj in path_record:
+            dat_file_list.append(obj.path_dat)
+            print("find_event_pipeline: file = {}, tstart = {}, source_name = {}"
+                  .format(os.path.basename(obj.path_dat), obj.tstart, obj.source_name))
+    else:
+        for obj in path_record:
+            print("find_event_pipeline: file = {}, tstart = {}, source_name = {}"
+                  .format(os.path.basename(obj.path_dat), obj.tstart, obj.source_name))      
+
+    # If this is a complex cadence, 
+    # * construct a complex_cadence list of 1s and 0s.
+    # * compute count_cadence = number of matches on on_source_complex_cadence.
     if on_source_complex_cadence:
         complex_cadence = []
+        count_cadence = 0
         for i in range(0, len(source_name_list)):
             source = source_name_list[i]
             if source == on_source_complex_cadence:
                 complex_cadence.append(1)
+                count_cadence += 1
             else:
                 complex_cadence.append(0)
-        print("The derived cadence is: " + str(complex_cadence))
+        if count_cadence > 0:
+            print("The derived complex cadence is: " + str(complex_cadence))
+        else:
+            print("Sorry, no potential candidates with your given on_source_complex_cadence={}  :("
+                  .format(on_source_complex_cadence))
+            return None
     
+    num_of_sets = int(n_files / number_in_cadence)
     print("There are " + str(len(dat_file_list)) + " total files in the filelist " + dat_file_list_str)
-    print("therefore, looking for events in " + str(int(n_files/number_in_cadence)) + " on-off set(s)")
+    print("therefore, looking for events in " + str(num_of_sets) + " on-off set(s)")
     print("with a minimum SNR of " + str(SNR_cut))
     
     if filter_threshold == 1:
-        print("Present in an A source only, above SNR_cut")
+        print("Present in an ON source only, above SNR_cut")
     if filter_threshold == 2:
-        print("Present in at least one A source with RFI rejection from the off-sources")
+        print("Present in at least one ON source with RFI rejection from the OFF sources")
     if filter_threshold == 3:
-        print("Present in all A sources with RFI rejection from the off-sources")
+        print("Present in all ON sources with RFI rejection from the OFF sources")
     
     if not check_zero_drift:
         print("not including signals with zero drift")
@@ -186,21 +226,18 @@ def find_event_pipeline(dat_file_list_str, SNR_cut=10, check_zero_drift=False, f
         
     #Looping over number_in_cadence chunks.
     candidate_list = []
-    for i in range((int(n_files/number_in_cadence))):
+    for i in range(num_of_sets):
         file_sublist = dat_file_list[number_in_cadence*i:((i*number_in_cadence)+(number_in_cadence))]
         if not complex_cadence:
             if on_off_first == 'ON':
-                name = file_sublist[0].split('_')[5]  
-                id_num = (file_sublist[0].split('_')[6]).split('.')[0]
-            if on_off_first == 'OFF':
-                name = file_sublist[1].split('_')[5] 
-                id_num = (file_sublist[1].split('_')[6]).split('.')[0]
-        else:
-            name = file_sublist[complex_cadence.index(1)].split('_')[5]  
-            id_num = file_sublist[complex_cadence.index(1)].split('_')[6].split('.')[0]
+                filename = os.path.basename(file_sublist[0])
+            else: # on_off_first == 'OFF'
+                filename = os.path.basename(file_sublist[1])
+        else: # complex_cadence
+            filename = os.path.basename(file_sublist[complex_cadence.index(1)])
             
         print()
-        print("***       " + name + "       ***")
+        print("*** First DAT file in set:  " + filename + " ***")
         print()
         cand = find_event.find_events(file_sublist, 
                                       SNR_cut=SNR_cut, 
@@ -223,10 +260,11 @@ def find_event_pipeline(dat_file_list_str, SNR_cut=10, check_zero_drift=False, f
     
     if saving:
         if csv_name is None:
+            prefix = os.path.dirname(dat_file_list[0]) + '/' + source_name_list[0]
             if check_zero_drift:
-                filestring = name + '_' + id_num + '_f' + str(filter_threshold) + '_snr' + str(SNR_cut) + '_zero' + '.csv'
+                filestring = prefix + '_f' + str(filter_threshold) + '_snr' + str(SNR_cut) + '_zero' + '.csv'
             else:
-                filestring = name + '_' + id_num + '_f' + str(filter_threshold) + '_snr' + str(SNR_cut) + '.csv'            
+                filestring = prefix + '_f' + str(filter_threshold) + '_snr' + str(SNR_cut) + '.csv'            
         else:
             filestring = csv_name
         if not isinstance(find_event_output_dataframe, list):

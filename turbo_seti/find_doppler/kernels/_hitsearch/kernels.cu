@@ -1,5 +1,5 @@
 extern "C" __global__
-void hitsearch_float64(int n, const double* spectrum, double threshold, double drift_rate, double* maxsnr, double* maxdrift, unsigned int* tot_hits) {
+void hitsearch_float64(const int n, const double* spectrum, const double threshold, const double drift_rate, double* maxsnr, double* maxdrift, unsigned int* tot_hits) {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     int stride = blockDim.x * gridDim.x;
     int count = 0;
@@ -16,7 +16,7 @@ void hitsearch_float64(int n, const double* spectrum, double threshold, double d
 }
 
 extern "C" __global__
-void hitsearch_float32(int n, const float* spectrum, double threshold, double drift_rate, float* maxsnr, float* maxdrift, unsigned int* tot_hits) {
+void hitsearch_float32(const int n, const float* spectrum, const double threshold, const double drift_rate, float* maxsnr, float* maxdrift, unsigned int* tot_hits) {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     int stride = blockDim.x * gridDim.x;
     int count = 0;

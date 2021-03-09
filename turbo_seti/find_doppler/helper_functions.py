@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 
-import logging
 import numpy as np
-logger_hf = logging.getLogger(__name__)
 
 
 def chan_freq(header, fine_channel, tdwidth, ref_frame):

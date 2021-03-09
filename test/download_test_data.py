@@ -10,7 +10,7 @@ HERE = os.path.split(os.path.abspath(__file__))[0]
 def download_test_data():
     """ Download Voyager test data """
     try:
-        os.system('rm *.h5 *.fil *.dat *.log *.png')
+        os.system('rm *.h5 *.fil *.dat *.log *.png 2> /dev/null')
     except:
         pass
     os.system('wget http://blpd0.ssl.berkeley.edu/Voyager_data/Voyager1.single_coarse.fine_res.h5')
@@ -38,6 +38,7 @@ def flip_data(filename):
         fchN      = fch1_orig + (foff_orig * nchans)
         h['data'].attrs['foff'] = foff_orig * -1
         h['data'].attrs['fch1'] = fchN
+        h['data'].attrs['source_name'] = 'Voyager1Flipped'
 
         for ii in range(h['data'].shape[0]):
             print('\tFlipping %i/%i' % (ii+1, h['data'].shape[0]))

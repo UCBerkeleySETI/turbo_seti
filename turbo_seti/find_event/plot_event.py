@@ -139,6 +139,7 @@ def plot_waterfall(wf, source_name, f_start=None, f_stop=None, **kwargs):
     #     plt.text(0.03, 0.6, plot_snr, transform=ax.transAxes, bbox=dict(facecolor='white'))
     # return plot
 
+
     del plot_f, plot_data
     gc.collect()
 
@@ -256,6 +257,7 @@ def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_r
         if ii < len(fil_file_list)-1:
             plt.xticks(np.linspace(f_start, f_stop, num=4), ['','','',''])
 
+
         del wf
         gc.collect()
 
@@ -359,6 +361,7 @@ def plot_candidate_events(candidate_event_dataframe, fil_file_list, filter_level
 
     '''
     global logger_plot_event
+
 
     # load in the data for each individual hit
     if candidate_event_dataframe is None:

@@ -7,7 +7,8 @@ ON-OFF radio SETI observations. The main function contained in this file is
 in this file (described below) to plot events from a turboSETI event .csv file.
 '''
 
-from os.path import dirname
+from os import mkdir
+from os.path import dirname, abspath, isdir
 import gc
 import logging
 logger_plot_event_name = 'plot_event'
@@ -137,7 +138,7 @@ def plot_waterfall(wf, source_name, f_start=None, f_stop=None, **kwargs):
     # if plot_snr != False:
     #     plt.text(0.03, 0.6, plot_snr, transform=ax.transAxes, bbox=dict(facecolor='white'))
     # return plot
-    
+
     del plot_f, plot_data
     gc.collect()
 
@@ -145,7 +146,7 @@ def plot_waterfall(wf, source_name, f_start=None, f_stop=None, **kwargs):
 
 
 def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_rate, f_mid,
-                         filter_level, source_name_list, offset=0, **kwargs):
+                         filter_level, source_name_list, offset=0, plot_dir=None, **kwargs):
     r'''
     Makes waterfall plots of an event for an entire on-off cadence.
 
@@ -188,7 +189,13 @@ def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_r
     fig = plt.subplots(n_plots, sharex=True, sharey=True,figsize=(10, 2*n_plots))
 
     # get directory path for storing PNG files
-    dirpath = dirname(fil_file_list[0]) + '/'
+    if plot_dir is None:
+        dirpath = dirname(abspath(fil_file_list[0])) + '/'
+    else:
+        if not isdir(plot_dir):
+            mkdir(plot_dir)
+        dirpath = plot_dir
+
 
     # read in data for the first panel
     max_load = bl.calcload.calc_max_load(fil_file_list[0])
@@ -248,7 +255,8 @@ def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_r
         # Format full plot
         if ii < len(fil_file_list)-1:
             plt.xticks(np.linspace(f_start, f_stop, num=4), ['','','',''])
-            
+
+
         del wf
         gc.collect()
 
@@ -292,7 +300,7 @@ def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_r
 
 
 def plot_candidate_events(candidate_event_dataframe, fil_file_list, filter_level, source_name_list,
-                          offset=0, plot_snr_list=False, **kwargs):
+                          offset=0, plot_snr_list=False, plot_dir=None, **kwargs):
     r'''
     Calls :func:`~make_waterfall_plots` on each event in the input .csv file.
 
@@ -352,7 +360,7 @@ def plot_candidate_events(candidate_event_dataframe, fil_file_list, filter_level
 
     '''
     global logger_plot_event
-    
+
     # load in the data for each individual hit
     if candidate_event_dataframe is None:
         print('*** plot_candidate_events: candidate_event_dataframe is None, nothing to do.')
@@ -401,4 +409,5 @@ def plot_candidate_events(candidate_event_dataframe, fil_file_list, filter_level
                              filter_level,
                              source_name_list,
                              offset=offset,
+                             plot_dir=plot_dir,
                              **kwargs)

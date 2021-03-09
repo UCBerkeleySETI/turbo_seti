@@ -139,7 +139,6 @@ def plot_waterfall(wf, source_name, f_start=None, f_stop=None, **kwargs):
     #     plt.text(0.03, 0.6, plot_snr, transform=ax.transAxes, bbox=dict(facecolor='white'))
     # return plot
 
-
     del plot_f, plot_data
     gc.collect()
 

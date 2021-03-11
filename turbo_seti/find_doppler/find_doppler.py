@@ -669,7 +669,7 @@ def tophitsearch(fd, tree_findoppler_original, max_val, tsteps, header, tdwidth,
         else:
             drate = max_val.maxdrift[i]
             info_str = "Top hit found! SNR {:f}, Drift Rate {:f}, index {}" \
-                       .format(maxsnr[i], drate, i)
+                       .format(maxsnr[i], drate.item(), i)
             logger.info(info_str)
             if logwriter:
                 logwriter.info(info_str)

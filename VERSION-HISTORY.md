@@ -5,6 +5,8 @@ This file is a version history of turbo_seti amendments, beginning with version 
 |    Date    | Version | Contents |
 | :--: | :--: | :-- |
 |  **==future==** | **TBD** | Add frequency channel masking capability. See issue #125. |
+| 2021-03-10 | 2.0.14 | Fixed issue #213 - Doppler search dies when using GPU (string format issue). |
+| | | Fixed issue #214 - Need some testing for plot_dir parameter of plot_event_pipeline. |
 | 2021-03-09 | PR #212 | Support specification of an output directory for plotting at multiple levels in plot_event_pipeline.py and plot_event.py. |
 | 2021-03-05 | 2.0.13 | Support very large data arrays.  See blimpy issue #180. |
 | 2021-03-03 | 2.0.12 | Fixed issue #207 - flexible DAT line scanning in find_event.py read_dat(). |

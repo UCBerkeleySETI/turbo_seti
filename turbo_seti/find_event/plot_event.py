@@ -21,10 +21,12 @@ matplotlib.use('agg')
 # Math/Science package imports
 import numpy as np
 from astropy.time import Time
+import pandas as pd
 
 # BL imports
 import blimpy as bl
 from blimpy.utils import rebin
+from . import find_event
 
 # preliminary plot arguments
 fontsize=16
@@ -32,7 +34,7 @@ font = {'family' : 'DejaVu Sans',
 'size' : fontsize}
 MAX_IMSHOW_POINTS = (4096, 1268)
 
-def overlay_drift(f_event, f_start, f_stop, drift_rate, t_duration, offset=0):
+def overlay_drift(f_event, f_start, f_stop, drift_rate, t_duration, offset=0, alpha=1, c='#cc0000'):
     r'''
     Creates a dashed red line at the recorded frequency and drift rate of
     the plotted event - can overlay the signal exactly or be offset by
@@ -45,14 +47,16 @@ def overlay_drift(f_event, f_start, f_stop, drift_rate, t_duration, offset=0):
         plt.plot((f_event - offset, f_event),
                  (10, 10),
                  "o-",
-                 c='#cc0000',
-                 lw=2)
+                 c=c,
+                 lw=2,
+                 alpha=alpha)
 
     # plots drift overlay line, with offset if desired
     plt.plot((f_event + offset, f_event + drift_rate/1e6 * t_duration + offset),
              (0, t_duration),
-             c='#cc0000',
-             ls='dashed', lw=2)
+             c=c,
+             ls='dashed', lw=2, 
+             alpha=alpha)
 
 def plot_waterfall(fil, source_name, f_start=None, f_stop=None, **kwargs):
     r"""
@@ -371,3 +375,198 @@ def plot_candidate_events(candidate_event_dataframe, fil_file_list, filter_level
                              offset=offset,
                              **kwargs)
 
+def plot_all_hit_and_candidates(dat_list_string, fils_list_string, candidate_event_table_string, check_nonzero=False, alpha=1, c='#cc0000', window=None):
+    #read candidate events into dataframe
+    candidate_event_dataframe = pd.read_csv(candidate_event_table_string)
+    
+    len_df = len(candidate_event_dataframe)
+    if len_df < 1:
+        print('*** plot_all_hit_and_candidates: len(candidate_event_dataframe) = 0, nothing to do.')
+        return
+    
+    #read in dat files
+    dat_file_list = []
+    for file in pd.read_csv(dat_list_string, encoding='utf-8', header=None, chunksize=1):
+        dat_file_list.append(file.iloc[0,0])
+        
+    #read in fil files
+    fil_file_list = []
+    for file in pd.read_csv(fils_list_string, encoding='utf-8', header=None, chunksize=1):
+        fil_file_list.append(file.iloc[0,0])
+        
+    n_events = len(candidate_event_dataframe)
+    print("This will make %s .png files"%n_events)
+    
+    for i in range(len(candidate_event_dataframe)):
+        candidate = candidate_event_dataframe.iloc[i]
+        plot_all_dat(dat_file_list, 
+                     fil_file_list, 
+                     candidate, 
+                     check_nonzero=check_nonzero, 
+                     alpha=alpha, 
+                     c=c, 
+                     window=window)
+        
+
+def plot_all_dat(dat_file_list, fil_file_list, candidate, check_nonzero=False, alpha=1, c='#cc0000', window=None):
+        
+    # put all hits into a single dataframe
+    all_hits = []
+    for dat in dat_file_list:
+        frame = find_event.read_dat(dat)
+        all_hits.append(frame)
+    all_hits_frame = pd.concat(all_hits)
+    
+    #change the min/max frequency if specified
+    if window != None:
+        f_min = window[0]
+        f_max = window[1]
+        keep = np.where((all_hits_frame["Freq"] > f_min) & (all_hits_frame["Freq"] < f_max))
+        all_hits_frame = all_hits_frame.iloc[keep]
+   
+    #obtaining source names
+    source_name_list = []
+    for fil in fil_file_list:
+        wf = bl.Waterfall(fil, load_data=False)
+        source_name = wf.container.header["source_name"]
+        source_name_list.append(source_name)
+        print("plot_all_dat: source_name={}".format(source_name))
+    
+
+    max_drift_rate = np.max(all_hits_frame["DriftRate"])
+    filter_level = "f0"
+    
+    # total range all hits fall between 
+    f_min = np.min(all_hits_frame["Freq"])
+    f_max = np.max(all_hits_frame["Freq"])
+    
+    fil1 = bl.Waterfall(fil_file_list[0], load_data=False)
+    t0 = fil1.header["tstart"]
+    t_elapsed = Time(wf.header['tstart'], format='mjd').unix - Time(t0, format='mjd').unix
+    bandwidth = 2.4 * abs(max_drift_rate)/1e6 * t_elapsed
+    bandwidth = np.max((bandwidth, 500./1e6))
+    
+    # Get start and stop frequencies based on midpoint and bandwidth
+    f_start, f_stop = np.sort((f_min - (bandwidth/2),  f_max + (bandwidth/2)))
+    mid_f = 0.5*(f_start + f_stop)
+    
+    # plugging some code from make_waterfall_plots
+    global logger_plot_event
+
+    # prepare for plotting
+    matplotlib.rc('font', **font)
+
+    # set up the sub-plots
+    n_plots = len(fil_file_list)
+    fig = plt.subplots(n_plots, sharex=True, sharey=True,figsize=(10, 2*n_plots))
+
+    # get directory path for storing PNG files
+    dirpath = dirname(fil_file_list[0]) + '/'
+
+    # read in data for the first panel
+    fil1 = bl.Waterfall(fil_file_list[0], f_start=f_start, f_stop=f_stop)
+    t0 = fil1.header['tstart']
+    dummy, plot_data1 = fil1.grab_data()
+
+    # rebin data to plot correctly with fewer points
+    dec_fac_x, dec_fac_y = 1, 1
+    if plot_data1.shape[0] > MAX_IMSHOW_POINTS[0]:
+        dec_fac_x = plot_data1.shape[0] / MAX_IMSHOW_POINTS[0]
+    if plot_data1.shape[1] > MAX_IMSHOW_POINTS[1]:
+        dec_fac_y =  int(np.ceil(plot_data1.shape[1] /  MAX_IMSHOW_POINTS[1]))
+    plot_data1 = rebin(plot_data1, dec_fac_x, dec_fac_y)
+    
+    subplots = []
+    
+    on_source_name = candidate["Source"]
+    f_candidate = candidate["Freq"]
+    
+    for i in range(len(dat_file_list)):
+        subplot = plt.subplot(n_plots, 1, i+1)
+        subplots.append(subplot)
+        
+        wf = bl.Waterfall(fil_file_list[i], 
+                          f_start, f_stop)
+
+        this_plot = plot_waterfall(wf, 
+                                   source_name_list[i], 
+                                   f_start, 
+                                   f_stop)
+        
+        plot_dat(dat_file_list[i], fil_file_list[i],
+                 f_start, f_stop, t0, candidate, check_nonzero=check_nonzero, alpha=alpha, c=c)
+        
+        #more code from make_waterfall_plots
+        # Title the full plot
+        if i == 0:
+            plot_title = "%s \n MJD:%5.5f" % (on_source_name, t0)
+
+            plt.title(plot_title)
+        # Format full plot
+        if i < len(fil_file_list)-1:
+            plt.xticks(np.linspace(f_start, f_stop, num=4), ['','','',''])
+
+    # More overall plot formatting, axis labelling
+    factor = 1e6
+    units = 'Hz'
+
+    ax = plt.gca()
+    ax.get_xaxis().get_major_formatter().set_useOffset(False)
+    xloc = np.linspace(f_start, f_stop, 5)
+    xticks = [round(loc_freq) for loc_freq in (xloc - mid_f)*factor]
+    if np.max(xticks) > 1000:
+        xticks = [xt/1000 for xt in xticks]
+        units = 'kHz'
+    plt.xticks(xloc, xticks)
+    plt.xlabel("Relative Frequency [%s] from %f MHz"%(units,mid_f),fontdict=font)
+
+    # Add colorbar
+    cax = fig[0].add_axes([0.94, 0.11, 0.03, 0.77])
+    fig[0].colorbar(this_plot,cax=cax,label='Normalized Power (Arbitrary Units)')
+
+    # Adjust plots
+    plt.subplots_adjust(hspace=0,wspace=0)
+
+    # save the figures
+    path_png = dirpath + filter_level + '_' + on_source_name + '_freq_' "{:0.6f}".format(f_candidate) + ".png"
+    plt.savefig(path_png, bbox_inches='tight')
+    logger_plot_event.debug('make_waterfall_plots: Saved file {}'.format(path_png))
+
+    # close all figure windows
+    plt.close('all')
+
+def plot_dat(dat, fil, f_start, f_stop, t0, candidate, check_nonzero=False, alpha=1, c='#cc0000'):
+    wf = bl.Waterfall(fil, f_start, f_stop)
+    hit_frame = find_event.read_dat(dat)
+    
+    # plot the estimated candidate line 
+    if candidate is not None:
+        t_elapsed = Time(wf.header['tstart'], format='mjd').unix - Time(t0, format='mjd').unix
+        t_duration = (wf.n_ints_in_file - 1) * wf.header['tsamp']
+        f_event = candidate["Freq"] + candidate["DriftRate"] / 1e6 * t_elapsed
+        drift_rate = candidate["DriftRate"]
+        # any mistakes will likely come from this line
+        overlay_drift(f_event, f_start, f_stop, drift_rate, t_duration)
+    
+    if len(hit_frame) == 0:
+        # there are no hits detected in this dat file 
+        return
+    
+    if not check_nonzero:
+        hit_frame = hit_frame[hit_frame["DriftRate"] != 0]
+    
+    f_mid = 0.5 * (f_start + f_stop)
+    t_duration = (wf.n_ints_in_file - 1) * wf.header["tsamp"]
+    
+    for i in range(len(hit_frame)):
+        hit = hit_frame.iloc[i]
+        
+        f_mid = hit["Freq"]
+        drift_rate = hit["DriftRate"]
+        f_event = f_mid 
+        bandwidth = 500./1e6
+        start, stop = np.sort((f_mid - (bandwidth/2),  f_mid + (bandwidth/2)))
+        
+        overlay_drift(f_event, start, stop, drift_rate, t_duration, offset=0, alpha=alpha, c=c)
+        
+        

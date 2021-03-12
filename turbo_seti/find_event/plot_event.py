@@ -375,7 +375,7 @@ def plot_candidate_events(candidate_event_dataframe, fil_file_list, filter_level
                              offset=offset,
                              **kwargs)
 
-def plot_all_dat_hits(dat_list_string, fils_list_string, check_nonzero=False, alpha=1, c='#cc0000', window=None):
+def plot_all_dat_hits(dat_list_string, fils_list_string, candidate_event_table_string, check_nonzero=False, alpha=1, c='#cc0000', window=None):
     #read in dat files
     dat_file_list = []
     for file in pd.read_csv(dat_list_string, encoding='utf-8', header=None, chunksize=1):
@@ -427,8 +427,8 @@ def plot_all_dat_hits(dat_list_string, fils_list_string, check_nonzero=False, al
     mid_f = 0.5*(f_start + f_stop)
     
     # on source name
-    frame = find_event.read_dat(dat_file_list[0])
-    on_source_name = frame["Source"][0]
+    #frame = find_event.read_dat(dat_file_list[0])
+    #on_source_name = frame["Source"][0]
     
     
     
@@ -460,6 +460,12 @@ def plot_all_dat_hits(dat_list_string, fils_list_string, check_nonzero=False, al
     
     subplots = []
     
+    # adding the candidates table and temporarily selecting the first entry
+    candidate_event_dataframe = pd.read_csv(candidate_event_table_string)
+    candidate = candidate_event_dataframe.iloc[0]
+    on_source_name = candidate["Source"]#[0]
+    f_candidate = candidate["Freq"]
+    
     for i in range(len(dat_file_list)):
         subplot = plt.subplot(n_plots, 1, i+1)
         subplots.append(subplot)
@@ -473,7 +479,7 @@ def plot_all_dat_hits(dat_list_string, fils_list_string, check_nonzero=False, al
                                    f_stop)
         
         plot_dat(dat_file_list[i], fil_file_list[i],
-                 f_start, f_stop, t0, check_nonzero=check_nonzero, alpha=alpha, c=c)
+                 f_start, f_stop, t0, check_nonzero=check_nonzero, candidate=candidate, alpha=alpha, c=c)
         
         #more code from make_waterfall_plots
         # Title the full plot
@@ -507,7 +513,7 @@ def plot_all_dat_hits(dat_list_string, fils_list_string, check_nonzero=False, al
     plt.subplots_adjust(hspace=0,wspace=0)
 
     # save the figures
-    path_png = dirpath + filter_level + '_' + on_source_name + '_freq_' "{:0.6f}".format(f_start) + ".png"
+    path_png = dirpath + filter_level + '_' + on_source_name + '_freq_' "{:0.6f}".format(f_candidate) + ".png"
     plt.savefig(path_png, bbox_inches='tight')
     logger_plot_event.debug('make_waterfall_plots: Saved file {}'.format(path_png))
 
@@ -517,9 +523,18 @@ def plot_all_dat_hits(dat_list_string, fils_list_string, check_nonzero=False, al
 
 
     
-def plot_dat(dat, fil, f_start, f_stop, t0, check_nonzero=False, alpha=1, c='#cc0000'):
+def plot_dat(dat, fil, f_start, f_stop, t0, check_nonzero=False, candidate=None, alpha=1, c='#cc0000'):
     wf = bl.Waterfall(fil, f_start, f_stop)
     hit_frame = find_event.read_dat(dat)
+    
+    # plot the estimated candidate line 
+    if candidate is not None:
+        t_elapsed = Time(wf.header['tstart'], format='mjd').unix - Time(t0, format='mjd').unix
+        t_duration = (wf.n_ints_in_file - 1) * wf.header['tsamp']
+        f_event = candidate["Freq"] + candidate["DriftRate"] / 1e6 * t_elapsed
+        drift_rate = candidate["DriftRate"]
+        # any mistakes will likely come from this line
+        overlay_drift(f_event, f_start, f_stop, drift_rate, t_duration)
     
     if len(hit_frame) == 0:
         #print("there are no hits to be plotted")
@@ -532,6 +547,7 @@ def plot_dat(dat, fil, f_start, f_stop, t0, check_nonzero=False, alpha=1, c='#cc
     f_mid = 0.5 * (f_start + f_stop)
     t_duration = (wf.n_ints_in_file - 1) * wf.header["tsamp"]
     
+    
     # more code here
     for i in range(len(hit_frame)):
         hit = hit_frame.iloc[i]
@@ -543,3 +559,5 @@ def plot_dat(dat, fil, f_start, f_stop, t0, check_nonzero=False, alpha=1, c='#cc
         start, stop = np.sort((f_mid - (bandwidth/2),  f_mid + (bandwidth/2)))
         
         overlay_drift(f_event, start, stop, drift_rate, t_duration, offset=0, alpha=alpha, c=c)
+        
+        

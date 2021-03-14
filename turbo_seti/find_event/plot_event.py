@@ -375,7 +375,8 @@ def plot_candidate_events(candidate_event_dataframe, fil_file_list, filter_level
                              offset=offset,
                              **kwargs)
 
-def plot_all_hit_and_candidates(dat_list_string, fils_list_string, candidate_event_table_string, check_nonzero=False, alpha=1, c='#cc0000', window=None):
+def plot_all_hit_and_candidates(dat_list_string, fils_list_string, candidate_event_table_string, 
+                                outdir=None, check_nonzero=False, alpha=1, c='#cc0000', window=None):
     #read candidate events into dataframe
     candidate_event_dataframe = pd.read_csv(candidate_event_table_string)
     
@@ -401,14 +402,15 @@ def plot_all_hit_and_candidates(dat_list_string, fils_list_string, candidate_eve
         candidate = candidate_event_dataframe.iloc[i]
         plot_all_dat(dat_file_list, 
                      fil_file_list, 
-                     candidate, 
+                     candidate,
+                     outdir=outdir,
                      check_nonzero=check_nonzero, 
                      alpha=alpha, 
                      c=c, 
                      window=window)
         
-
-def plot_all_dat(dat_file_list, fil_file_list, candidate, check_nonzero=False, alpha=1, c='#cc0000', window=None):
+def plot_all_dat(dat_file_list, fil_file_list, candidate, check_nonzero=False, 
+                 outdir=None, alpha=1, c='#cc0000', window=None):
         
     # put all hits into a single dataframe
     all_hits = []
@@ -528,6 +530,8 @@ def plot_all_dat(dat_file_list, fil_file_list, candidate, check_nonzero=False, a
     plt.subplots_adjust(hspace=0,wspace=0)
 
     # save the figures
+    if outdir is not None:
+        dirpath = outdir
     path_png = dirpath + filter_level + '_' + on_source_name + '_freq_' "{:0.6f}".format(f_candidate) + ".png"
     plt.savefig(path_png, bbox_inches='tight')
     logger_plot_event.debug('make_waterfall_plots: Saved file {}'.format(path_png))

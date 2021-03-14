@@ -7,7 +7,9 @@ ON-OFF radio SETI observations. The main function contained in this file is
 in this file (described below) to plot events from a turboSETI event .csv file.
 '''
 
+from os import mkdir
 from os.path import dirname
+import gc
 import logging
 logger_plot_event_name = 'plot_event'
 logger_plot_event = logging.getLogger(logger_plot_event_name)
@@ -466,7 +468,9 @@ def plot_all_dat(dat_file_list, fil_file_list, candidate, check_nonzero=False,
     dirpath = dirname(fil_file_list[0]) + '/'
 
     # read in data for the first panel
-    fil1 = bl.Waterfall(fil_file_list[0], f_start=f_start, f_stop=f_stop)
+    max_load = bl.calcload.calc_max_load(fil_file_list[0])
+    print('plot_event make_waterfall_plots: max_load={} is required for {}'.format(max_load, fil_file_list[0]))
+    fil1 = bl.Waterfall(fil_file_list[0], f_start=f_start, f_stop=f_stop, max_load=max_load)
     t0 = fil1.header['tstart']
     dummy, plot_data1 = fil1.grab_data()
 
@@ -479,16 +483,20 @@ def plot_all_dat(dat_file_list, fil_file_list, candidate, check_nonzero=False,
     plot_data1 = rebin(plot_data1, dec_fac_x, dec_fac_y)
     
     subplots = []
+    del fil1, dummy, plot_data1
+    gc.collect()
     
     on_source_name = candidate["Source"]
     f_candidate = candidate["Freq"]
     
-    for i in range(len(dat_file_list)):
+    for i, filename in enumerate(fil_file_list):
         subplot = plt.subplot(n_plots, 1, i+1)
         subplots.append(subplot)
         
-        wf = bl.Waterfall(fil_file_list[i], 
-                          f_start, f_stop)
+        #read in the data
+        max_load = bl.calcload.calc_max_load(filename)
+        print('plot_event make_waterfall_plots: max_load={} is required for {}'.format(max_load, filename))
+        wf = bl.Waterfall(filename, f_start=f_start, f_stop=f_stop, max_load=max_load)
 
         this_plot = plot_waterfall(wf, 
                                    source_name_list[i], 
@@ -507,6 +515,9 @@ def plot_all_dat(dat_file_list, fil_file_list, candidate, check_nonzero=False,
         # Format full plot
         if i < len(fil_file_list)-1:
             plt.xticks(np.linspace(f_start, f_stop, num=4), ['','','',''])
+
+        del wf
+        gc.collect()        
 
     # More overall plot formatting, axis labelling
     factor = 1e6

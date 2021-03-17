@@ -4,6 +4,7 @@ Main program module for executable turboSETI
 '''
 
 import sys
+import os
 import logging
 import time
 import cProfile
@@ -68,6 +69,14 @@ def main(args=None):
         print('turbo_seti: {}'.format(TURBO_SETI_VERSION))
         print('blimpy: {}'.format(BLIMPY_VERSION))
         sys.exit(0)
+
+    if args.filename == '':
+        os.system('turboSETI -h')
+        sys.exit(0)
+
+    if not os.path.exists(args.filename):
+        print("\nInput file {} does not exist!\n".format(args.filename))
+        sys.exit(86)
 
     if args.flag_profile == "y":
         cProfile.runctx('exec(args)', {'args': args, 'exec': exec}, {}, 'exec')

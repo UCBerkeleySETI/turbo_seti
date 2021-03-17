@@ -557,6 +557,11 @@ def plot_dat(dat, fil, f_start, f_stop, t0, candidate, check_nonzero=False, alph
     wf = bl.Waterfall(fil, f_start, f_stop)
     hit_frame = find_event.read_dat(dat)
     
+    #select just the hits within the frequency range
+    if len(hit_frame) > 0:
+        keep = np.where((hit_frame['Freq'] > f_start) & (hit_frame['Freq'] < f_stop))
+        hit_frame = hit_frame.iloc[keep]
+    
     # plot the estimated candidate line 
     if candidate is not None:
         t_elapsed = Time(wf.header['tstart'], format='mjd').unix - Time(t0, format='mjd').unix

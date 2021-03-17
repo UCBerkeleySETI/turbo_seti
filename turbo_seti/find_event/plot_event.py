@@ -392,28 +392,6 @@ def plot_all_hit_and_candidates(dat_list_string, fils_list_string, candidate_eve
     for file in pd.read_csv(dat_list_string, encoding='utf-8', header=None, chunksize=1):
         dat_file_list.append(file.iloc[0,0])
         
-    #read in fil files
-    fil_file_list = []
-    for file in pd.read_csv(fils_list_string, encoding='utf-8', header=None, chunksize=1):
-        fil_file_list.append(file.iloc[0,0])
-        
-    n_events = len(candidate_event_dataframe)
-    print("This will make %s .png files"%n_events)
-    
-    for i in range(len(candidate_event_dataframe)):
-        candidate = candidate_event_dataframe.iloc[i]
-        plot_all_dat(dat_file_list, 
-                     fil_file_list, 
-                     candidate,
-                     outdir=outdir,
-                     check_nonzero=check_nonzero, 
-                     alpha=alpha, 
-                     c=c, 
-                     window=window)
-        
-def plot_all_dat(dat_file_list, fil_file_list, candidate, check_nonzero=False, 
-                 outdir=None, alpha=1, c='#cc0000', window=None):
-        
     # put all hits into a single dataframe
     all_hits = []
     for dat in dat_file_list:
@@ -427,7 +405,15 @@ def plot_all_dat(dat_file_list, fil_file_list, candidate, check_nonzero=False,
         f_max = window[1]
         keep = np.where((all_hits_frame["Freq"] > f_min) & (all_hits_frame["Freq"] < f_max))
         all_hits_frame = all_hits_frame.iloc[keep]
-   
+        
+        keep = np.where((candidate_event_dataframe["Freq"] > f_min) & (candidate_event_dataframe["Freq"] < f_max))
+        candidate_event_dataframe = candidate_event_dataframe.iloc[keep]
+        
+    #read in fil files
+    fil_file_list = []
+    for file in pd.read_csv(fils_list_string, encoding='utf-8', header=None, chunksize=1):
+        fil_file_list.append(file.iloc[0,0])
+        
     #obtaining source names
     source_name_list = []
     for fil in fil_file_list:
@@ -435,9 +421,26 @@ def plot_all_dat(dat_file_list, fil_file_list, candidate, check_nonzero=False,
         source_name = wf.container.header["source_name"]
         source_name_list.append(source_name)
         print("plot_all_dat: source_name={}".format(source_name))
+        
+    n_events = len(candidate_event_dataframe)
+    print("This will make %s .png files"%n_events)
     
+    for i in range(len(candidate_event_dataframe)):
+        candidate = candidate_event_dataframe.iloc[i]
+        plot_all_dat(dat_file_list, 
+                     fil_file_list, 
+                     source_name_list,
+                     candidate,
+                     all_hits_frame,
+                     outdir=outdir,
+                     check_nonzero=check_nonzero, 
+                     alpha=alpha, 
+                     c=c)
+        
+def plot_all_dat(dat_file_list, fil_file_list, source_name_list, candidate, all_hits_frame, check_nonzero=False, 
+                 outdir=None, alpha=1, c='#cc0000'):
 
-    max_drift_rate = np.max(all_hits_frame["DriftRate"])
+    max_drift_rate = np.max(all_hits_frame["Freq"]) - np.min(all_hits_frame["Freq"])
     filter_level = "f0"
     
     # total range all hits fall between 
@@ -446,7 +449,7 @@ def plot_all_dat(dat_file_list, fil_file_list, candidate, check_nonzero=False,
     
     fil1 = bl.Waterfall(fil_file_list[0], load_data=False)
     t0 = fil1.header["tstart"]
-    t_elapsed = Time(wf.header['tstart'], format='mjd').unix - Time(t0, format='mjd').unix
+    t_elapsed = Time(fil1.header['tstart'], format='mjd').unix - Time(t0, format='mjd').unix
     bandwidth = 2.4 * abs(max_drift_rate)/1e6 * t_elapsed
     bandwidth = np.max((bandwidth, 500./1e6))
     

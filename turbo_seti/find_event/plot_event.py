@@ -378,7 +378,7 @@ def plot_candidate_events(candidate_event_dataframe, fil_file_list, filter_level
                              **kwargs)
 
 def plot_all_hit_and_candidates(dat_list_string, fils_list_string, candidate_event_table_string, 
-                                outdir=None, check_nonzero=False, alpha=1, c='#cc0000', window=None):
+                                outdir=None, check_zero_drift=False, alpha=1, c='#cc0000', window=None):
     #read candidate events into dataframe
     candidate_event_dataframe = pd.read_csv(candidate_event_table_string)
     
@@ -423,21 +423,37 @@ def plot_all_hit_and_candidates(dat_list_string, fils_list_string, candidate_eve
         print("plot_all_dat: source_name={}".format(source_name))
         
     n_events = len(candidate_event_dataframe)
-    print("This will make %s .png files"%n_events)
-    
-    for i in range(len(candidate_event_dataframe)):
-        candidate = candidate_event_dataframe.iloc[i]
-        plot_all_dat(dat_file_list, 
-                     fil_file_list, 
-                     source_name_list,
-                     candidate,
-                     all_hits_frame,
-                     outdir=outdir,
-                     check_nonzero=check_nonzero, 
-                     alpha=alpha, 
-                     c=c)
+    if n_events == 0:
+        # check to see if there are any hits detected
+        if len(all_hits_frame) == 0:
+            print("There are no hits in this range. This will make 0 .png files")
+        else:
+            # plot just the hits as there will be no candidate
+            print("This will make 1 .png file")
+            plot_all_dat(dat_file_list, 
+                         fil_file_list, 
+                         source_name_list,
+                         all_hits_frame,
+                         outdir=outdir,
+                         check_zero_drift=check_zero_drift, 
+                         alpha=alpha, 
+                         c=c)
+    else:
+        #plot the hits and candidate(s)
+        print("This will make %s .png files"%n_events)
+        for i in range(n_events):
+            candidate = candidate_event_dataframe.iloc[i]
+            plot_all_dat(dat_file_list, 
+                         fil_file_list, 
+                         source_name_list,
+                         all_hits_frame,
+                         candidate,
+                         outdir=outdir,
+                         check_zero_drift=check_zero_drift, 
+                         alpha=alpha, 
+                         c=c)
         
-def plot_all_dat(dat_file_list, fil_file_list, source_name_list, candidate, all_hits_frame, check_nonzero=False, 
+def plot_all_dat(dat_file_list, fil_file_list, source_name_list, all_hits_frame, candidate=None, check_zero_drift=False, 
                  outdir=None, alpha=1, c='#cc0000'):
 
     max_drift_rate = np.max(all_hits_frame["Freq"]) - np.min(all_hits_frame["Freq"])
@@ -446,6 +462,7 @@ def plot_all_dat(dat_file_list, fil_file_list, source_name_list, candidate, all_
     # total range all hits fall between 
     f_min = np.min(all_hits_frame["Freq"])
     f_max = np.max(all_hits_frame["Freq"])
+    
     
     fil1 = bl.Waterfall(fil_file_list[0], load_data=False)
     t0 = fil1.header["tstart"]
@@ -489,8 +506,12 @@ def plot_all_dat(dat_file_list, fil_file_list, source_name_list, candidate, all_
     del fil1, dummy, plot_data1
     gc.collect()
     
-    on_source_name = candidate["Source"]
-    f_candidate = candidate["Freq"]
+    on_source_name = source_name_list[0]
+    f_candidate = mid_f
+    
+    if candidate is not None:
+        on_source_name = candidate["Source"]
+        f_candidate = candidate["Freq"]
     
     for i, filename in enumerate(fil_file_list):
         subplot = plt.subplot(n_plots, 1, i+1)
@@ -500,14 +521,14 @@ def plot_all_dat(dat_file_list, fil_file_list, source_name_list, candidate, all_
         max_load = bl.calcload.calc_max_load(filename)
         print('plot_event make_waterfall_plots: max_load={} is required for {}'.format(max_load, filename))
         wf = bl.Waterfall(filename, f_start=f_start, f_stop=f_stop, max_load=max_load)
-
+        
         this_plot = plot_waterfall(wf, 
                                    source_name_list[i], 
                                    f_start, 
                                    f_stop)
         
         plot_dat(dat_file_list[i], fil_file_list[i],
-                 f_start, f_stop, t0, candidate, check_nonzero=check_nonzero, alpha=alpha, c=c)
+                 f_start, f_stop, t0, candidate, check_zero_drift=check_zero_drift, alpha=alpha, c=c)
         
         #more code from make_waterfall_plots
         # Title the full plot
@@ -553,7 +574,7 @@ def plot_all_dat(dat_file_list, fil_file_list, source_name_list, candidate, all_
     # close all figure windows
     plt.close('all')
 
-def plot_dat(dat, fil, f_start, f_stop, t0, candidate, check_nonzero=False, alpha=1, c='#cc0000'):
+def plot_dat(dat, fil, f_start, f_stop, t0, candidate, check_zero_drift=False, alpha=1, c='#cc0000'):
     wf = bl.Waterfall(fil, f_start, f_stop)
     hit_frame = find_event.read_dat(dat)
     
@@ -575,12 +596,13 @@ def plot_dat(dat, fil, f_start, f_stop, t0, candidate, check_nonzero=False, alph
         # there are no hits detected in this dat file 
         return
     
-    if not check_nonzero:
+    if not check_zero_drift:
         hit_frame = hit_frame[hit_frame["DriftRate"] != 0]
     
     f_mid = 0.5 * (f_start + f_stop)
     t_duration = (wf.n_ints_in_file - 1) * wf.header["tsamp"]
     
+    #plot all the hits 
     for i in range(len(hit_frame)):
         hit = hit_frame.iloc[i]
         

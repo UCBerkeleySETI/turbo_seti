@@ -7,6 +7,7 @@ This file is a version history of turbo_seti amendments, beginning with version 
 |  **==future==** | **TBD** | Add frequency channel masking capability. See issue #125. |
 | 2021-03-20 | 2.0.15 | Fixed issue #205 - Reverse-engineered the original drift index files. |
 | | | Fixed issue #218 - Replaced drift index file 8 (broken). |
+| | | Fixed issue #94 - removed unused code from plot_event_pipeline.py and plot_event.py |
 | 2021-03-10 | 2.0.14 | Fixed issue #213 - Doppler search dies when using GPU (string format issue). |
 | | | Fixed issue #214 - Need some testing for plot_dir parameter of plot_event_pipeline. |
 | 2021-03-09 | PR #212 | Support specification of an output directory for plotting at multiple levels in plot_event_pipeline.py and plot_event.py. |

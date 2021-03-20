@@ -567,8 +567,13 @@ def plot_all_dat(dat_file_list, fil_file_list, source_name_list, all_hits_frame,
     # save the figures
     if outdir is not None:
         dirpath = outdir
-    path_png = dirpath + filter_level + '_' + on_source_name + '_freq_' "{:0.6f}".format(f_candidate) + ".png"
-    plt.savefig(path_png, bbox_inches='tight')
+        
+    # make note if the plot contains a candidate
+    cand = ""
+    if candidate is not None:
+        cand = "_candidate"
+    path_png = dirpath + filter_level + '_' + on_source_name + cand + '_freq_' "{:0.6f}".format(f_candidate) + ".png"
+    plt.savefig(path_png, bbox_inches='tight', transparent=False)
     logger_plot_event.debug('make_waterfall_plots: Saved file {}'.format(path_png))
 
     # close all figure windows

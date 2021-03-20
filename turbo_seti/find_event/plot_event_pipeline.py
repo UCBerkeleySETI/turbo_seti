@@ -81,15 +81,6 @@ def plot_event_pipeline(event_csv_string, fils_list_string, user_validation=Fals
         print("*** plot_event_pipeline: Oops, cannot access file {}".format(event_csv_string))
         return
 
-    with open(event_csv_string, "r") as file:
-        distances = file.readline()
-    distance_list = distances[2:-2].split(',')
-    for dummy, distance in enumerate(distance_list):
-        if len(distance) == 1:
-            distance = '0d'
-    plot_snr_list = distance_list
-
-    #reading in the list of .fil files
     fil_file_list = []
     for file in pandas.read_csv(fils_list_string, encoding='utf-8', header=None, chunksize=1):
         fil_file_list.append(file.iloc[0,0])
@@ -156,5 +147,4 @@ def plot_event_pipeline(event_csv_string, fils_list_string, user_validation=Fals
                                    filter_level,
                                    source_name_list,
                                    offset=offset,
-                                   plot_dir=plot_dir,
-                                   plot_snr_list=plot_snr_list)
+                                   plot_dir=plot_dir)

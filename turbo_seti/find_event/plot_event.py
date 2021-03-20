@@ -300,7 +300,7 @@ def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_r
 
 
 def plot_candidate_events(candidate_event_dataframe, fil_file_list, filter_level, source_name_list,
-                          offset=0, plot_snr_list=False, plot_dir=None, **kwargs):
+                          offset=0, plot_dir=None, **kwargs):
     r'''
     Calls :func:`~make_waterfall_plots` on each event in the input .csv file.
 
@@ -342,7 +342,6 @@ def plot_candidate_events(candidate_event_dataframe, fil_file_list, filter_level
         event) or 'auto' (shifts line to the left by
         an auto-calculated amount, with addition lines
         showing original position).
-    plot_snr_list : bool (*** NOT YET IN USE***)
     kwargs : dict
 
 

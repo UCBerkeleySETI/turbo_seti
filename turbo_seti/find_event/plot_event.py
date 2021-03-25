@@ -454,6 +454,11 @@ def plot_all_hit_and_candidates(dat_list_string, fils_list_string, candidate_eve
         keep = np.where((candidate_event_dataframe["Freq"] > f_min) & (candidate_event_dataframe["Freq"] < f_max))
         candidate_event_dataframe = candidate_event_dataframe.iloc[keep]
         
+    #remove hits with a drift rate of zero
+    if not check_zero_drift:
+        keep = np.where(all_hits_frame["DriftRate"] != 0)
+        all_hits_frame = all_hits_frame.iloc[keep]
+        
     #read in fil files
     fil_file_list = []
     for file in pd.read_csv(fils_list_string, encoding='utf-8', header=None, chunksize=1):

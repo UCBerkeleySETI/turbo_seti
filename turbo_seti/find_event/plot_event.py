@@ -153,7 +153,7 @@ def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_r
     drift_rate : float
         Drift rate in Hz/s.
     f_mid : float
-        <iddle frequency of the event, in MHz.
+        Middle frequency of the event, in MHz.
     filter_level : int
         Filter level (1, 2, or 3) that produced the event.
     source_name_list : list
@@ -379,13 +379,57 @@ def plot_candidate_events(candidate_event_dataframe, fil_file_list, filter_level
 
 def plot_all_hit_and_candidates(dat_list_string, fils_list_string, candidate_event_table_string, 
                                 outdir=None, check_zero_drift=False, alpha=1, c='#cc0000', window=None):
+    """
+    Makes a plot similar to the one produced by 
+    plot_candidate_events, but also includes the hits 
+    detected, in addition to the candidate signal.
+    
+    Calls `plot_all_dat` and `plot_dat`
+    
+    Arguments
+    ----------
+    dat_list_string : str
+        List of .dat files in the cadence.
+    fils_list_string : str
+        List of filterbank or .h5 files in the cadence.
+    candidate_event_table_string : str
+        The string name of a .csv file that contains the
+        list of events at a given filter level, created as
+        output from find_event_pipeline.py. 
+    outdir : str, optional
+        Path to the directory where the plots will be saved to. 
+        The default is None, which will result in the plots being 
+        saved to the directory where the .dat file are located.
+    check_zero_drift : bool, optional
+         A True/False flag that tells the program whether to
+        include hits that have a drift rate of 0 Hz/s. Earth-
+        based RFI tends to have no drift rate, while signals
+        from the sky are expected to have non-zero drift rates.
+        The default is False.
+    outdir : str, optional
+        Path to the directory where the plots will be saved to. 
+        The default is None, which will result in the plots being 
+        saved to the directory the .dat file are located.
+    alpha : float, optional
+        The opacity of the overlayed hit plot. This should 
+        be between 0 and 1, with 0 being invisible, and 1
+        being the default opacity. This is passed into 
+        matplotlib.pyplot function. 
+    c : str, optional
+        Allows for the specification of the color of the overlayed
+        hits. The default color is identical to the color of the 
+        candidate signal plot, so choosing a different color is 
+        recommended. The default is '#cc0000'.
+    window : tuple, optional
+        Sets the start and stop frequencies of the plot, in MHz.
+        The input takes the form of a tuple: (start, stop). And 
+        assumes that the start is less than the stop. If given, the 
+        resulting plot will range exactly between the start/stop
+        frequencies. The default is None, which will result in 
+        a plot of the entire range of hits detected.
+    """
     #read candidate events into dataframe
     candidate_event_dataframe = pd.read_csv(candidate_event_table_string)
-    
-    len_df = len(candidate_event_dataframe)
-    if len_df < 1:
-        print('*** plot_all_hit_and_candidates: len(candidate_event_dataframe) = 0, nothing to do.')
-        return
     
     #read in dat files
     dat_file_list = []
@@ -403,9 +447,10 @@ def plot_all_hit_and_candidates(dat_list_string, fils_list_string, candidate_eve
     if window != None:
         f_min = window[0]
         f_max = window[1]
-        keep = np.where((all_hits_frame["Freq"] > f_min) & (all_hits_frame["Freq"] < f_max))
+        keep = np.where((all_hits_frame["Freq"] >= f_min) & (all_hits_frame["Freq"] <= f_max))
         all_hits_frame = all_hits_frame.iloc[keep]
         
+        #keep only the candidates within the window 
         keep = np.where((candidate_event_dataframe["Freq"] > f_min) & (candidate_event_dataframe["Freq"] < f_max))
         candidate_event_dataframe = candidate_event_dataframe.iloc[keep]
         
@@ -437,7 +482,8 @@ def plot_all_hit_and_candidates(dat_list_string, fils_list_string, candidate_eve
                          outdir=outdir,
                          check_zero_drift=check_zero_drift, 
                          alpha=alpha, 
-                         c=c)
+                         c=c,
+                         window=window)
     else:
         #plot the hits and candidate(s)
         print("This will make %s .png files"%n_events)
@@ -451,12 +497,76 @@ def plot_all_hit_and_candidates(dat_list_string, fils_list_string, candidate_eve
                          outdir=outdir,
                          check_zero_drift=check_zero_drift, 
                          alpha=alpha, 
-                         c=c)
+                         c=c,
+                         window=window)
         
 def plot_all_dat(dat_file_list, fil_file_list, source_name_list, all_hits_frame, candidate=None, check_zero_drift=False, 
-                 outdir=None, alpha=1, c='#cc0000'):
-
-    max_drift_rate = np.max(all_hits_frame["Freq"]) - np.min(all_hits_frame["Freq"])
+                 outdir=None, alpha=1, c='#cc0000', window=None):
+    """ 
+    Parameters
+    ----------
+    dat_file_list : list
+        A Python list that contains a series of 
+        strings corresponding to the filenames of .dat
+        files, each on a new line, that corresponds to 
+        the .dat files created when running turboSETI 
+        candidate search on the .h5 or .fil files below
+    fil_file_list : list
+        A Python list that contains a series of 
+        strings corresponding to the filenames of .dat
+        files, each on a new line, that corresponds to 
+        the cadence used to create the .csv file used 
+        for event_csv_string.
+    source_name_list : list
+        A Python list that contains a series of strings
+        corresponding to the source names of the 
+        cadence in chronological (descending through 
+        the plot pannels) cadence.
+    all_hits_frame : dict
+        A pandas dataframe contining information about 
+        all the hits detected. The necessary data 
+        includes the start and stop frequencies, the drift
+        rate, and the source name. This dataframe is 
+        generated in plot_all_hit_and_candidates above. 
+    candidate : dict, optional
+        A single row from a pandas dataframe containing
+        information about one of the candidate signals
+        detected. Contains information about the candidate 
+        signal to be plotted. The necessary data includes 
+        the start and stop frequencies, the drift rate, 
+        and the source name. The dataframe the candiate
+        comes from is generated in plot_all_hit_and_candidates
+        above as `candidate_event_dataframe`. The default is None.
+    check_zero_drift : bool, optional
+         A True/False flag that tells the program whether to
+        include hits that have a drift rate of 0 Hz/s. Earth-
+        based RFI tends to have no drift rate, while signals
+        from the sky are expected to have non-zero drift rates.
+        The default is False.
+    outdir : str, optional
+        Path to the directory where the plots will be saved to. 
+        The default is None, which will result in the plots being 
+        saved to the directory the .dat file are located.
+    alpha : float, optional
+        The opacity of the overlayed hit plot. This should 
+        be between 0 and 1, with 0 being invisible, and 1
+        being the default opacity. This is passed into 
+        matplotlib.pyplot function. 
+    c : str, optional
+        Allows for the specification of the color of the overlayed
+        hits. The default color is identical to the color of the 
+        candidate signal plot, so choosing a different color is 
+        recommended. The default is '#cc0000'.
+    window : tuple, optional
+        Sets the start and stop frequencies of the plot, in MHz.
+        The input takes the form of a tuple: (start, stop). And 
+        assumes that the start is less than the stop. The 
+        resulting plot will range exactly between the start/stop
+        frequencies. The default is None, which will result in 
+        a plot of the entire range of hits detected.
+    """
+    #set plot boundaries based on the contents of the file
+    freq_range = np.max(all_hits_frame["Freq"]) - np.min(all_hits_frame["Freq"])
     filter_level = "f0"
     
     # total range all hits fall between 
@@ -467,12 +577,18 @@ def plot_all_dat(dat_file_list, fil_file_list, source_name_list, all_hits_frame,
     fil1 = bl.Waterfall(fil_file_list[0], load_data=False)
     t0 = fil1.header["tstart"]
     t_elapsed = Time(fil1.header['tstart'], format='mjd').unix - Time(t0, format='mjd').unix
-    bandwidth = 2.4 * abs(max_drift_rate)/1e6 * t_elapsed
+    bandwidth = 2.4 * abs(freq_range)/1e6 * t_elapsed
     bandwidth = np.max((bandwidth, 500./1e6))
     
     # Get start and stop frequencies based on midpoint and bandwidth
     f_start, f_stop = np.sort((f_min - (bandwidth/2),  f_max + (bandwidth/2)))
     mid_f = 0.5*(f_start + f_stop)
+    
+    #if given a window to plot in, set boundaries accordingly
+    if window is not None:
+        f_start = window[0]
+        f_stop  = window[1]
+        mid_f   = 0.5*(f_start + f_stop) 
     
     # plugging some code from make_waterfall_plots
     global logger_plot_event
@@ -579,7 +695,47 @@ def plot_all_dat(dat_file_list, fil_file_list, source_name_list, all_hits_frame,
     # close all figure windows
     plt.close('all')
 
-def plot_dat(dat, fil, f_start, f_stop, t0, candidate, check_zero_drift=False, alpha=1, c='#cc0000'):
+def plot_dat(dat, fil, f_start, f_stop, t0, candidate=None, check_zero_drift=False, alpha=1, c='#cc0000'):
+    """
+    Parameters
+    ----------
+    dat : str
+        The .dat file containing information about the hits detected.
+    fil : str
+        Filterbank or h5 file corresponding to the .dat file.
+    f_start : float
+        Start frequency, in MHz.
+    f_stop : float
+        Stop frequency, in MHz.
+    t0 : float
+        Start time of the candate event in mjd units.
+    candidate : dict, optional
+        A single row from a pandas dataframe containing
+        information about one of the candidate signals
+        detected. Contains information about the candidate 
+        signal to be plotted. The necessary data includes 
+        the start and stop frequencies, the drift rate, 
+        and the source name. The dataframe the candiate
+        comes from is generated in plot_all_hit_and_candidates
+        above as `candidate_event_dataframe`. The default is None.
+    check_zero_drift : bool, optional
+         A True/False flag that tells the program whether to
+        include hits that have a drift rate of 0 Hz/s. Earth-
+        based RFI tends to have no drift rate, while signals
+        from the sky are expected to have non-zero drift rates.
+        The default is False.
+    alpha : float, optional
+        The opacity of the overlayed hit plot. This should 
+        be between 0 and 1, with 0 being invisible, and 1
+        being the default opacity. This is passed into 
+        matplotlib.pyplot function. 
+    c : str, optional
+        Allows for the specification of the color of the overlayed
+        hits. The default color is identical to the color of the 
+        candidate signal plot, so choosing a different color is 
+        recommended. The default is '#cc0000'.
+
+    """
     wf = bl.Waterfall(fil, f_start, f_stop)
     hit_frame = find_event.read_dat(dat)
     
@@ -604,7 +760,7 @@ def plot_dat(dat, fil, f_start, f_stop, t0, candidate, check_zero_drift=False, a
     if not check_zero_drift:
         hit_frame = hit_frame[hit_frame["DriftRate"] != 0]
     
-    f_mid = 0.5 * (f_start + f_stop)
+    #f_mid = 0.5 * (f_start + f_stop)
     t_duration = (wf.n_ints_in_file - 1) * wf.header["tsamp"]
     
     #plot all the hits 
@@ -618,5 +774,3 @@ def plot_dat(dat, fil, f_start, f_stop, t0, candidate, check_zero_drift=False, a
         start, stop = np.sort((f_mid - (bandwidth/2),  f_mid + (bandwidth/2)))
         
         overlay_drift(f_event, start, stop, drift_rate, t_duration, offset=0, alpha=alpha, c=c)
-        
-        

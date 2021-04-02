@@ -29,7 +29,7 @@ font = {'family' : 'DejaVu Sans',
 MAX_IMSHOW_POINTS = (4096, 1268)
 
 def plot_dat(dat_list_string, fils_list_string, candidate_event_table_string, 
-                                outdir=None, check_zero_drift=False, alpha=1, c='black', window=None):
+                                outdir=None, check_zero_drift=False, alpha=1, color='black', window=None):
     """
     Makes a plot similar to the one produced by 
     plot_candidate_events, but also includes the hits 
@@ -66,7 +66,7 @@ def plot_dat(dat_list_string, fils_list_string, candidate_event_table_string,
         be between 0 and 1, with 0 being invisible, and 1
         being the default opacity. This is passed into 
         matplotlib.pyplot function. 
-    c : str, optional
+    color : str, optional
         Allows for the specification of the color of the overlayed
         hits. The default is 'black'.
     window : tuple, optional
@@ -136,7 +136,7 @@ def plot_dat(dat_list_string, fils_list_string, candidate_event_table_string,
                                outdir=outdir,
                                check_zero_drift=check_zero_drift, 
                                alpha=alpha, 
-                               c=c,
+                               color=color,
                                window=window)
     else:
         #plot the hits and candidate(s)
@@ -151,11 +151,11 @@ def plot_dat(dat_list_string, fils_list_string, candidate_event_table_string,
                                outdir=outdir,
                                check_zero_drift=check_zero_drift, 
                                alpha=alpha, 
-                               c=c,
+                               color=color,
                                window=window)
         
 def plot_hit_candidate(dat_file_list, fil_file_list, source_name_list, all_hits_frame, candidate=None, check_zero_drift=False, 
-                 outdir=None, alpha=1, c='black', window=None):
+                 outdir=None, alpha=1, color='black', window=None):
     """ 
     Parameters
     ----------
@@ -206,7 +206,7 @@ def plot_hit_candidate(dat_file_list, fil_file_list, source_name_list, all_hits_
         be between 0 and 1, with 0 being invisible, and 1
         being the default opacity. This is passed into 
         matplotlib.pyplot function. 
-    c : str, optional
+    color : str, optional
         Allows for the specification of the color of the overlayed
         hits. The default is 'black'.
     window : tuple, optional
@@ -257,7 +257,7 @@ def plot_hit_candidate(dat_file_list, fil_file_list, source_name_list, all_hits_
 
     # read in data for the first panel
     max_load = bl.calcload.calc_max_load(fil_file_list[0])
-    print('plot_event make_waterfall_plots: max_load={} is required for {}'.format(max_load, fil_file_list[0]))
+    print('plot_dat plot_hit_candidate: max_load={} is required for {}'.format(max_load, fil_file_list[0]))
     fil1 = bl.Waterfall(fil_file_list[0], f_start=f_start, f_stop=f_stop, max_load=max_load)
     t0 = fil1.header['tstart']
     dummy, plot_data1 = fil1.grab_data()
@@ -296,7 +296,7 @@ def plot_hit_candidate(dat_file_list, fil_file_list, source_name_list, all_hits_
                                               f_stop)
         
         make_plot(dat_file_list[i], fil_file_list[i],
-                 f_start, f_stop, t0, candidate, check_zero_drift=check_zero_drift, alpha=alpha, c=c)
+                 f_start, f_stop, t0, candidate, check_zero_drift=check_zero_drift, alpha=alpha, color=color)
         
         #more code from make_waterfall_plots
         # Title the full plot
@@ -347,7 +347,7 @@ def plot_hit_candidate(dat_file_list, fil_file_list, source_name_list, all_hits_
     # close all figure windows
     plt.close('all')
 
-def make_plot(dat, fil, f_start, f_stop, t0, candidate=None, check_zero_drift=False, alpha=1, c='black'):
+def make_plot(dat, fil, f_start, f_stop, t0, candidate=None, check_zero_drift=False, alpha=1, color='black'):
     """
     Parameters
     ----------
@@ -381,7 +381,7 @@ def make_plot(dat, fil, f_start, f_stop, t0, candidate=None, check_zero_drift=Fa
         be between 0 and 1, with 0 being invisible, and 1
         being the default opacity. This is passed into 
         matplotlib.pyplot function. 
-    c : str, optional
+    color : str, optional
         Allows for the specification of the color of the overlayed
         hits. The default is 'black'.
 
@@ -423,5 +423,5 @@ def make_plot(dat, fil, f_start, f_stop, t0, candidate=None, check_zero_drift=Fa
         bandwidth = 500./1e6
         start, stop = np.sort((f_mid - (bandwidth/2),  f_mid + (bandwidth/2)))
         
-        plot_event.overlay_drift(f_event, start, stop, drift_rate, t_duration, offset=0, alpha=alpha, c=c)
+        plot_event.overlay_drift(f_event, start, stop, drift_rate, t_duration, offset=0, alpha=alpha, color=color)
         

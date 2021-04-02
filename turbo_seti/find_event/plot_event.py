@@ -35,7 +35,7 @@ font = {'family' : 'DejaVu Sans',
 MAX_IMSHOW_POINTS = (4096, 1268)
 
 
-def overlay_drift(f_event, f_start, f_stop, drift_rate, t_duration, offset=0, alpha=1, c='#cc0000'):
+def overlay_drift(f_event, f_start, f_stop, drift_rate, t_duration, offset=0, alpha=1, color='#cc0000'):
     r'''
     Creates a dashed red line at the recorded frequency and drift rate of
     the plotted event - can overlay the signal exactly or be offset by
@@ -48,14 +48,14 @@ def overlay_drift(f_event, f_start, f_stop, drift_rate, t_duration, offset=0, al
         plt.plot((f_event - offset, f_event),
                  (10, 10),
                  "o-",
-                 c=c,
+                 c=color,
                  lw=2,
                  alpha=alpha)
 
     # plots drift overlay line, with offset if desired
     plt.plot((f_event + offset, f_event + drift_rate/1e6 * t_duration + offset),
              (0, t_duration),
-             c=c,
+             c=color,
              ls='dashed', lw=2,
              alpha=alpha)
 

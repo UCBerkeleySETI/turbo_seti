@@ -414,14 +414,15 @@ def make_plot(dat, fil, f_start, f_stop, t0, candidate=None, check_zero_drift=Fa
     t_duration = (wf.n_ints_in_file - 1) * wf.header["tsamp"]
     
     #plot all the hits 
+    bandwidth = 500./1e6
+    half_bandwidth = bandwidth/2.0
     for i in range(len(hit_frame)):
         hit = hit_frame.iloc[i]
         
         f_mid = hit["Freq"]
         drift_rate = hit["DriftRate"]
         f_event = f_mid 
-        bandwidth = 500./1e6
-        start, stop = np.sort((f_mid - (bandwidth/2),  f_mid + (bandwidth/2)))
+        start, stop = np.sort((f_mid - (half_bandwidth),  f_mid + (half_bandwidth)))
         
         plot_event.overlay_drift(f_event, start, stop, drift_rate, t_duration, offset=0, alpha=alpha, color=color)
         

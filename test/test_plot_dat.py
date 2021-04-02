@@ -1,20 +1,14 @@
+r'''test_plot_dat - test plotting of a DAT file.
+NOTE:  This source file uses data downloaded by test_pipelines_1.py
+'''
+import glob
+from tempfile import gettempdir
 from turbo_seti.find_event import plot_dat
-import os
 
-h5_list = ["single_coarse_guppi_59046_80036_DIAG_VOYAGER-1_0011.rawspec.0000.h5",
-           "single_coarse_guppi_59046_80036_DIAG_VOYAGER-1_0011.rawspec.0000.h5",
-           "single_coarse_guppi_59046_80036_DIAG_VOYAGER-1_0011.rawspec.0000.h5",
-           "single_coarse_guppi_59046_80036_DIAG_VOYAGER-1_0011.rawspec.0000.h5",
-           "single_coarse_guppi_59046_80036_DIAG_VOYAGER-1_0011.rawspec.0000.h5",
-           "single_coarse_guppi_59046_80036_DIAG_VOYAGER-1_0011.rawspec.0000.h5"]
-
-dat_list = ["single_coarse_guppi_59046_80036_DIAG_VOYAGER-1_0011.rawspec.0000.dat", 
-            "single_coarse_guppi_59046_80036_DIAG_VOYAGER-1_0011.rawspec.0000.dat", 
-            "single_coarse_guppi_59046_80036_DIAG_VOYAGER-1_0011.rawspec.0000.dat", 
-            "single_coarse_guppi_59046_80036_DIAG_VOYAGER-1_0011.rawspec.0000.dat", 
-            "single_coarse_guppi_59046_80036_DIAG_VOYAGER-1_0011.rawspec.0000.dat", 
-            "single_coarse_guppi_59046_80036_DIAG_VOYAGER-1_0011.rawspec.0000.dat"]
-
+TESTDIR = gettempdir() + '/pipeline_testing/'
+PLOTDIR = TESTDIR + 'plots/'
+h5_list = sorted(glob.glob(TESTDIR + 'single*.h5'))
+dat_list = sorted(glob.glob(TESTDIR + 'single*.dat'))
 H5_LIST_FILE = "list_h5_files.txt"
 DAT_LIST_FILE= "list_dat_files.txt"
 

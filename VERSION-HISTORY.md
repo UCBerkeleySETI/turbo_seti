@@ -5,6 +5,7 @@ This file is a version history of turbo_seti amendments, beginning with version 
 |    Date    | Version | Contents |
 | :--: | :--: | :-- |
 |  **==future==** | **TBD** | Add frequency channel masking capability. See issue #125. |
+| 2021-04-01 | 2.0.16 | Added turbo_seti/find_event/plot_dat.py and test/test_plot_dat.py |
 | 2021-03-20 | 2.0.15 | Fixed issue #205 - Reverse-engineered the original drift index files. |
 | | | Fixed issue #218 - Replaced drift index file 8 (broken). |
 | | | Fixed issue #94 - removed unused code from plot_event_pipeline.py and plot_event.py |

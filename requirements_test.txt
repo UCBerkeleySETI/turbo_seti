@@ -6,3 +6,4 @@ coverage
 wget
 setigen
 pyslalib
+pytest-order

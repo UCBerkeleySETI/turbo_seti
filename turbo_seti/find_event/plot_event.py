@@ -35,12 +35,11 @@ font = {'family' : 'DejaVu Sans',
 MAX_IMSHOW_POINTS = (4096, 1268)
 
 
-def overlay_drift(f_event, f_start, f_stop, drift_rate, t_duration, offset=0):
+def overlay_drift(f_event, f_start, f_stop, drift_rate, t_duration, offset=0, alpha=1, color='#cc0000'):
     r'''
     Creates a dashed red line at the recorded frequency and drift rate of
     the plotted event - can overlay the signal exactly or be offset by
     some amount (offset can be 0 or 'auto').
-
     '''
     # determines automatic offset and plots offset lines
     if offset == 'auto':
@@ -48,14 +47,16 @@ def overlay_drift(f_event, f_start, f_stop, drift_rate, t_duration, offset=0):
         plt.plot((f_event - offset, f_event),
                  (10, 10),
                  "o-",
-                 c='#cc0000',
-                 lw=2)
+                 c=color,
+                 lw=2,
+                 alpha=alpha)
 
     # plots drift overlay line, with offset if desired
     plt.plot((f_event + offset, f_event + drift_rate/1e6 * t_duration + offset),
              (0, t_duration),
-             c='#cc0000',
-             ls='dashed', lw=2)
+             c=color,
+             ls='dashed', lw=2,
+             alpha=alpha)
 
 
 def plot_waterfall(wf, source_name, f_start=None, f_stop=None, **kwargs):
@@ -199,7 +200,7 @@ def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_r
 
     # read in data for the first panel
     max_load = bl.calcload.calc_max_load(fil_file_list[0])
-    print('plot_event make_waterfall_plots: max_load={} is required for {}'.format(max_load, fil_file_list[0]))
+    #print('plot_event make_waterfall_plots: max_load={} is required for {}'.format(max_load, fil_file_list[0]))
     wf1 = bl.Waterfall(fil_file_list[0], f_start=f_start, f_stop=f_stop, max_load=max_load)
     t0 = wf1.header['tstart']
     plot_f1, plot_data1 = wf1.grab_data()
@@ -229,7 +230,7 @@ def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_r
 
         # read in data
         max_load = bl.calcload.calc_max_load(filename)
-        print('plot_event make_waterfall_plots: max_load={} is required for {}'.format(max_load, filename))
+        #print('plot_event make_waterfall_plots: max_load={} is required for {}'.format(max_load, filename))
         wf = bl.Waterfall(filename, f_start=f_start, f_stop=f_stop, max_load=max_load)
         # make plot with plot_waterfall
         source_name = source_name_list[ii]
@@ -265,8 +266,8 @@ def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_r
     factor = 1e6
     units = 'Hz'
 
-    ax = plt.gca()
-    ax.get_xaxis().get_major_formatter().set_useOffset(False)
+    #ax = plt.gca()
+    #ax.get_xaxis().get_major_formatter().set_useOffset(False)
     xloc = np.linspace(f_start, f_stop, 5)
     xticks = [round(loc_freq) for loc_freq in (xloc - mid_f)*factor]
     if np.max(xticks) > 1000:

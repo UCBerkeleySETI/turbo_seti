@@ -64,7 +64,7 @@ def validate_hittbl(arg_pd_df, arg_csvf, arg_caller):
         failures += 1
 
     pd_snr = arg_pd_df['SNR'].values
-    if not np.all(csv_snr == pd_snr):
+    if not np.all(np.isclose(csv_snr, pd_snr, rtol=0.0001)):
         print('*** Oops, {}: pd_snr={}, csv_snr={}'
               .format(prefix, pd_snr, csv_snr))
         failures += 1

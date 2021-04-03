@@ -19,6 +19,7 @@ from urllib.error import HTTPError
 from argparse import ArgumentParser
 import imghdr
 import wget
+import pytest
 
 from turbo_seti.find_doppler.find_doppler import FindDoppler
 from turbo_seti.find_event.find_event_pipeline import find_event_pipeline
@@ -199,6 +200,7 @@ def find_plot_pipelines(need_init=True, filter_threshold=3):
           .format(main_time_stop - main_time_start))
 
 
+@pytest.mark.order(1)
 def test_pipelines(need_init=True, cleanup=False):
     r'''
     This is the pytest entry point.

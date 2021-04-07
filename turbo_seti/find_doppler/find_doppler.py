@@ -7,6 +7,7 @@ import logging
 import dask.bag as db
 from dask.diagnostics import ProgressBar
 
+from h5py import __version__ as H5PY_VERSION
 from blimpy import __version__ as BLIMPY_VERSION
 from .turbo_seti_version import TURBO_SETI_VERSION
 from .kernels import Kernels, Scheduler
@@ -19,8 +20,8 @@ from .merge_dats_logs import merge_dats_logs
 #import pdb;# pdb.set_trace()
 logger_name = 'find_doppler'
 logger = logging.getLogger(logger_name)
-version_announcements = '\nturbo_seti version {}\nblimpy version {}\n' \
-                        .format(TURBO_SETI_VERSION, BLIMPY_VERSION)
+version_announcements = '\nturbo_seti version {}\nblimpy version {}\nh5py version {}\n' \
+                        .format(TURBO_SETI_VERSION, BLIMPY_VERSION, H5PY_VERSION)
 
 class max_vals:
     r"""

@@ -10,16 +10,9 @@ TESTDIR = gettempdir() + '/pipeline_testing/'
 PLOTDIR = TESTDIR + 'plots/'
 h5_list = sorted(glob.glob(TESTDIR + 'single*.h5'))
 dat_list = sorted(glob.glob(TESTDIR + 'single*.dat'))
-H5_LIST_FILE = "list_h5_files.txt"
-DAT_LIST_FILE= "list_dat_files.txt"
+H5_LIST_FILE  = TESTDIR + 'h5_files.lst'
+DAT_LIST_FILE = TESTDIR + 'dat_files.lst'
 PATH_CSVF = TESTDIR + 'found_event_table.csv'
-
-with open(H5_LIST_FILE, "w") as f:
-    for line in h5_list:
-        f.write(line + "\n")
-with open(DAT_LIST_FILE, "w") as f:
-    for line in dat_list:
-        f.write(line + "\n")
 
 def test_plot_dat():
     # test default settings, will produce six plots, all candidates

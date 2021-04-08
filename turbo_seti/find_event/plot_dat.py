@@ -315,8 +315,8 @@ def plot_hit_candidate(dat_file_list, fil_file_list, source_name_list, all_hits_
     factor = 1e6
     units = 'Hz'
 
-    ax = plt.gca()
-    ax.get_xaxis().get_major_formatter().set_useOffset(False)
+    #ax = plt.gca()
+    #ax.get_xaxis().get_major_formatter().set_useOffset(False)
     xloc = np.linspace(f_start, f_stop, 5)
     xticks = [round(loc_freq) for loc_freq in (xloc - mid_f)*factor]
     if np.max(xticks) > 1000:

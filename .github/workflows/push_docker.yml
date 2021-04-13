@@ -6,6 +6,7 @@ on:
       - '**.rst'
     branches:
       - master
+      - gcp-gpu-test
 
 jobs:
   build-cpu:

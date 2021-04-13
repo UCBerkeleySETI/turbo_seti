@@ -32,6 +32,3 @@ jobs:
       - uses: actions/checkout@v2
       - name: Build the Docker GPU image
         run: docker build --build-arg IMAGE=cupy/cupy:v8.6.0 --file Dockerfile --tag turboseti-docker-gpu:$(date +%s) .
-      - name: Test turbo_seti with GPU
-        uses: docker://turboseti-docker-gpu
-        run: nvidia-smi 

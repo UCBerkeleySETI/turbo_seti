@@ -5,7 +5,7 @@ This file is a version history of turbo_seti amendments, beginning with version 
 |    Date    | Version | Contents |
 | :--: | :--: | :-- |
 |  **==future==** | **TBD** | Add frequency channel masking capability. See issue #125. |
-| 2021-04-13 | 2.0.18 | Add GPU enabled Docker image.
+| 2021-04-13 | 2.0.18 | Add GPU enabled Docker image build.
 | 2021-04-07 | 2.0.17 | Fixed issue #230 - Added turbo_seti/find_event/plot_dat.py which makes a plot similar to the one produced by plot_candidate_events, but also includes the hits detected, in addition to the candidate signal. |
 | 2021-04-03 | 2.0.16 | Fixed issue #225 - Ensure proper order of regression test execution. |
 | | | Fixed issue #226 - Apparently useless plot_event.py code became a bug source in latest matplotlib. |

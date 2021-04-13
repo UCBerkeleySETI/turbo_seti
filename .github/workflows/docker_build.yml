@@ -28,7 +28,7 @@ jobs:
 
     runs-on: nvidia-gpu
 
-        steps:
+    steps:
       - uses: actions/checkout@v2
       - name: Build the Docker GPU image
         run: docker build --build-arg IMAGE=cupy/cupy:v8.6.0 --file Dockerfile --tag turboseti-docker-gpu:$(date +%s) .

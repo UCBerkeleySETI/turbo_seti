@@ -1,4 +1,6 @@
-FROM ubuntu:20.04
+ARG IMAGE=ubuntu:20.04
+FROM ${IMAGE}
+
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update

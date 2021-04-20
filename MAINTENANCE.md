@@ -20,6 +20,7 @@ The primary method of launching regression testing is through the use of the `py
 * Change directory into the `test` directory and execute `python3 download_test_data.py` which will perform all required regression testing initialization.
 * When the previous step has completed, change directory up one level to the top of the `turbo_seti` directory tree.
 * Execute: ```python3 setup.py install```
+* Execute: ```python3 -m pip install -r requirements_test.txt```
 * Regression testing can now begin.
 * Running the full suite of regression tests is invoked by executing `pytest` with no parameters specified.  It is possible to run a single regression test file by specifying it as an argument to `pytest`.  For example, if one wishes to only run the find event tests, the following is the command line to use: `pytest test/test_find_event.py`.
 * It is **highly encouraged** for developers to perform regression testing frequently in order to avoid surprises later on.

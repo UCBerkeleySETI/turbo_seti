@@ -35,8 +35,8 @@ def main(args=None):
                    help='show the turbo_seti and blimpy versions and exit')
     p.add_argument('-M', '--max_drift', dest='max_drift', type=float, default=10.0,
                    help='Set the maximum drift rate threshold. Unit: Hz/sec. Default: 10.0')
-    p.add_argument('-m', '--min_drift', dest='min_drift', type=float, default=0.0,
-                   help='Set the minimum drift rate threshold. Unit: Hz/sec. Default: 0.0')
+    p.add_argument('-m', '--min_drift', dest='min_drift', type=float, default=0.00001,
+                   help='Set the minimum drift rate threshold. Unit: Hz/sec. Default: 0.00001')
     p.add_argument('-s', '--snr', dest='snr', type=float, default=25.0,
                    help='Set the minimum SNR threshold. Default: 25.0')
     p.add_argument('-o', '--out_dir', dest='out_dir', type=str, default='./',

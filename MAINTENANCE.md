@@ -19,6 +19,7 @@ The primary method of launching regression testing is through the use of the `py
 * Also, from the same site, `turbo_seti` is downloaded to a local computer.  The download operations can be performed in a few different ways but the simplest might be to download the zip file by clicking on the `Code` button and selecting `Download ZIP`.  Once the the zip file is in a local directory, unzip it and move the turbo_seti directory tree to wherever is appropriate for testing.  The zip file can now be discarded.
 * Change directory into the `test` directory and execute `python3 download_test_data.py` which will perform all required regression testing initialization.
 * When the previous step has completed, change directory up one level to the top of the `turbo_seti` directory tree.
+* Execute: ```python3 -m pip install -U git+https://github.com/UCBerkeleySETI/blimpy```
 * Execute: ```python3 setup.py install```
 * Execute: ```python3 -m pip install -r requirements_test.txt```
 * Regression testing can now begin.

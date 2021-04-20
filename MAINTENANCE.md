@@ -17,8 +17,10 @@ The primary method of launching regression testing is through the use of the `py
 
 * The development of an amendment to `turbo_seti` begins with taking a fork from a github site, normally from `https://github.com/UCBerkeleySETI/turbo_seti`.
 * Also, from the same site, `turbo_seti` is downloaded to a local computer.  The download operations can be performed in a few different ways but the simplest might be to download the zip file by clicking on the `Code` button and selecting `Download ZIP`.  Once the the zip file is in a local directory, unzip it and move the turbo_seti directory tree to wherever is appropriate for testing.  The zip file can now be discarded.
-* Change directory into the `test` directory (where this file is located) and execute `python3 download_test_data.py` which will perform all required regression testing initialization.
-* When the previous step has completed, change directory up one level to the top of the `turbo_seti` directory tree.  Regression testing can now begin.
+* Change directory into the `test` directory and execute `python3 download_test_data.py` which will perform all required regression testing initialization.
+* When the previous step has completed, change directory up one level to the top of the `turbo_seti` directory tree.
+* Execute: ```python3 setup.py install```
+* Regression testing can now begin.
 * Running the full suite of regression tests is invoked by executing `pytest` with no parameters specified.  It is possible to run a single regression test file by specifying it as an argument to `pytest`.  For example, if one wishes to only run the find event tests, the following is the command line to use: `pytest test/test_find_event.py`.
 * It is **highly encouraged** for developers to perform regression testing frequently in order to avoid surprises later on.
 * Once, development activity on the local machine is complete and the last regression test has run verifying the absence of negative side effects, then the new and/or modified turbo_seti files can be uploaded to the developer's fork github site.

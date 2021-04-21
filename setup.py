@@ -9,7 +9,7 @@
 
 from setuptools import setup, find_packages
 
-__version__ = "2.0.18"
+__version__ = "2.0.19"
 
 with open("turbo_seti/find_doppler/turbo_seti_version.py", "w") as fh:
     fh.write("TURBO_SETI_VERSION = '{}'\n".format(__version__))
@@ -24,13 +24,10 @@ with open("requirements_test.txt", "r") as fh:
     test_requirements = fh.readlines()
 
 entry_points = {
-    'console_scripts' :
-        ['turboSETI = turbo_seti.find_doppler.seti_event:main']
+    "console_scripts": ["turboSETI = turbo_seti.find_doppler.seti_event:main"]
 }
 
-package_data={
-    'turbo_seti': ['drift_indexes/*.txt', 'find_doppler/kernels/**/*.cu']
-}
+package_data = {"turbo_seti": ["drift_indexes/*.txt", "find_doppler/kernels/**/*.cu"]}
 
 setup(
     name="turbo_seti",
@@ -45,7 +42,7 @@ setup(
     author_email="e.enriquez@berkeley.edu",
     description="Analysis tool for the search of narrow band drifting signals in filterbank data",
     long_description=long_description,
-    long_description_content_type='text/markdown',
+    long_description_content_type="text/markdown",
     license="MIT License",
     keywords="astronomy",
     url="https://github.com/UCBerkeleySETI/turbo_seti",
@@ -56,5 +53,5 @@ setup(
         "Intended Audience :: Science/Research",
         "Programming Language :: Python :: 3",
         "Topic :: Scientific/Engineering",
-        ]
+    ],
 )

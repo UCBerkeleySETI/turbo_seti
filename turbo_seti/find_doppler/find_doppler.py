@@ -46,7 +46,7 @@ class FindDoppler:
         Inputted filename (.h5 or .fil)
     max_drift : float
         Max drift rate in Hz/second.
-    min_drift : int
+    min_drift : float
         Min drift rate in Hz/second.
     snr : float
         Signal to Noise Ratio - A ratio bigger than 1 to 1 has more signal than noise.
@@ -73,7 +73,7 @@ class FindDoppler:
         Python logging threshold level (INFO, DEBUG, or WARNING)
 
     """
-    def __init__(self, datafile, max_drift=4.0, min_drift=0.0, snr=25.0, out_dir='./', coarse_chans=None,
+    def __init__(self, datafile, max_drift=4.0, min_drift=0.00001, snr=25.0, out_dir='./', coarse_chans=None,
                  obs_info=None, flagging=False, n_coarse_chan=None, kernels=None, gpu_backend=False,
                  precision=2, append_output=False, log_level_int=logging.INFO):
 

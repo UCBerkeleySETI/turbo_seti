@@ -117,6 +117,7 @@ class FindDoppler:
                     + ', precision={}, append_output={}, log_level_int={}, obs_info={}' \
                         .format(precision, append_output, log_level_int, obs_info)
         logger.info(self.data_handle.get_info())
+        logger.info("Computed drift rate resolution: {}".format(self.data_handle.drift_rate_resolution))
         if min_drift < 0 or max_drift < 0:
             raise ValueError('Both min_drift({}) and max_drift({}) must be nonnegative'
                              .format(min_drift, max_drift))
@@ -445,7 +446,6 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
             fd.kernels.xp.copyto(tree_findoppler_original, tree_findoppler)
 
             fd.kernels.tt.flt(tree_findoppler, tsteps * tdwidth, tsteps)
-            logger.debug("done...")
             if (tree_findoppler == tree_findoppler_original).all():
                 logger.error("taylor_flt has no effect?")
             else:
@@ -530,6 +530,7 @@ def populate_tree(fd, spectra, tree_findoppler, nframes, tdwidth, tsteps, fftlen
     It uses np.roll() for drift-rate blocks higher than 1.
 
     """
+    logger.debug("populate_tree() roll=" + str(roll))
     if reverse:
         direction = -1
     else:

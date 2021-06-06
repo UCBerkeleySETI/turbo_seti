@@ -5,6 +5,7 @@ This file is a version history of turbo_seti amendments, beginning with version 
 |    Date    | Version | Contents |
 | :--: | :--: | :-- |
 |  **==future==** | **TBD** | Add frequency channel masking capability. See issue #125. |
+| 2021-06-06 | 2.0.20 | Log drift_rate_resolution value (issue #236).
 | 2021-04-21 | 2.0.19 | Change min_drift default to disallow near-zero drift.
 | 2021-04-13 | 2.0.18 | Add GPU enabled Docker image build.
 | 2021-04-07 | 2.0.17 | Fixed issue #230 - Added turbo_seti/find_event/plot_dat.py which makes a plot similar to the one produced by plot_candidate_events, but also includes the hits detected, in addition to the candidate signal. |

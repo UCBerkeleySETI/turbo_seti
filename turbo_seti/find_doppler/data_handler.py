@@ -77,6 +77,7 @@ class DATAHandle:
             # Grab header from DATAH5
             dobj_master = DATAH5(filename, kernels=self.kernels)
             self.header = dobj_master.header
+            self.drift_rate_resolution = dobj_master.drift_rate_resolution
             dobj_master.close()
 
             # Split the file

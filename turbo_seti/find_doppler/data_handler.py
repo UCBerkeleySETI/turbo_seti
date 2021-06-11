@@ -142,22 +142,21 @@ class DATAHandle:
         f0 = fil_file.header['fch1']
 
         #Looping over the number of coarse channels.
-        if self.n_coarse_chan is not None:
-            n_coarse_chan = self.n_coarse_chan
-        elif fil_file.header.get('n_coarse_chan', None) is not None:
-            n_coarse_chan = fil_file.header['n_coarse_chan']
-        else:
-            n_coarse_chan = int(fil_file.calc_n_coarse_chan())
+        if self.n_coarse_chan is None:
+            if fil_file.header.get('n_coarse_chan', None) is not None:
+                self.n_coarse_chan = fil_file.header['n_coarse_chan']
+            else:
+                self.n_coarse_chan = int(fil_file.calc_n_coarse_chan())
 
         # Only load coarse chans of interest -- or do all if not specified
         if self.coarse_chans in (None, ''):
-            self.coarse_chans = range(n_coarse_chan)
+            self.coarse_chans = range(self.n_coarse_chan)
 
         for chan in self.coarse_chans:
 
             #Calculate freq range for given course channel.
-            f_start = f0 + chan * (f_delt) * fil_file.n_channels_in_file / n_coarse_chan
-            f_stop = f0 + (chan + 1) * (f_delt) * fil_file.n_channels_in_file / n_coarse_chan
+            f_start = f0 + chan * (f_delt) * fil_file.n_channels_in_file / self.n_coarse_chan
+            f_stop = f0 + (chan + 1) * (f_delt) * fil_file.n_channels_in_file / self.n_coarse_chan
 
             if f_start > f_stop:
                 f_start, f_stop = f_stop, f_start
@@ -166,7 +165,7 @@ class DATAHandle:
                         'f_start': f_start,
                         'f_stop': f_stop,
                         'coarse_chan': chan,
-                        'n_coarse_chan': n_coarse_chan}
+                        'n_coarse_chan': self.n_coarse_chan}
 
             #This appends to a list of all data instance selections. So that all get processed later.
             data_list.append(data_obj)
@@ -376,3 +375,4 @@ class DATAH5:
             del self.kernels
 
         self.closed = True
+

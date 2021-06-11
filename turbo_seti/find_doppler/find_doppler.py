@@ -100,6 +100,8 @@ class FindDoppler:
         if (self.data_handle is None) or (self.data_handle.status is False):
             raise IOError("File error, aborting...")
 
+        self.n_coarse_chan = self.data_handle.n_coarse_chan
+        
         if obs_info is None:
             obs_info = {'pulsar': 0, 'pulsar_found': 0, 'pulsar_dm': 0.0, 'pulsar_snr': 0.0,
                         'pulsar_stats': self.kernels.np.zeros(6), 'RFI_level': 0.0, 'Mean_SEFD': 0.0, 'psrflux_Sens': 0.0,
@@ -113,25 +115,12 @@ class FindDoppler:
         self.parms = 'datafile={}, max_drift={}, min_drift={}, snr={}, out_dir={}, coarse_chans={}' \
                         .format(datafile, max_drift, min_drift, snr, out_dir, coarse_chans) \
                     + ', flagging={}, n_coarse_chan={}, kernels={}, gpu_backend={}' \
-                        .format(flagging, n_coarse_chan, kernels, gpu_backend) \
+                        .format(flagging, self.n_coarse_chan, kernels, gpu_backend) \
                     + ', precision={}, append_output={}, log_level_int={}, obs_info={}' \
                         .format(precision, append_output, log_level_int, obs_info)
-        logger.info(self.data_handle.get_info())
         if min_drift < 0 or max_drift < 0:
             raise ValueError('Both min_drift({}) and max_drift({}) must be nonnegative'
                              .format(min_drift, max_drift))
-
-
-    def get_info(self):
-        r"""
-        Generate info string.
-
-        Returns:
-          : String that contains the values of this FinDoppler object's attributes.
-
-        """
-        info_str = "File: %s\n drift rates (min, max): (%f, %f)\n SNR: %f\n"%(self.data_handle.filename, self.min_drift, self.max_drift, self.snr)
-        return info_str
 
 
     def last_logwriter(self, arg_path, arg_text):
@@ -170,8 +159,7 @@ class FindDoppler:
 
         """
         t0 = time.time()
-        logger.info(self.get_info())
-
+ 
         filename_in = self.data_handle.filename
         header_in   = self.data_handle.header
 
@@ -190,17 +178,18 @@ class FindDoppler:
         filewriter = FileWriter(path_dat, header_in)
 
         logwriter.info(version_announcements)
-        msg = "Starting ET search using {}".format(filename_in)
+
+        msg = "HDF5 header info: {}\n".format(self.data_handle.get_info())
+        logwriter.info(msg)
+        print(msg)
+        
+        msg = 'Starting ET search with parameters: ' + self.parms + '\n'
         logwriter.info(msg)
         print(msg)
 
-        msg = 'Parameters: ' + self.parms
+        msg = "Computed drift rate resolution: {}\n".format(self.data_handle.drift_rate_resolution)
         logwriter.info(msg)
-        logger.info(msg)
-
-        msg = "Computed drift rate resolution: {}".format(self.data_handle.drift_rate_resolution)
-        logwriter.info(msg)
-        logger.info(msg)
+        print(msg)
 
         # Run serial version
         if n_partitions == 1:

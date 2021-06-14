@@ -111,10 +111,14 @@ class DATAHandle:
 
         """
         fil_file = Waterfall(self.filename)
-        bn = os.path.basename(self.filename)
-        new_filename = os.path.join(self.out_dir, bn.replace('.fil', '.h5'))
-        fil_file.write_to_hdf5(new_filename)
-        self.filename = new_filename
+        fil_path = os.path.basename(self.filename)
+        h5_path = os.path.join(self.out_dir, fil_path.replace('.fil', '.h5'))
+        try:
+            os.remove(h5_path)
+        except:
+            pass
+        fil_file.write_to_hdf5(h5_path)
+        self.filename = h5_path
 
     def __split_h5(self):
         r"""

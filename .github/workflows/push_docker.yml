@@ -22,17 +22,20 @@ jobs:
           repository: ucberkeleyseti/turbo_seti
           tags: latest
 
-  build-gpu:
+# ==========================
+# Work-around for issue #240
+# ==========================
+#  build-gpu:
 
-    runs-on: nvidia-gpu
+#    runs-on: nvidia-gpu
 
-    steps:
-      - uses: actions/checkout@v2
-      - name: Build and push GPU image to Docker Hub
-        uses: docker/build-push-action@v1
-        with:
-          username: ${{ secrets.DOCKER_USER }}
-          password: ${{ secrets.DOCKER_PASS }}
-          repository: ucberkeleyseti/turbo_seti_gpu
-          build_args: IMAGE=cupy/cupy:v8.6.0
-          tags: latest
+#    steps:
+#      - uses: actions/checkout@v2
+#      - name: Build and push GPU image to Docker Hub
+#        uses: docker/build-push-action@v1
+#        with:
+#          username: ${{ secrets.DOCKER_USER }}
+#          password: ${{ secrets.DOCKER_PASS }}
+#          repository: ucberkeleyseti/turbo_seti_gpu
+#          build_args: IMAGE=cupy/cupy:v8.6.0
+#          tags: latest

@@ -97,8 +97,6 @@ class FindDoppler:
                                       n_coarse_chan=n_coarse_chan,
                                       coarse_chans=coarse_chans,
                                       kernels=self.kernels)
-        if (self.data_handle is None) or (self.data_handle.status is False):
-            raise IOError("File error, aborting...")
 
         self.n_coarse_chan = self.data_handle.n_coarse_chan
         
@@ -193,7 +191,7 @@ class FindDoppler:
 
         # Run serial version
         if n_partitions == 1:
-            sched = Scheduler(load_data, [ (l, self.kernels.precision) for l in self.data_handle.data_list ])
+            sched = Scheduler(load_the_data, [ (l, self.kernels.precision) for l in self.data_handle.data_list ])
             for dl in self.data_handle.data_list:
                 search_coarse_channel(dl, self, dataloader=sched, filewriter=filewriter, logwriter=logwriter)
         # Run Parallel version via dask
@@ -211,7 +209,7 @@ class FindDoppler:
         t1 = time.time()
         self.last_logwriter(path_log, '\n===== Search time: {:.2f} minutes'.format((t1 - t0)/60.0))
 
-def load_data(d, precision):
+def load_the_data(d, precision):
     data_obj = DATAH5(d['filename'],
                   f_start=d['f_start'],
                   f_stop=d['f_stop'],
@@ -272,7 +270,7 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
     if dataloader:
         data_obj, spectra, drift_indices = dataloader.get()
     else:
-        data_obj, spectra, drift_indices = load_data(d, fd.kernels.precision)
+        data_obj, spectra, drift_indices = load_the_data(d, fd.kernels.precision)
 
     # Transfer data to device
     spectra = fd.kernels.xp.asarray(spectra)
@@ -356,8 +354,8 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
 
     # --------------------------------
     # Stats calc
-    the_mean_val, the_stddev = comp_stats(spectra.sum(axis=0), xp=fd.kernels.xp)
-    logger.debug('comp_stats the_mean_val={}, the_stddev={}'.format(the_mean_val, the_stddev))
+    the_median, the_stddev = comp_stats(spectra.sum(axis=0), xp=fd.kernels.xp)
+    logger.debug('comp_stats the_median={}, the_stddev={}'.format(the_median, the_stddev))
 
     # --------------------------------
     # Looping over drift_rate_nblock
@@ -416,7 +414,7 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
                 spectrum = tree_findoppler_flip[indx: indx + tdwidth]
 
                 # normalize
-                spectrum -= the_mean_val
+                spectrum -= the_median
                 spectrum /= the_stddev
 
                 # Reverse spectrum back
@@ -467,7 +465,7 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
                 spectrum = tree_findoppler[indx: indx + tdwidth]
 
                 # normalize
-                spectrum -= the_mean_val
+                spectrum -= the_median
                 spectrum /= the_stddev
 
                 hitsearch(fd, spectrum, specstart, specend, snr, drift_rate, data_obj.header,

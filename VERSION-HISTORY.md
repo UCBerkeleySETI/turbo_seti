@@ -5,6 +5,9 @@ This file is a version history of turbo_seti amendments, beginning with version 
 |    Date    | Version | Contents |
 | :--: | :--: | :-- |
 |  **==future==** | **TBD** | Add frequency channel masking capability. See issue #125. |
+| 2021-06-26 | 2.0.23 | Make data_handler.py provide useful info during exceptions (issue #243).
+| | | Cleared up median vs mean confusion (issue #244).
+| | |Stop using a Python3 reserved word for a function name (issue #245).
 | 2021-06-14 | 2.0.22 | Pre-delete HDF5 file when input is a Filterbank file (.fil) (issue #241).
 | 2021-06-11 | 2.0.21 | Log n_coarse_chan value when calculated by blimpy (issue #238).
 | 2021-06-06 | 2.0.20 | Log drift_rate_resolution value (issue #236).

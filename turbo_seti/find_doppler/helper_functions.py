@@ -6,6 +6,7 @@ import numpy as np
 def chan_freq(header, fine_channel, tdwidth, ref_frame):
     r"""
     Find channel frequency.
+    Note issue #98.
 
     Parameters
     ----------
@@ -98,7 +99,7 @@ def FlipX(outbuf, xdim, ydim, xp=None):
 
 def comp_stats(np_arr, xp=None):
     r"""
-    Compute mean and stddev of floating point vector array in a fast way, without using the outliers.
+    Compute median and stddev of floating point vector array in a fast way, without using the outliers.
 
     Parameters
     ----------

@@ -60,7 +60,6 @@ class DATAHandle:
                 if not sigproc.is_filterbank(filename):
                     self.status = False
                     errmsg = 'Not a filterbank file: {}'.format(filename)
-                    logger.error(errmsg)
                     raise IOError(errmsg)
                 logger.info("Filterbank file detected. Attempting to create .h5 file in current directory...")
                 try:
@@ -68,7 +67,6 @@ class DATAHandle:
                 except:
                     self.status = False
                     errmsg = 'Unable to create .h5 file from: {}'.format(filename)
-                    logger.error(errmsg)
                     raise IOError(errmsg)
 
             self.filestat = os.stat(filename)
@@ -87,7 +85,6 @@ class DATAHandle:
         else:
             self.status = False
             errmsg = "File {} doesn\'t exist, please check!".format(filename)
-            logger.error(errmsg)
             raise IOError(errmsg)
 
     def get_info(self):
@@ -138,7 +135,6 @@ class DATAHandle:
             fil_file = Waterfall(self.filename)
         except:
             errmsg = "Error encountered when trying to open file: {}".format(self.filename)
-            logger.error(errmsg)
             raise IOError(errmsg)
 
         #Finding lowest freq in file.
@@ -220,7 +216,6 @@ class DATAH5:
                                       t_start=self.t_start, t_stop=self.t_stop, load_data=False)
         except:
             errmsg = "Error encountered when trying to open file: {}".format(filename)
-            logger.error(errmsg)
             raise IOError(errmsg)
 
         #Getting header
@@ -231,7 +226,6 @@ class DATAH5:
                 header = self.__make_data_header(self.fil_file.header)
         except:
             errmsg = "Error accessing header from file: {}".format(self.fil_file.header)
-            logger.error(errmsg)
             raise IOError(errmsg)
 
         self.header = header
@@ -273,6 +267,13 @@ class DATAH5:
             n_coarse_chan = int(self.fil_file.calc_n_coarse_chan())
         self.fil_file.blank_dc(n_coarse_chan)
 
+        dim_time = self.fil_file.data.shape[0]
+        if dim_time < 2:
+            msg = "data_handler.py:load_data: Cannot handle data with only 1 time step!"
+            logger.error(msg)
+            msg = "data shape = {}!".format(self.fil_file.data.shape)
+            raise ValueError(msg)
+
         spectra = self.kernels.np.squeeze(self.fil_file.data)
 
         # DCP APR 2020 -- COMMENTED OUT. THIS IS BREAKING STUFF IN CURRENT VERSION.
@@ -282,7 +283,7 @@ class DATAH5:
 
         # This check will add rows of zeros if the obs is too short
         # (and thus not a power of two rows).
-        if spectra.shape[0] != self.tsteps:
+        if spectra.shape[0] < self.tsteps:
             padding = self.kernels.np.zeros((self.tsteps-spectra.shape[0], self.fftlen))
             spectra = self.kernels.np.concatenate((spectra, padding), axis=0)
 
@@ -290,8 +291,11 @@ class DATAH5:
         self.obs_length = self.tsteps * self.header['DELTAT']
 
         if spectra.shape != (self.tsteps_valid, self.fftlen):
-            logger.error('Something is wrong with array size.')
-            raise IOError('Something is wrong with array size.')
+            msg = "data_handler.py:load_data: spectra.shape={}!".format(spectra.shape)
+            logger.error(msg)
+            msg = "data_handler.py:load_data: tsteps_valid={}, fftlen={}!" \
+                    .format(self.tsteps_valid, self.fftlen)
+            raise ValueError(msg)
 
         drift_indexes = self.load_drift_indexes()
 
@@ -312,6 +316,11 @@ class DATAH5:
         file_path = resource_filename('turbo_seti', f'drift_indexes/drift_indexes_array_{n}.txt')
 
         if not os.path.isfile(file_path):
+            dia_file = 'drift_indexes/drift_indexes_array_{}.txt'.format(n)
+            msg = "data_handler.py:load_drift_indexes: tsteps={}!".format(self.tsteps)
+            logger.error(msg)
+            msg = "data_handler.py:load_drift_indexes: {} not found!".format(dia_file)
+            logger.error(msg)
             raise ValueError("""Don't attempt to use High Time Resolution (HRT) files with turboSETI. """
                              """TurboSETI is designed to search for narrowband signals -- the maximum """
                              """doppler drift we can expect due to the motion of celestial bodies is a few Hz/s. """
@@ -379,4 +388,3 @@ class DATAH5:
             del self.kernels
 
         self.closed = True
-

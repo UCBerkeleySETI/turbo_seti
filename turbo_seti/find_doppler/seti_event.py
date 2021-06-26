@@ -30,7 +30,8 @@ def main(args=None):
     p = ArgumentParser(description='turboSETI doppler drift narrowband search utility version {}.'
                                     .format(TURBO_SETI_VERSION))
 
-    p.add_argument('filename', type=str, default='', nargs="?", help='Name of filename to open (h5 or fil)')
+    p.add_argument('filename', type=str, default='', nargs="?",
+                   help='Name of filename to open (h5 or fil)')
     p.add_argument('-v', '--version', dest='show_version', default=False, action='store_true',
                    help='show the turbo_seti and blimpy versions and exit')
     p.add_argument('-M', '--max_drift', dest='max_drift', type=float, default=10.0,
@@ -79,13 +80,13 @@ def main(args=None):
         sys.exit(86)
 
     if args.flag_profile == "y":
-        cProfile.runctx('exec(args)', {'args': args, 'exec': exec}, {}, 'exec')
-        p = pstats.Stats('exec')
-        p.strip_dirs().sort_stats('time').print_stats(8)
+        cProfile.runctx('exec(args)', {'args': args, 'exec': exec_proc}, {}, filename='stats_file.bin')
+        p = pstats.Stats('stats_file.bin')
+        p.strip_dirs().sort_stats('time').print_stats(16)
     else:
-        exec(args)
+        exec_proc(args)
 
-def exec(args):
+def exec_proc(args):
     r"""
     Interface to FindDoppler class, called by main().
 
@@ -139,7 +140,6 @@ def exec(args):
         print('Search time: %5.2f min' % ((t1-t0)/60.))
 
     except Exception as e:
-        logging.exception(e)
         raise RuntimeError('[turboSETI] An exception occured in FindDoppler.') from e
 
 if __name__ == '__main__':

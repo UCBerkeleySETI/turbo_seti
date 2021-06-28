@@ -45,7 +45,7 @@ def main(args=None):
     p.add_argument('-l', '--loglevel', dest='log_level', type=str, default='info',
                    help='Specify log level (info, debug, warning)')
     p.add_argument('-c', '--coarse_chans', dest='coarse_chans', type=str, default=None,
-                   help='Comma separated string list of coarse channels to analyze.')
+                   help='Comma separated string list of coarse channels to analyze. E.g. 7,12 to search channels 7 and 12 only.')
     p.add_argument('-n', '--n_coarse_chan', dest='n_coarse_chan', type=int, default=None,
                    help='Number of coarse channels to use.')
     p.add_argument('-p', '--n_parallel', dest='n_parallel', type=int, default=1,

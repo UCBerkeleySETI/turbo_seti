@@ -54,7 +54,9 @@ class FindDoppler:
         Directory where output files should be placed. By default this is the
         current working directory.
     coarse_chans : list(int)
-        The inputted comma separated list of coarse channels to analyze, if any.
+        The inputted comma separated list of coarse channels to analyze, if any. By default, 
+        all coarse channels will be searched. Use this to search only specified channels, 
+        e.g. [7,12] will search channels 7 and 12 only.
     obs_info : dict
         Used to hold info found on file, including info about pulsars, RFI, and SEFD.
     flagging : bool

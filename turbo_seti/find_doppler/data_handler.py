@@ -236,8 +236,8 @@ class DATAH5:
         self.tsteps_valid = header['NAXIS2']
         self.tsteps = int(math.pow(2, math.ceil(np.log2(math.floor(self.tsteps_valid)))))
 
-        self.obs_length = self.tsteps_valid * header['DELTAT']
-        self.drift_rate_resolution = (1e6 * np.abs(header['DELTAF'])) / self.obs_length   # in Hz/sec
+        self.header['obs_length'] = self.tsteps_valid * header['DELTAT']
+        self.drift_rate_resolution = (1e6 * np.abs(header['DELTAF'])) / self.header['obs_length']   # in Hz/sec
         self.header['baryv'] = 0.0
         self.header['barya'] = 0.0
         self.header['coarse_chan'] = coarse_chan
@@ -288,7 +288,7 @@ class DATAH5:
             spectra = self.kernels.np.concatenate((spectra, padding), axis=0)
 
         self.tsteps_valid = self.tsteps
-        self.obs_length = self.tsteps * self.header['DELTAT']
+        self.header['obs_length'] = self.tsteps * self.header['DELTAT']
 
         if spectra.shape != (self.tsteps_valid, self.fftlen):
             msg = "data_handler.py:load_data: spectra.shape={}!".format(spectra.shape)

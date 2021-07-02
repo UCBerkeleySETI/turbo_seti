@@ -120,7 +120,7 @@ def test_pipeline_wrong_source():
                                    number_in_cadence=3,
                                    user_validation=False,
                                    saving=True,
-                                   on_source_complex_cadence='VOYAGER-24',
+                                   on_source_complex_cadence='VOYAGER-42',
                                    csv_name=PATH_CSVF)
 
     # df_event should be nil
@@ -133,14 +133,11 @@ def test_pipeline_wrong_source():
 def try_mixed(arg_list, init_needed=True):
     print('\n===== try_mixed: BEGIN =====')
     
-    # Make the off-cadence file.
+    # If init needed, make the off-cadence file and one DAT file.
     if init_needed:
         generate_fil_file(PATH_IRRELEVANT_FIL, -1, -1)
-    
-    # Make a DAT file.
-    if init_needed:
         make_one_dat_file(PATH_IRRELEVANT_FIL, max_drift=10.0, min_snr=20.0, remove_h5=False)
-
+    
     # Make the dat list.
     with open(PATH_DAT_LIST_FILE, 'w') as fh:
         for path_dat in arg_list:

@@ -2,7 +2,7 @@ from tempfile import gettempdir
 from shutil import rmtree
 from os import mkdir
 from numpy import isclose
-from turbo_seti.find_event.find_event import make_table, calc_freq_range, find_events
+from turbo_seti.find_event.find_event import calc_freq_range, find_events
 
 TESTDIR = gettempdir() + '/test_find_event/'
 RTOL_DIFF = 0.001 # isclose(), 0.1%
@@ -46,7 +46,7 @@ HEADER_LINES = [
     "# -------------------------- o --------------------------",
     "# Source:Voyager1",
     "# MJD: 57650.782094907408	RA: 17h10m03.984s	DEC: 12d10m58.8s",
-    "# DELTAT:  18.253611	DELTAF(Hz):  -2.793968",
+    "# DELTAT:  18.253611	DELTAF(Hz):  -2.793968	max_drift_rate:   4.000000	obs_length: 292.057776",
     "# --------------------------",
     "# Top_Hit_# 	Drift_Rate 	SNR 	Uncorrected_Frequency 	Corrected_Frequency 	Index 	freq_start 	freq_end 	SEFD 	SEFD_freq 	Coarse_Channel_Number 	Full_number_of_hits",
     "# --------------------------"
@@ -76,17 +76,14 @@ def write_all_dat_files(dat_table_list, dat_file_list):
         ix += 1
 
 
-def subtest_make_table():
-    pd_table = make_table("rubbish", init=True)
-    assert len(pd_table) == 0
-
-
 def subtest_calc_freq_range():
     hit = {
         "DELTAF": 4.2,
         "DELTAT": 0.42,
         "DriftRate": 0.0,
-        'Freq': 4200.0
+        'Freq': 4200.0,
+        'obs_length': 292.3,
+        'max_drift_rate': 4.0
     }
     low1, high1 = calc_freq_range(hit, delta_t=4.2, max_dr=False, follow=True)
     print("subtest_calc_freq_range 1: low={}, high={}".format(low1, high1))
@@ -115,7 +112,6 @@ def test_find_event():
 
     write_all_dat_files(dat_table_list, dat_file_list)
 
-    subtest_make_table()
     subtest_calc_freq_range()
     
     # Assert that 3 hits are in tables 1, 3, and 5 - 9 events.

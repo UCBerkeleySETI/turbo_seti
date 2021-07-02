@@ -163,6 +163,10 @@ class FindDoppler:
         filename_in = self.data_handle.filename
         header_in   = self.data_handle.header
 
+        # As of 2.1.0, add max_drift_rate and obs_length to FileWriter header input
+        header_in['max_drift_rate'] = self.max_drift
+        #header_in['obs_length'] was already set in data_handler.py DATAH __init__
+    
         wfilename = filename_in.split('/')[-1].replace('.h5', '').replace('.fits', '').replace('.fil', '')
         path_log = '{}/{}.log'.format(self.out_dir.rstrip('/'), wfilename)
         path_dat = '{}/{}.dat'.format(self.out_dir.rstrip('/'), wfilename)
@@ -476,7 +480,7 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
     # Writing the top hits to file.
     logger.debug('END looping over drift_rate_nblock.')
     filewriter = tophitsearch(fd, tree_findoppler_original, max_val, tsteps, data_obj.header, tdwidth,
-                              fftlen, max_drift, data_obj.obs_length,
+                              fftlen, max_drift, data_obj.header['obs_length'],
                               logwriter=logwriter, filewriter=filewriter, obs_info=obs_info)
 
     logger.debug("Total number of candidates for coarse channel " +

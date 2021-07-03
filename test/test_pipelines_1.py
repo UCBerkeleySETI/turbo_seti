@@ -200,7 +200,7 @@ def find_plot_pipelines(need_init=True, filter_threshold=3):
           .format(main_time_stop - main_time_start))
 
 
-@pytest.mark.first
+@pytest.mark.run(order=1)
 def test_pipelines(need_init=True, cleanup=False):
     r'''
     This is the pytest entry point.

@@ -81,7 +81,7 @@ def plot_hit(fil_filename, dat_filename, hit_id, bw=None, offset=0):
 
     """
     # Load hit details
-    dat = find_event.make_table(dat_filename)
+    dat = find_event.read_dat(dat_filename)
     hit = dat.iloc[hit_id]
 
     f0 = hit['Freq']

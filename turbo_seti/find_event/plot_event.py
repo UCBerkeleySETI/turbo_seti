@@ -250,8 +250,7 @@ def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_r
 
         # Title the full plot
         if ii == 0:
-            plot_title = "%s \n $\dot{\\nu}$ = %2.3f Hz/s , MJD:%5.5f" % (on_source_name, drift_rate, t0)
-
+            plot_title = "%s \n $\\dot{\\nu}$ = %2.3f Hz/s, MJD:%5.5f" % (on_source_name, drift_rate, t0)
             plt.title(plot_title)
         # Format full plot
         if ii < len(fil_file_list)-1:

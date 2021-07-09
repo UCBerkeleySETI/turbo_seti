@@ -151,6 +151,8 @@ def execute_pipelines(args):
             first_file = "OFF"
     from_dir = os.path.abspath(args.input_dir_path) + "/"
     dest_dir = os.path.abspath(args.out_dir) + "/"
+    if not os.path.exists(dest_dir):
+        os.mkdir(dest_dir)
 
     # Establish output pathnames,
     path_h5_list = dest_dir + NAME_H5_LIST

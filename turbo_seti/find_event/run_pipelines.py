@@ -62,11 +62,11 @@ def clean_event_stuff(path_out_dir):
         os.remove(deader)
 
 
-def make_lists(path_out_dir, path_h5_list, path_dat_list):
+def make_lists(path_h5_dir, path_h5_list, path_dat_list):
     r"""Create 2 files, a list of .h5 files and a list of .dat files."""
     with open(path_dat_list, "w") as fh_dat:
         with open(path_h5_list, "w") as fh_h5:
-            for path_h5 in sorted(glob.glob("{}/*.h5".format(path_out_dir))):
+            for path_h5 in sorted(glob.glob("{}/*.h5".format(path_h5_dir))):
                 path_dat = path_h5.replace(".h5", ".dat")
                 fh_h5.write("{}\n".format(path_h5))
                 fh_dat.write("{}\n".format(path_dat))
@@ -114,17 +114,17 @@ def main(args=None):
     if args.show_version:
         print("turbo_seti: {}".format(TURBO_SETI_VERSION))
         print("blimpy: {}".format(BLIMPY_VERSION))
-        sys.exit(0)
+        return 0
 
     if args.input_dir_path == "":
         os.system("plotSETI -h")
-        sys.exit(0)
+        return 0
 
     if not os.path.exists(args.input_dir_path):
         print("\nInput directory {} does not exist!\n".format(args.input_dir_path))
-        sys.exit(86)
+        return 86
 
-    execute_pipelines(args)
+    return execute_pipelines(args)
 
 
 def execute_pipelines(args):
@@ -149,6 +149,7 @@ def execute_pipelines(args):
             first_file = "ON"
         else:
             first_file = "OFF"
+    from_dir = os.path.abspath(args.input_dir_path) + "/"
     dest_dir = os.path.abspath(args.out_dir) + "/"
 
     # Establish output pathnames,
@@ -156,7 +157,7 @@ def execute_pipelines(args):
     path_dat_list = dest_dir + NAME_DAT_LIST
     path_csvf = dest_dir + NAME_CSVF
     clean_event_stuff(dest_dir)
-    make_lists(dest_dir, path_h5_list, path_dat_list)
+    make_lists(from_dir, path_h5_list, path_dat_list)
 
     # Run find_event_pipeline()
     number_in_cadence = len(open(path_h5_list).readlines())
@@ -186,7 +187,7 @@ def execute_pipelines(args):
 
     if df_check is None:
         print("\n*** plotSETI: No events produced in find_event_pipeline()!  Bye-bye.")
-        sys.exit(86)
+        return 86
 
     # Make the plots for all of the HDF5/DAT file pairs in batch mode.
     matplotlib.use("agg", force=True)
@@ -198,8 +199,11 @@ def execute_pipelines(args):
                         user_validation=False)
 
     print("\nplotSETI: Plots are stored in directory {}.  Bye-bye.".format(dest_dir))
+    
+    return 0
 
 
 if __name__ == "__main__":
     # Start the show!
     main()
+

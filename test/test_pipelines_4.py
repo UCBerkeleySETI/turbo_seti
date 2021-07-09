@@ -4,7 +4,9 @@ test_pipelines_4.py
 Test plotSETI.
 '''
 
+import os
 from tempfile import gettempdir
+import pytest
 from turbo_seti import run_pipelines
 
 TESTDIR = gettempdir() + '/pipeline_testing/'
@@ -18,9 +20,10 @@ def execute_one(counter, args):
     return rc
 
 
-def test_pipelines_4(cleanup=False):
+@pytest.mark.order(2)
+def test_pipelines_4():
     print('\n===== test_pipelines_4: BEGIN =====')
-
+    
     args = [TESTDIR, "-o", PLOTDIR, "-f", "1", "-s", "25.0", "-c", "on"]
     rc = execute_one(1, args)
     assert(rc == 0)

@@ -124,6 +124,12 @@ def find_event_pipeline(dat_file_list_str, SNR_cut=10, check_zero_drift=False, f
     sortby_tstart : bool
         If True, the input file list is sorted by header.tstart.
 
+    Returns
+    -------
+    Either:
+        * a Pandas dataframe with all the events that were found.
+        * None, if no events were found.
+
     Examples
     --------
     >>> import find_event_pipeline;
@@ -188,7 +194,7 @@ def find_event_pipeline(dat_file_list_str, SNR_cut=10, check_zero_drift=False, f
         if count_cadence > 0:
             print("The derived complex cadence is: " + str(complex_cadence))
         else:
-            print("Sorry, no potential candidates with your given on_source_complex_cadence={}  :("
+            print("\n*** find_event_pipeline [complex cadence]: Sorry, no potential candidates with your given on_source_complex_cadence={}  :("
                   .format(on_source_complex_cadence))
             return None
     
@@ -253,8 +259,8 @@ def find_event_pipeline(dat_file_list_str, SNR_cut=10, check_zero_drift=False, f
     if len(candidate_list) > 0:
         find_event_output_dataframe = pd.concat(candidate_list)
     else:
-        print("Sorry, no potential candidates with your given parameters :(")
-        find_event_output_dataframe = []
+        print("\n*** find_event_pipeline: Sorry, no potential candidates with your given parameters :(")
+        return None
 
     print("*** find_event_output_dataframe is complete ***")
     
@@ -271,6 +277,7 @@ def find_event_pipeline(dat_file_list_str, SNR_cut=10, check_zero_drift=False, f
             find_event_output_dataframe.to_csv(filestring)
             print("find_event_pipeline: Saved CSV file to {}".format(filestring))
         else:
-            print("Sorry, no events to save :(")
+            print("\n*** find_event_pipeline: Sorry, no events to save :(")
+            return None
 
     return find_event_output_dataframe

@@ -346,7 +346,6 @@ def find_events(dat_file_list, SNR_cut=10, check_zero_drift=False, filter_thresh
     #Check that all targets in the on_table come from the same source
     #Fix issue where some sources have B'' format
     uniqlist = list(on_table['Source'].unique())
-    print("\nDEBUG uniqlist:", uniqlist, "\n")
     for i, ele in enumerate(uniqlist):
         try:
             uniqlist[i] = ele.strip("'B")

@@ -9,7 +9,7 @@
 
 from setuptools import setup, find_packages
 
-__version__ = "2.1.0"
+__version__ = "2.1.1"
 
 with open("turbo_seti/find_doppler/turbo_seti_version.py", "w") as fh:
     fh.write("TURBO_SETI_VERSION = '{}'\n".format(__version__))
@@ -24,7 +24,9 @@ with open("requirements_test.txt", "r") as fh:
     test_requirements = fh.readlines()
 
 entry_points = {
-    "console_scripts": ["turboSETI = turbo_seti.find_doppler.seti_event:main"]
+    "console_scripts" : [
+        "turboSETI = turbo_seti.find_doppler.seti_event:main",
+        "plotSETI = turbo_seti.find_event.run_pipelines:main" ]
 }
 
 package_data = {"turbo_seti": ["drift_indexes/*.txt", "find_doppler/kernels/**/*.cu"]}

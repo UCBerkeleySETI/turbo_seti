@@ -11,7 +11,6 @@ It then finds events within this group of files.
 
 #required packages and programs
 import os
-import sys
 from operator import attrgetter
 
 import logging
@@ -196,19 +195,46 @@ def find_event_pipeline(dat_file_list_str, SNR_cut=10, check_zero_drift=False, f
         for obj in path_record:
             dat_file_list.append(obj.path_dat)
 
+    # Set up the frequency range matcher record.
+    # If a complex cadence, the source name is used to select the matcher;
+    # Otherwise, just use the first record.
+    if on_source_complex_cadence:
+        flag_terminate = True
+        for obj in path_record: # Look for 1st occurence of source_name.
+            if obj.source_name == on_source_complex_cadence:
+                matcher = obj
+                flag_terminate = False
+                break
+        if flag_terminate:
+            logger.error("find_event_pipeline: Source '{}' is not in this complex cadence!"
+                         .format(on_source_complex_cadence))
+            for obj in path_record:
+                logger.info("find_event_pipeline: file={}, tstart={}, source_name={}, fch1={}, foff={}, nchans={}"
+                            .format(os.path.basename(obj.path_dat), obj.tstart, obj.source_name,
+                                    obj.fch1, obj.foff, obj.nchans))
+            return None
+    else:
+        matcher = path_record[0]
+            
     # Display path_record rows.
-    matcher = path_record[0]
     flag_terminate = False
     for obj in path_record:
-        print("find_event_pipeline: file={}, tstart={}, source_name={}, fch1={}, foff={}, nchans={}"
-              .format(os.path.basename(obj.path_dat), obj.tstart, obj.source_name, obj.fch1, obj.foff, obj.nchans))
+        logger.info("find_event_pipeline: file={}, tstart={}, source_name={}, fch1={}, foff={}, nchans={}"
+                    .format(os.path.basename(obj.path_dat), obj.tstart, obj.source_name,
+                            obj.fch1, obj.foff, obj.nchans))
+        if on_source_complex_cadence: # Complex cadence?
+            # If not a part of the complex cadence, then skip it.
+            if on_source_complex_cadence != obj.source_name:
+                continue
+        # Part of the cadence, complex or not.
+        # Make sure that the frequency range makes sense.
         if not close_enough(obj.fch1, matcher.fch1) \
         or not close_enough(obj.foff, matcher.foff) \
         or obj.nchans != matcher.nchans:
-            logger.error("Inconsistent frequency range!  This does not look like a cadence of related files.")
+            logger.error("find_event_pipeline: Inconsistent frequency range!  This does not look like a cadence of related files.")
             flag_terminate = True
     if flag_terminate:
-        sys.exit(86)
+        return None
 
 
     # If this is a complex cadence,

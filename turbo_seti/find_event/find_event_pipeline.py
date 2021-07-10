@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
 r"""
-Front-facing script to find drifting, narrowband events in a set of generalized 
+Front-facing script to find drifting, narrowband events in a set of generalized
 cadences of ON-OFF radio SETI observations.
-    
+
 The main function contained in this file is :func:`find_event_pipeline` calls
 find_events from find_events.py to read a list of turboSETI .dat files.
 It then finds events within this group of files.
@@ -11,30 +11,40 @@ It then finds events within this group of files.
 
 #required packages and programs
 import os
+import sys
 from operator import attrgetter
-try:
-    import find_event
-except:
-    from . import find_event
+
+import logging
+logger_name = 'find_event_pipeline'
+logger = logging.getLogger(logger_name)
+logger.setLevel(logging.INFO)
 
 import pandas as pd
+import numpy as np
 from blimpy import Waterfall
+from turbo_seti.find_event.find_event import find_events
+
+
+RTOL_DIFF = 0.01 # 1%
 
 
 class PathRecord:
     r''' Definition of a DAT record '''
-    def __init__(self, path_dat, tstart, source_name):
+    def __init__(self, path_dat, tstart, source_name, fch1, foff, nchans):
         self.path_dat = path_dat
         self.tstart = tstart
         self.source_name = source_name
+        self.fch1 = fch1
+        self.foff = foff
+        self.nchans = nchans
     def __repr__(self):
         return repr((self.path_dat, self.tstart, self.source_name))
-    
+
 
 def get_file_header(dat_path):
     r'''
     Extract and return the target's source name from the DAT file path.
-    
+
     Parameters
     ----------
     dat_path : str
@@ -47,7 +57,7 @@ def get_file_header(dat_path):
     Notes
     -----
     The HDF5 file is ASSUMED(!!) to be resident in the same directory of the DAT file.
-    The file name of the HDF5 file is identical to that of the DAT file 
+    The file name of the HDF5 file is identical to that of the DAT file
     except for the file extension (.h5 instead of .dat).
 
     '''
@@ -56,32 +66,39 @@ def get_file_header(dat_path):
     return wf.container.header
 
 
-def find_event_pipeline(dat_file_list_str, SNR_cut=10, check_zero_drift=False, filter_threshold=3, 
+def close_enough(x, y):
+    r"""Make sure that x and y are close enough to be considered roughly equal."""
+    if np.isclose(float(x), float(y), rtol=RTOL_DIFF):
+        return True
+    return False
+
+
+def find_event_pipeline(dat_file_list_str, SNR_cut=10, check_zero_drift=False, filter_threshold=3,
                         on_off_first='ON', number_in_cadence=6, on_source_complex_cadence=False,
                         saving=True, csv_name=None, user_validation=False,
-                        sortby_tstart=True): 
+                        sortby_tstart=True):
     """
     Find event pipeline.
 
     Parameters
     ----------
     dat_file_list_str : str
-        The string name of a plaintext file ending in .lst 
-        that contains the filenames of .dat files, each on a 
-        new line, that were created with seti_event.py. The 
-        .lst should contain a set of cadences (ON observations 
-        alternating with OFF observations). The cadence can be 
-        of any length, given that the ON source is every other 
+        The string name of a plaintext file ending in .lst
+        that contains the filenames of .dat files, each on a
+        new line, that were created with seti_event.py. The
+        .lst should contain a set of cadences (ON observations
+        alternating with OFF observations). The cadence can be
+        of any length, given that the ON source is every other
         file. This includes Breakthrough Listen standard ABACAD
-        as well as OFF first cadences like BACADA. Minimum 
-        cadence length is 2, maximum cadence length is 
+        as well as OFF first cadences like BACADA. Minimum
+        cadence length is 2, maximum cadence length is
         unspecified (currently tested up to 6).
         Example: ABACAD|ABACAD|ABACAD
     SNR_cut : int
-        The threshold SNR below which hits in the ON source 
-        will be disregarded. For the least strict thresholding, 
-        set this parameter equal to the minimum-searched SNR 
-        that you used to create the .dat files from 
+        The threshold SNR below which hits in the ON source
+        will be disregarded. For the least strict thresholding,
+        set this parameter equal to the minimum-searched SNR
+        that you used to create the .dat files from
         seti_event.py. Recommendation (and default) is 10.
     check_zero_drift : bool
         A True/False flag that tells the program whether to
@@ -91,11 +108,11 @@ def find_event_pipeline(dat_file_list_str, SNR_cut=10, check_zero_drift=False, f
     filter_threshold : int
         Specification for how strict the hit filtering will be.
         There are 3 different levels of filtering, specified by
-        the integers 1, 2, and 3. Filter_threshold = 1 
+        the integers 1, 2, and 3. Filter_threshold = 1
         returns hits above an SNR cut, taking into account the
         check_zero_drift parameter, but without an ON-OFF check.
         Filter_threshold = 2 returns hits that passed level 1
-        AND that are in at least one ON but no OFFs. 
+        AND that are in at least one ON but no OFFs.
         Filter_threshold = 3 returns events that passed level 2
         AND that are present in *ALL* ONs.
     on_off_first : str {'ON', 'OFF'}
@@ -107,19 +124,19 @@ def find_event_pipeline(dat_file_list_str, SNR_cut=10, check_zero_drift=False, f
         Default is 6 for ABACAD.
     on_source_complex_cadence : bool
         If using a complex cadence (i.e. ons and offs not
-        alternating), this variable should be the string 
+        alternating), this variable should be the string
         target name used in the .dat filenames. The code will
         then determine which files in your dat_file_list_str
         cadence are ons and which are offs.
     saving : bool
-        A True/False flag that tells the program whether to 
+        A True/False flag that tells the program whether to
         save the output array as a .csv.
     user_validation : bool
         A True/False flag that, when set to True, asks if the
         user wishes to continue with their input parameters
         (and requires a 'y' or 'n' typed as confirmation)
         before beginning to run the program. Recommended when
-        first learning the program, not recommended for 
+        first learning the program, not recommended for
         automated scripts.
     sortby_tstart : bool
         If True, the input file list is sorted by header.tstart.
@@ -133,28 +150,34 @@ def find_event_pipeline(dat_file_list_str, SNR_cut=10, check_zero_drift=False, f
     Examples
     --------
     >>> import find_event_pipeline;
-    >>> find_event_pipeline.find_event_pipeline(dat_file_list_str, SNR_cut=10, check_zero_drift=False,
-    ...                                         filter_threshold=3, on_off_first='ON', number_in_cadence=6, 
-    ...                                         on_source_complex_cadence=False, saving=True,
+    >>> find_event_pipeline.find_event_pipeline(dat_file_list_str,
+    ...                                         SNR_cut=10,
+    ...                                         check_zero_drift=False,
+    ...                                         filter_threshold=3,
+    ...                                         on_off_first='ON',
+    ...                                         number_in_cadence=6,
+    ...                                         on_source_complex_cadence=False,
+    ...                                         saving=True,
     ...                                         user_validation=False)
 
     """
     print()
     print("************   BEGINNING FIND_EVENT PIPELINE   **************")
     print()
-    
+
     if on_source_complex_cadence:
-        print("Assuming a complex cadence for the following on source: " + on_source_complex_cadence)
+        print("Assuming a complex cadence for the following on source: {}"
+              .format(on_source_complex_cadence))
     else: # not on_source_complex_cadence:
         print("Assuming the first observation is an " + on_off_first)
         complex_cadence = on_source_complex_cadence
-        
+
     # Get a list of the DAT files.
     dat_file_list = open(dat_file_list_str).readlines()
     dat_file_list = [files.replace('\n','') for files in dat_file_list]
     dat_file_list = [files.replace(',','') for files in dat_file_list]
     n_files = len(dat_file_list)
-    
+
     # Get source names and build path_record list.
     source_name_list = []
     path_record = []
@@ -162,7 +185,8 @@ def find_event_pipeline(dat_file_list_str, SNR_cut=10, check_zero_drift=False, f
         header = get_file_header(dat)
         source_name = header["source_name"]
         tstart = header["tstart"]
-        path_record.append(PathRecord(dat, tstart, source_name))
+        path_record.append(PathRecord(dat, tstart, source_name, header["fch1"],
+                                      header["foff"], header["nchans"]))
         source_name_list.append(source_name)
 
     # If sorting by header.tstart, then rewrite the dat_file_list in header.tstart order.
@@ -171,14 +195,23 @@ def find_event_pipeline(dat_file_list_str, SNR_cut=10, check_zero_drift=False, f
         dat_file_list = []
         for obj in path_record:
             dat_file_list.append(obj.path_dat)
-            print("find_event_pipeline: file = {}, tstart = {}, source_name = {}"
-                  .format(os.path.basename(obj.path_dat), obj.tstart, obj.source_name))
-    else:
-        for obj in path_record:
-            print("find_event_pipeline: file = {}, tstart = {}, source_name = {}"
-                  .format(os.path.basename(obj.path_dat), obj.tstart, obj.source_name))      
 
-    # If this is a complex cadence, 
+    # Display path_record rows.
+    matcher = path_record[0]
+    flag_terminate = False
+    for obj in path_record:
+        print("find_event_pipeline: file={}, tstart={}, source_name={}, fch1={}, foff={}, nchans={}"
+              .format(os.path.basename(obj.path_dat), obj.tstart, obj.source_name, obj.fch1, obj.foff, obj.nchans))
+        if not close_enough(obj.fch1, matcher.fch1) \
+        or not close_enough(obj.foff, matcher.foff) \
+        or obj.nchans != matcher.nchans:
+            logger.error("Inconsistent frequency range!  This does not look like a cadence of related files.")
+            flag_terminate = True
+    if flag_terminate:
+        sys.exit(86)
+
+
+    # If this is a complex cadence,
     # * construct a complex_cadence list of 1s and 0s.
     # * compute count_cadence = number of matches on on_source_complex_cadence.
     if on_source_complex_cadence:
@@ -197,19 +230,20 @@ def find_event_pipeline(dat_file_list_str, SNR_cut=10, check_zero_drift=False, f
             print("\n*** find_event_pipeline [complex cadence]: Sorry, no potential candidates with your given on_source_complex_cadence={}  :("
                   .format(on_source_complex_cadence))
             return None
-    
+
     num_of_sets = int(n_files / number_in_cadence)
-    print("There are " + str(len(dat_file_list)) + " total files in the filelist " + dat_file_list_str)
+    print("There are " + str(len(dat_file_list)) + " total files in the filelist "
+          + dat_file_list_str)
     print("therefore, looking for events in " + str(num_of_sets) + " on-off set(s)")
     print("with a minimum SNR of " + str(SNR_cut))
-    
+
     if filter_threshold == 1:
         print("Present in an ON source only, above SNR_cut")
     if filter_threshold == 2:
         print("Present in at least one ON source with RFI rejection from the OFF sources")
     if filter_threshold == 3:
         print("Present in all ON sources with RFI rejection from the OFF sources")
-    
+
     if not check_zero_drift:
         print("not including signals with zero drift")
     else:
@@ -217,8 +251,8 @@ def find_event_pipeline(dat_file_list_str, SNR_cut=10, check_zero_drift=False, f
     if not saving:
         print("not saving the output files")
     else:
-        print("saving the output files")    
-    
+        print("saving the output files")
+
     if user_validation:
         question = "Do you wish to proceed with these settings?"
         while "the answer is invalid":
@@ -229,11 +263,13 @@ def find_event_pipeline(dat_file_list_str, SNR_cut=10, check_zero_drift=False, f
                 break
             if reply[0] == 'n':
                 return None
-        
+
     #Looping over number_in_cadence chunks.
     candidate_list = []
-    for i in range(num_of_sets):
-        file_sublist = dat_file_list[number_in_cadence*i:((i*number_in_cadence)+(number_in_cadence))]
+    for ii in range(num_of_sets):
+        sublist_low = number_in_cadence * ii
+        sublist_high = sublist_low + number_in_cadence
+        file_sublist = dat_file_list[sublist_low : sublist_high]
         if not complex_cadence:
             if on_off_first == 'ON':
                 filename = os.path.basename(file_sublist[0])
@@ -241,16 +277,16 @@ def find_event_pipeline(dat_file_list_str, SNR_cut=10, check_zero_drift=False, f
                 filename = os.path.basename(file_sublist[1])
         else: # complex_cadence
             filename = os.path.basename(file_sublist[complex_cadence.index(1)])
-            
+
         print()
         print("*** First DAT file in set:  " + filename + " ***")
         print()
-        cand = find_event.find_events(file_sublist, 
-                                      SNR_cut=SNR_cut, 
-                                      check_zero_drift=check_zero_drift, 
-                                      filter_threshold=filter_threshold, 
-                                      on_off_first=on_off_first,
-                                      complex_cadence=complex_cadence)
+        cand = find_events(file_sublist,
+                           SNR_cut=SNR_cut,
+                           check_zero_drift=check_zero_drift,
+                           filter_threshold=filter_threshold,
+                           on_off_first=on_off_first,
+                           complex_cadence=complex_cadence)
         cand_len = 1
         if cand is None:
             cand_len = 0
@@ -263,14 +299,16 @@ def find_event_pipeline(dat_file_list_str, SNR_cut=10, check_zero_drift=False, f
         return None
 
     print("*** find_event_output_dataframe is complete ***")
-    
+
     if saving:
         if csv_name is None:
             prefix = os.path.dirname(dat_file_list[0]) + '/' + source_name_list[0]
             if check_zero_drift:
-                filestring = prefix + '_f' + str(filter_threshold) + '_snr' + str(SNR_cut) + '_zero' + '.csv'
+                filestring = prefix + '_f' + str(filter_threshold) + '_snr' \
+                    + str(SNR_cut) + '_zero' + '.csv'
             else:
-                filestring = prefix + '_f' + str(filter_threshold) + '_snr' + str(SNR_cut) + '.csv'            
+                filestring = prefix + '_f' + str(filter_threshold) + '_snr' \
+                    + str(SNR_cut) + '.csv'
         else:
             filestring = csv_name
         if not isinstance(find_event_output_dataframe, list):

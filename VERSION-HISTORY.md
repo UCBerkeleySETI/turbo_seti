@@ -4,6 +4,7 @@ This file is a version history of turbo_seti amendments, beginning with version 
 
 | `YYYY_MM_DD` | `Version` | `Contents` |
 | :--: | :--: | :-- |
+| 2021-07-10 | 2.1.2 | Diagnose non-cadence sets of files in find_event_pipeline (issue #250). |
 | 2021-07-09 | 2.1.1 | New turbo_seti utility: plotSETI. |
 | 2021-07-04 | 2.1.0 | The function calc_freq_range uses hardcoded parameter values. These should instead be derived from the data. |
 | | | See issue #231 for the full description and the resolution approach. |

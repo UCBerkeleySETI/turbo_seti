@@ -312,16 +312,18 @@ class DATAH5:
         drift_indexes : ndarray
 
         """
-        n = int(np.log2(self.tsteps))
-        file_path = resource_filename('turbo_seti', f'drift_indexes/drift_indexes_array_{n}.txt')
+        dia_num = int(np.log2(self.tsteps))
+        file_path = resource_filename('turbo_seti', f'drift_indexes/drift_indexes_array_{dia_num}.txt')
 
         if not os.path.isfile(file_path):
-            dia_file = 'drift_indexes/drift_indexes_array_{}.txt'.format(n)
-            msg = "data_handler.py:load_drift_indexes: tsteps={}!".format(self.tsteps)
+            dia_file = 'drift_indexes/drift_indexes_array_{}.txt'.format(dia_num)
+            msg = "data_handler.py:load_drift_indexes: time integration steps = {}!".format(self.tsteps)
             logger.error(msg)
-            msg = "data_handler.py:load_drift_indexes: {} not found!".format(dia_file)
+            msg = "data_handler.py:load_drift_indexes: file {} not found!".format(dia_file)
             logger.error(msg)
-            raise ValueError("""Don't attempt to use High Time Resolution (HRT) files with turboSETI. """
+            if self.tsteps < 4:
+                raise ValueError("Number of time integration steps must be at least 4!")
+            raise ValueError("""Don't attempt to use High Time Resolution (HTR) files with turboSETI. """
                              """TurboSETI is designed to search for narrowband signals -- the maximum """
                              """doppler drift we can expect due to the motion of celestial bodies is a few Hz/s. """
                              """The high time resolution products (ending 0001.fil) has ~0.5 MHz resolution and """

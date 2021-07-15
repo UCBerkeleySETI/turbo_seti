@@ -117,30 +117,27 @@ def exec_proc(args):
         print("Info: Your system is compatible with GPU-mode. Use the `-g y` argument to enable it.")
 
     #Doing search
-    try:
-        t0 = time.time()
+    t0 = time.time()
 
-        find_seti_event = FindDoppler(args.filename,
-                                      max_drift=args.max_drift,
-                                      min_drift=args.min_drift,
-                                      snr=args.snr,
-                                      out_dir=args.out_dir,
-                                      append_output=(args.flag_append_output == "y"),
-                                      coarse_chans=coarse_chans,
-                                      obs_info=None,
-                                      n_coarse_chan=args.n_coarse_chan,
-                                      gpu_backend=(args.flag_gpu == "y"),
-                                      precision=1 if args.flag_single_precision == "y" else 2,
-                                      log_level_int=log_level_int)
+    find_seti_event = FindDoppler(args.filename,
+                                  max_drift=args.max_drift,
+                                  min_drift=args.min_drift,
+                                  snr=args.snr,
+                                  out_dir=args.out_dir,
+                                  append_output=(args.flag_append_output == "y"),
+                                  coarse_chans=coarse_chans,
+                                  obs_info=None,
+                                  n_coarse_chan=args.n_coarse_chan,
+                                  gpu_backend=(args.flag_gpu == "y"),
+                                  precision=1 if args.flag_single_precision == "y" else 2,
+                                  log_level_int=log_level_int)
 
-        find_seti_event.search(n_partitions=args.n_parallel,
-                               progress_bar=args.flag_progress_bar)
+    find_seti_event.search(n_partitions=args.n_parallel,
+                           progress_bar=args.flag_progress_bar)
 
-        t1 = time.time()
-        print('Search time: %5.2f min' % ((t1-t0)/60.))
+    t1 = time.time()
+    print('Search time: %5.2f min' % ((t1-t0)/60.))
 
-    except Exception as e:
-        raise RuntimeError('[turboSETI] An exception occured in FindDoppler.') from e
 
 if __name__ == '__main__':
     main()

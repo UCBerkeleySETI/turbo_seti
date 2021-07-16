@@ -4,6 +4,8 @@ This file is a version history of turbo_seti amendments, beginning with version 
 
 | `YYYY_MM_DD` | `Version` | `Contents` |
 | :--: | :--: | :-- |
+| 2021-07-15 | 2.1.3 | Diagnose out of range time steps with correct messages (issue #256). |
+| | | Also, stop catching exceptions in seti_event.py which causes a cascade in tracebacks. |
 | 2021-07-10 | 2.1.2 | Diagnose non-cadence sets of files in find_event_pipeline (issue #250). |
 | 2021-07-09 | 2.1.1 | New turbo_seti utility: plotSETI. |
 | 2021-07-04 | 2.1.0 | The function calc_freq_range uses hardcoded parameter values. These should instead be derived from the data. |

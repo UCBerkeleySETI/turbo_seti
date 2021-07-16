@@ -298,8 +298,6 @@ class DATAH5:
             raise ValueError(msg)
 
         drift_indexes = self.load_drift_indexes()
-
-        spectra = self.kernels.xp.array(spectra, dtype=self.kernels.float_type)
         return spectra, drift_indexes
 
     def load_drift_indexes(self):
@@ -364,7 +362,7 @@ class DATAH5:
         #used by helper_functions.py
         if coarse:
             base_header['NAXIS1'] = int(header['nchans']/self.n_coarse_chan)
-            base_header['FCNTR'] = self.kernels.xp.abs(self.f_stop - self.f_start) / 2. + self.kernels.xp.fmin(
+            base_header['FCNTR'] = self.kernels.np.abs(self.f_stop - self.f_start) / 2. + self.kernels.np.fmin(
                 self.f_start, self.f_stop)
         else:
             base_header['NAXIS1'] = int(header['nchans'])

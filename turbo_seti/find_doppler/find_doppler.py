@@ -54,8 +54,8 @@ class FindDoppler:
         Directory where output files should be placed. By default this is the
         current working directory.
     coarse_chans : list(int)
-        The inputted comma separated list of coarse channels to analyze, if any. By default, 
-        all coarse channels will be searched. Use this to search only specified channels, 
+        The inputted comma separated list of coarse channels to analyze, if any. By default,
+        all coarse channels will be searched. Use this to search only specified channels,
         e.g. [7,12] will search channels 7 and 12 only.
     obs_info : dict
         Used to hold info found on file, including info about pulsars, RFI, and SEFD.
@@ -101,7 +101,7 @@ class FindDoppler:
                                       kernels=self.kernels)
 
         self.n_coarse_chan = self.data_handle.n_coarse_chan
-        
+
         if obs_info is None:
             obs_info = {'pulsar': 0, 'pulsar_found': 0, 'pulsar_dm': 0.0, 'pulsar_snr': 0.0,
                         'pulsar_stats': self.kernels.np.zeros(6), 'RFI_level': 0.0, 'Mean_SEFD': 0.0, 'psrflux_Sens': 0.0,
@@ -159,14 +159,14 @@ class FindDoppler:
 
         """
         t0 = time.time()
- 
+
         filename_in = self.data_handle.filename
         header_in   = self.data_handle.header
 
         # As of 2.1.0, add max_drift_rate and obs_length to FileWriter header input
         header_in['max_drift_rate'] = self.max_drift
         #header_in['obs_length'] was already set in data_handler.py DATAH __init__
-    
+
         wfilename = filename_in.split('/')[-1].replace('.h5', '').replace('.fits', '').replace('.fil', '')
         path_log = '{}/{}.log'.format(self.out_dir.rstrip('/'), wfilename)
         path_dat = '{}/{}.dat'.format(self.out_dir.rstrip('/'), wfilename)
@@ -186,7 +186,7 @@ class FindDoppler:
         msg = "HDF5 header info: {}\n".format(self.data_handle.get_info())
         logwriter.info(msg)
         print(msg)
-        
+
         msg = 'Starting ET search with parameters: ' + self.parms + '\n'
         logwriter.info(msg)
         print(msg)
@@ -418,15 +418,11 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
                 # SEARCH NEGATIVE DRIFT RATES
                 spectrum = tree_findoppler_flip[indx: indx + tdwidth]
 
-                # normalize
-                spectrum -= the_median
-                spectrum /= the_stddev
-
                 # Reverse spectrum back
                 spectrum = spectrum[::-1]
 
                 hitsearch(fd, spectrum, specstart, specend, snr, drift_rate, data_obj.header,
-                          tdwidth, max_val, 0)
+                          tdwidth, max_val, 0, the_median, the_stddev)
 
         # ----------------------------------------------------------------------
         # Positive drift rates search.
@@ -464,12 +460,8 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
                 # SEARCH POSITIVE DRIFT RATES
                 spectrum = tree_findoppler[indx: indx + tdwidth]
 
-                # normalize
-                spectrum -= the_median
-                spectrum /= the_stddev
-
                 hitsearch(fd, spectrum, specstart, specend, snr, drift_rate, data_obj.header,
-                          tdwidth, max_val, 0)
+                          tdwidth, max_val, 0, the_median, the_stddev)
 
     # Writing the top hits to file.
     logger.debug('END looping over drift_rate_nblock.')
@@ -543,7 +535,8 @@ def populate_tree(fd, spectra, tree_findoppler, nframes, tdwidth, tsteps, fftlen
     return tree_findoppler
 
 
-def hitsearch(fd, spectrum, specstart, specend, hitthresh, drift_rate, header, tdwidth, max_val, reverse):
+def hitsearch(fd, spectrum, specstart, specend, hitthresh, drift_rate, header, tdwidth, max_val, reverse,
+              the_median, the_stddev):
     r"""
     Searches for hits at given drift rate. A hit occurs in each channel if > hitthresh.
 
@@ -580,10 +573,15 @@ def hitsearch(fd, spectrum, specstart, specend, hitthresh, drift_rate, header, t
         numBlocks = (length + blockSize - 1) // blockSize
         spectrum_tmp = fd.kernels.xp.copy(spectrum[specstart:specend])
         call = (length, spectrum_tmp, float(hitthresh), float(drift_rate),
-                max_val.maxsnr, max_val.maxdrift, max_val.total_n_hits)
+                max_val.maxsnr, max_val.maxdrift, max_val.total_n_hits,
+                the_median, the_stddev)
         fd.kernels.hitsearch((numBlocks,), (blockSize,), call)
 
     else:
+
+        # normalize
+        spectrum -= the_median
+        spectrum /= the_stddev
 
         hits = 0
         for i in (spectrum[specstart:specend] > hitthresh).nonzero()[0] + specstart:

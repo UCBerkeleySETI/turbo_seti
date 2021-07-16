@@ -44,9 +44,9 @@ class DATAHandle:
 
     """
     def __init__(self, filename=None, out_dir='./', n_coarse_chan=None, coarse_chans=None,
-                 kernels=None, gpu_backend=False, precision=2):
+                 kernels=None, gpu_backend=False, precision=2, gpu_id=0):
         if not kernels:
-            self.kernels = Kernels(gpu_backend, precision)
+            self.kernels = Kernels(gpu_backend, precision, gpu_id)
         else:
             self.kernels = kernels
 
@@ -73,7 +73,7 @@ class DATAHandle:
             self.filesize = self.filestat.st_size/(1024.0**2)
 
             # Grab header from DATAH5
-            dobj_master = DATAH5(filename, kernels=self.kernels)
+            dobj_master = DATAH5(filename, kernels=self.kernels, gpu_id=gpu_id)
             self.header = dobj_master.header
             self.drift_rate_resolution = dobj_master.drift_rate_resolution
             dobj_master.close()
@@ -196,7 +196,7 @@ class DATAH5:
 
     """
     def __init__(self, filename, f_start=None, f_stop=None, t_start=None, t_stop=None,
-                 coarse_chan=1, n_coarse_chan=None, kernels=None, gpu_backend=False, precision=2):
+                 coarse_chan=1, n_coarse_chan=None, kernels=None, gpu_backend=False, precision=2, gpu_id=0):
         self.filename = filename
         self.closed = False
         self.f_start = f_start
@@ -206,7 +206,7 @@ class DATAH5:
         self.n_coarse_chan = n_coarse_chan
 
         if not kernels:
-            self.kernels = Kernels(gpu_backend, precision)
+            self.kernels = Kernels(gpu_backend, precision, gpu_id)
         else:
             self.kernels = kernels
 

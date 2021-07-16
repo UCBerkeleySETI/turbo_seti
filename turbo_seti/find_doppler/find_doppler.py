@@ -76,13 +76,13 @@ class FindDoppler:
 
     """
     def __init__(self, datafile, max_drift=4.0, min_drift=0.00001, snr=25.0, out_dir='./', coarse_chans=None,
-                 obs_info=None, flagging=False, n_coarse_chan=None, kernels=None, gpu_backend=False,
+                 obs_info=None, flagging=False, n_coarse_chan=None, kernels=None, gpu_backend=False, gpu_id=0,
                  precision=2, append_output=False, log_level_int=logging.INFO):
 
         print(version_announcements)
 
         if not kernels:
-            self.kernels = Kernels(gpu_backend, precision)
+            self.kernels = Kernels(gpu_backend, precision, gpu_id)
         else:
             self.kernels = kernels
 
@@ -114,8 +114,8 @@ class FindDoppler:
         self.append_output = append_output
         self.parms = 'datafile={}, max_drift={}, min_drift={}, snr={}, out_dir={}, coarse_chans={}' \
                         .format(datafile, max_drift, min_drift, snr, out_dir, coarse_chans) \
-                    + ', flagging={}, n_coarse_chan={}, kernels={}, gpu_backend={}' \
-                        .format(flagging, self.n_coarse_chan, kernels, gpu_backend) \
+                    + ', flagging={}, n_coarse_chan={}, kernels={}, gpu_id={}, gpu_backend={}' \
+                        .format(flagging, self.n_coarse_chan, kernels, gpu_id, gpu_backend) \
                     + ', precision={}, append_output={}, log_level_int={}, obs_info={}' \
                         .format(precision, append_output, log_level_int, obs_info)
         if min_drift < 0 or max_drift < 0:

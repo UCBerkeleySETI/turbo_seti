@@ -29,13 +29,16 @@ It was originally based on `dedoppler` [dedoppler](http://github.com/cs150bf/gbt
 
 ### Dependencies
 
-- Python 3.6+
+- Python 3.7+
 - astropy
-- numba
 - numpy
+- blimpy (Breakthrough Listen I/O Methods for Python :  https://github.com/UCBerkeleySETI/blimpy)
+- pandas
+- toolz
+- fsspec
 - dask
 - dask[bag]
-- blimpy (Breakthrough Listen I/O Methods for Python :  https://github.com/UCBerkeleySETI/blimpy)
+- numba
 - cupy (NVIDIA GPU mode only)
 
 &nbsp;
@@ -44,7 +47,11 @@ It was originally based on `dedoppler` [dedoppler](http://github.com/cs150bf/gbt
 
 ## Installation
 
-The latest release can be installed via pip directly from this repository:
+If you have not yet installed blimpy, do so in this manner:
+
+`python3 -m pip install -U git+https://github.com/UCBerkeleySETI/blimpy`
+
+Then, install turbo_seti directly from this repository:
 
 `python3 -m pip install -U git+https://github.com/UCBerkeleySETI/turbo_seti`
 
@@ -53,19 +60,19 @@ The latest release can be installed via pip directly from this repository:
 Already included is NUMBA Just-in-Time (JIT) CPU performance enhancements. However, if you have NVIDIA GPU hardware on the computer where turbo_seti is going to execute, you can get significant additional performance improvement.  Enable GPU enhanced processing with these steps:
 
 1. Install pypi package "cupy":  `python3 -m pip install cupy`
-2. Run the exercutable this way:  `turboSETI <FULL_PATH_TO_INPUT_HDF5_FILE> -g y [OTHER OPTIONS]`
+2. Run the executable this way:  `turboSETI <FULL_PATH_TO_INPUT_HDF5_FILE> -g y [OTHER OPTIONS]`
 
 ## Usage
 
 ### Expected Input File Format
 
-At the moment, the `turboSETI` command line and the `FindDoppler` class instantiation expect a single HDF5 file (.h5) produced by a blimpy utility (E.g. `fil2h5`).
+At the moment, the `turboSETI` command line and the `FindDoppler` object expect an HDF5 file (.h5) or a Filterbank file (.fil) such as produced by one of the blimpy utilities.
 
 ### Usage as a Command Line
 
 Run with data: `turboSETI <FULL_PATH_TO_INPUT_HDF5_FILE> [OPTIONS]`
 
-For usage: `turboSETI -h`
+For an explanation of the program options: `turboSETI -h`
 
 
 
@@ -81,105 +88,98 @@ fdop.search(...)
 
 ```
 import time
-from shutil import rmtree
-from os import mkdir
-import blimpy
+from blimpy import Waterfall
 from turbo_seti.find_doppler.find_doppler import FindDoppler
 
-H5DIR = "/mnt/elkdata/linux-home-folder/seti_testing/datasets/voyager/"
+H5DIR = "/seti_data/voyager/"
 H5PATH = H5DIR + "Voyager1.single_coarse.fine_res.h5"
-OUT_DIR_BASE = '/tmp/run_turbo_seti/'
+OUT_DIR_BASE = H5DIR
 
-
-def run_turbo_seti(arg_in_h5_file: str, arg_out_dir: str):
-    print("\nrun_turbo_seti: Calling FindDoppler({})".format(arg_in_h5_file))
-    # -- Start fresh.
-    rmtree(arg_out_dir, ignore_errors=True)
-    mkdir(arg_out_dir)
-    # -- Get a report of header and data shape
-    wf = blimpy.Waterfall(arg_in_h5_file)
-    wf.info()
-    # -- Instantiate FindDoppler.
-    fdop = FindDoppler(datafile=arg_in_h5_file, max_drift=20, out_dir=arg_out_dir)
-    # -- Search for hits and report elapsed time.
-    print("\nPlease wait ...")
-    t0 = time.time()
-    fdop.search()
-    et = time.time() - t0
-    print("run_turbo_seti: search() elapsed time = {} seconds"
-          .format(et))
-
-
-if __name__ == '__main__':
-
-    run_turbo_seti(H5PATH, OUT_DIR_BASE)
+print("\nUsing HDF5 file: {}\nHeader and data shape:".format(H5PATH))
+# -- Get a report of header and data shape
+wf = Waterfall(H5PATH)
+wf.info()
+# -- Instantiate FindDoppler.
+print("\nInstantiating the FindDoppler object.")
+fdop = FindDoppler(datafile=H5PATH, max_drift=4, snr=25, out_dir=H5DIR)
+# -- Search for hits and report elapsed time.
+print("\nBegin doppler search.  Please wait ...")
+t1 = time.time()
+fdop.search()
+elapsed_time = time.time() - t1
+print("\nFindDoppler.search() elapsed time = {} seconds".format(elapsed_time))
 ```
 
 
 ### Sample DAT File Output
 
+```
+# -------------------------- o --------------------------
+# File ID: Voyager1.single_coarse.fine_res.h5 
+# -------------------------- o --------------------------
+# Source:Voyager1
+# MJD: 57650.782094907408	RA: 17h10m03.984s	DEC: 12d10m58.8s
+# DELTAT:  18.253611	DELTAF(Hz):  -2.793968
+# --------------------------
+# Top_Hit_# 	Drift_Rate 	SNR 	Uncorrected_Frequency 	Corrected_Frequency 	Index 	freq_start 	freq_end 	SEFD 	SEFD_freq 	Coarse_Channel_Number 	Full_number_of_hits 	
+# --------------------------
+001	 -0.392226	 30.612128	   8419.319368	   8419.319368	739933	   8419.321003	   8419.317740	0.0	      0.000000	0	858	
+002	 -0.373093	245.707984	   8419.297028	   8419.297028	747929	   8419.298662	   8419.295399	0.0	      0.000000	0	858	
+003	 -0.392226	 31.220652	   8419.274374	   8419.274374	756037	   8419.276009	   8419.272745	0.0	      0.000000	0	858	
+```
 
-    File ID: blc07_guppi_57650_67573_Voyager1_0002.gpuspec.0000_57
-    Source:Voyager1 MJD: 57650.782094907408 RA:  17:10:04.0 DEC:  +12:10:58.8       DELTAT:  18.253611      DELTAF(Hz):   2.793968
-    --------------------------
-    N_candidates: 1055
-    --------------------------
-    Top Hit #       Drift Rate      SNR     Uncorrected Frequency   Corrected Frequency     Index   freq_start      freq_end        SEFD    SEFD_freq
-    --------------------------
-    001      -0.353960       51.107710         8419.274366     8419.274366  292536     8419.274344     8419.274386  0.0           0.000000
-    002      -0.363527       48.528281         8419.274687     8419.274687  292651     8419.274665     8419.274707  0.0           0.000000
-    003      -0.382660      118.779830         8419.297028     8419.297028  300647     8419.297006     8419.297047  0.0           0.000000
-    004      -0.392226       51.193226         8419.319366     8419.319366  308642     8419.319343     8419.319385  0.0           0.000000
-    005      -0.363527       49.893235         8419.319681     8419.319681  308755     8419.319659     8419.319701  0.0           0.000000
-    006       0.000000      298.061948         8419.921871     8419.921871  524287     8419.921848     8419.921890  0.0           0.000000
 
 ### Sample Console Logging (level=INFO) Output
 Note that the coarse channel number appears as a suffix of the logger name.  For example, "find_doppler.8" depicts logging for find_doppler.py in coarse channel number 8 (relative to 0).
 ```
-turboSETI  /seti_data/voyager/Voyager1.single_coarse.fine_res.h5 -n 16 -o /tmp/run_turbo_seti/ -l info
-find_doppler    INFO     {'DIMENSION_LABELS': array(['frequency', 'feed_id', 'time'], dtype=object), 'az_start': 0.0, 'data_type': 1, 'fch1': 8421.386717353016, 'foff': -2.7939677238464355e-06, 'ibeam': 1, 'machine_id': 20, 'nbeams': 1, 'nbits': 32, 'nchans': 1048576, 'nifs': 1, 'rawdatafile': 'guppi_57650_67573_Voyager1_0002.0000.raw', 'source_name': 'Voyager1', 'src_dej': <Angle 12.183 deg>, 'src_raj': <Angle 17.16777333 hourangle>, 'telescope_id': 6, 'tsamp': 18.253611008, 'tstart': 57650.78209490741, 'za_start': 0.0}
-find_doppler    INFO     Recreating DAT and LOG files
-find_doppler    INFO     Start ET search for /seti_data/voyager/Voyager1.single_coarse.fine_res.h5
-find_doppler.0  INFO     Total number of candidates for coarse channel 0 is: 0
-find_doppler.1  INFO     Total number of candidates for coarse channel 1 is: 0
-find_doppler.2  INFO     Total number of candidates for coarse channel 2 is: 0
-find_doppler.3  INFO     Total number of candidates for coarse channel 3 is: 0
-find_doppler.4  INFO     Total number of candidates for coarse channel 4 is: 0
-find_doppler.5  INFO     Total number of candidates for coarse channel 5 is: 0
-find_doppler.6  INFO     Total number of candidates for coarse channel 6 is: 0
-find_doppler.7  INFO     Total number of candidates for coarse channel 7 is: 0
-find_doppler.8  INFO     Top hit found! SNR: 247337.821136 ... index: 0
-find_doppler.8  INFO     Top hit found! SNR: 15524.311644 ... index: 52
-find_doppler.8  INFO     Top hit found! SNR: 15522.626980 ... index: 65500
-find_doppler.8  INFO     Total number of candidates for coarse channel 8 is: 30719
-find_doppler.9  INFO     Total number of candidates for coarse channel 9 is: 0
-find_doppler.10 INFO     Total number of candidates for coarse channel 10 is: 0
-find_doppler.11 INFO     Top hit found! SNR: 154.966914 ... index: 19037
-find_doppler.11 INFO     Top hit found! SNR: 1247.693444 ... index: 27033
-find_doppler.11 INFO     Top hit found! SNR: 158.058329 ... index: 35141
-find_doppler.11 INFO     Total number of candidates for coarse channel 11 is: 167459
-find_doppler.12 INFO     Total number of candidates for coarse channel 12 is: 0
-find_doppler.13 INFO     Total number of candidates for coarse channel 13 is: 0
-find_doppler.14 INFO     Total number of candidates for coarse channel 14 is: 0
-find_doppler.15 INFO     Total number of candidates for coarse channel 15 is: 0
-Search time:  0.34 min
+Using HDF5 file: /seti_data/voyager/Voyager1.single_coarse.fine_res.h5
+Header and data shape:
+
+--- File Info ---
+DIMENSION_LABELS :   ['frequency' 'feed_id' 'time']
+        az_start :                              0.0
+       data_type :                                1
+            fch1 :            8421.386717353016 MHz
+            foff :      -2.7939677238464355e-06 MHz
+           ibeam :                                1
+      machine_id :                               20
+          nbeams :                                1
+           nbits :                               32
+          nchans :                          1048576
+            nifs :                                1
+     rawdatafile : guppi_57650_67573_Voyager1_0002.0000.raw
+     source_name :                         Voyager1
+         src_dej :                       12:10:58.8
+         src_raj :                     17:10:03.984
+    telescope_id :                                6
+           tsamp :                     18.253611008
+   tstart (ISOT) :          2016-09-19T18:46:13.000
+    tstart (MJD) :                57650.78209490741
+        za_start :                              0.0
+
+Num ints in file :                               16
+      File shape :                 (16, 1, 1048576)
+--- Selection Info ---
+Data selection shape :                 (16, 1, 1048576)
+Minimum freq (MHz) :                8418.457032646984
+Maximum freq (MHz) :                8421.386717353016
+
+Instantiating the FindDoppler object.
+find_doppler.0  INFO     {'DIMENSION_LABELS': array(['frequency', 'feed_id', 'time'], dtype=object), 'az_start': 0.0, 'data_type': 1, 'fch1': 8421.386717353016, 'foff': -2.7939677238464355e-06, 'ibeam': 1, 'machine_id': 20, 'nbeams': 1, 'nbits': 32, 'nchans': 1048576, 'nifs': 1, 'rawdatafile': 'guppi_57650_67573_Voyager1_0002.0000.raw', 'source_name': 'Voyager1', 'src_dej': <Angle 12.183 deg>, 'src_raj': <Angle 17.16777333 hourangle>, 'telescope_id': 6, 'tsamp': 18.253611008, 'tstart': 57650.78209490741, 'za_start': 0.0}
+
+Begin doppler search.  Please wait ...
+find_doppler.0  INFO     File: /seti_data/voyager/Voyager1.single_coarse.fine_res.h5
+ drift rates (min, max): (0.000000, 4.000000)
+ SNR: 25.000000
+
+Starting ET search using /seti_data/voyager/Voyager1.single_coarse.fine_res.h5
+find_doppler.0  INFO     Parameters: datafile=/seti_data/voyager/Voyager1.single_coarse.fine_res.h5, max_drift=4, min_drift=0.0, snr=25, out_dir=/seti_data/voyager/, coarse_chans=None, flagging=False, n_coarse_chan=None, kernels=None, gpu_backend=False, precision=2, append_output=False, log_level_int=20, obs_info={'pulsar': 0, 'pulsar_found': 0, 'pulsar_dm': 0.0, 'pulsar_snr': 0.0, 'pulsar_stats': array([0., 0., 0., 0., 0., 0.]), 'RFI_level': 0.0, 'Mean_SEFD': 0.0, 'psrflux_Sens': 0.0, 'SEFDs_val': [0.0], 'SEFDs_freq': [0.0], 'SEFDs_freq_up': [0.0]}
+find_doppler.0  INFO     Top hit found! SNR 30.612128, Drift Rate -0.392226, index 739933
+find_doppler.0  INFO     Top hit found! SNR 245.707984, Drift Rate -0.373093, index 747929
+find_doppler.0  INFO     Top hit found! SNR 31.220652, Drift Rate -0.392226, index 756037
+
+FindDoppler.search() elapsed time = 9.972093105316162 seconds
 ```
-
-### BL Internal Technote
-
-Currently, there is some voyager test data in bls0 at the GBT cluster.
-From the .../turbo_seti/bin/ folder run the next command.
-
-```bash
-$ python seti_event.py /datax/users/eenriquez/voyager_test/blc07_guppi_57650_67573_Voyager1_0002.gpuspec.0000.fil -o <your_test_folder> -M 2
-```
-
-This will take `/datax/users/eenriquez/voyager_test/blc07_guppi_57650_67573_Voyager1_0002.gpuspec.0000.fil` as input (and in this particular case it will discover that this file is too big to handle all at once, so it will first partition it into smaller FITS files and save them into the directory specified by option **`-o`**, and then proceed with drift signal search for each small FITS files). Everything else was set to default values.
-
-Sample Outputs:
-See `/datax/eenriquez/voyager_test/*/*.log`, `/datax/eenriquez/voyager_test/*.dat` for search results and see `/datax/eenriquez/voyager_test/*.png` for some plots.
-
-
 
 &nbsp;
 --------------------------

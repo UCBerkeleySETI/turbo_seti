@@ -8,10 +8,11 @@
 # twine upload dist/*
 
 from setuptools import setup, find_packages
-import numpy
-from setuptools.extension import Extension
 
-__version__ = "2.1.0"
+__version__ = "2.1.2"
+
+with open("turbo_seti/find_doppler/turbo_seti_version.py", "w") as fh:
+    fh.write("TURBO_SETI_VERSION = '{}'\n".format(__version__))
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -23,17 +24,12 @@ with open("requirements_test.txt", "r") as fh:
     test_requirements = fh.readlines()
 
 entry_points = {
-    'console_scripts' :
-        ['turboSETI = turbo_seti.find_doppler.seti_event:main',
-         'find_event = turbo_seti.find_event.find_event:main',
-         'find_scan_sets = turbo_seti.find_event.find_scan_sets:main',
-         'plot_event = turbo_seti.find_event.plot_event:main',
-     ]
+    "console_scripts" : [
+        "turboSETI = turbo_seti.find_doppler.seti_event:main",
+        "plotSETI = turbo_seti.find_event.run_pipelines:main" ]
 }
 
-package_data={
-    'turbo_seti': ['drift_indexes/*.txt', 'find_doppler/kernels/**/*.cu'],
-}
+package_data = {"turbo_seti": ["drift_indexes/*.txt", "find_doppler/kernels/**/*.cu"]}
 
 setup(
     name="turbo_seti",
@@ -48,7 +44,7 @@ setup(
     author_email="e.enriquez@berkeley.edu",
     description="Analysis tool for the search of narrow band drifting signals in filterbank data",
     long_description=long_description,
-    long_description_content_type='text/markdown',
+    long_description_content_type="text/markdown",
     license="MIT License",
     keywords="astronomy",
     url="https://github.com/UCBerkeleySETI/turbo_seti",
@@ -59,5 +55,5 @@ setup(
         "Intended Audience :: Science/Research",
         "Programming Language :: Python :: 3",
         "Topic :: Scientific/Engineering",
-        ]
+    ],
 )

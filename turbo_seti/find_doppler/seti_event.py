@@ -3,14 +3,18 @@
 Main program module for executable turboSETI
 '''
 
+import sys
+import os
 import logging
 import time
 import cProfile
 import pstats
 from argparse import ArgumentParser
 
+from blimpy import __version__ as BLIMPY_VERSION
 from .find_doppler import FindDoppler
 from .kernels import Kernels
+from .turbo_seti_version import TURBO_SETI_VERSION
 
 
 def main(args=None):
@@ -23,27 +27,33 @@ def main(args=None):
 
     """
     # Create an option parser to get command-line input/arguments
-    p = ArgumentParser(description='turboSETI doppler drift narrowband search utility.')
+    p = ArgumentParser(description='turboSETI doppler drift narrowband search utility version {}.'
+                                    .format(TURBO_SETI_VERSION))
 
-    p.add_argument('filename', type=str, help='Name of filename to open (h5 or fil)')
+    p.add_argument('filename', type=str, default='', nargs="?",
+                   help='Name of filename to open (h5 or fil)')
+    p.add_argument('-v', '--version', dest='show_version', default=False, action='store_true',
+                   help='show the turbo_seti and blimpy versions and exit')
     p.add_argument('-M', '--max_drift', dest='max_drift', type=float, default=10.0,
-                   help='Set the drift rate to search. Unit: Hz/sec. Default: 10.0')
-    p.add_argument('-m', '--mask', dest='mask', type=str, default=None,
+                   help='Set the maximum drift rate threshold. Unit: Hz/sec. Default: 10.0')
+    p.add_argument('-x', '--mask', dest='mask', type=str, default=None,
                    help='Set the frequency masking file path.')
+    p.add_argument('-m', '--min_drift', dest='min_drift', type=float, default=0.00001,
+                   help='Set the minimum drift rate threshold. Unit: Hz/sec. Default: 0.00001')
     p.add_argument('-s', '--snr', dest='snr', type=float, default=25.0,
-                   help='SNR threshold. Default: 25.0')
+                   help='Set the minimum SNR threshold. Default: 25.0')
     p.add_argument('-o', '--out_dir', dest='out_dir', type=str, default='./',
                    help='Location for output files. Default: local dir. ')
     p.add_argument('-l', '--loglevel', dest='log_level', type=str, default='info',
                    help='Specify log level (info, debug, warning)')
     p.add_argument('-c', '--coarse_chans', dest='coarse_chans', type=str, default=None,
-                   help='Comma separated list of coarse channels to analyze.')
+                   help='Comma separated string list of coarse channels to analyze. E.g. 7,12 to search channels 7 and 12 only.')
     p.add_argument('-n', '--n_coarse_chan', dest='n_coarse_chan', type=int, default=None,
-                   help='Number of coarse channels in file.')
+                   help='Number of coarse channels to use.')
     p.add_argument('-p', '--n_parallel', dest='n_parallel', type=int, default=1,
-                   help='Number of partitions to run in parallel. Default to 1 (single partition)')
-    p.add_argument('-b', '--progress_bar', dest='flag_progress_bar', type=str, default='y',
-                   help='Use a progress bar? (y/n)')
+                   help='Number of dask partitions to run in parallel. Default to 1 (dask not in use)')
+    p.add_argument('-b', '--progress_bar', dest='flag_progress_bar', type=str, default='n',
+                   help='Use a progress bar with dask? (y/n)')
     p.add_argument('-g', '--gpu', dest='flag_gpu', type=str, default='n',
                    help='Compute on the GPU? (y/n)')
     p.add_argument('-P', '--profile', dest='flag_profile', type=str, default='n',
@@ -58,14 +68,27 @@ def main(args=None):
     else:
         args = p.parse_args(args)
 
-    if args.flag_profile == "y":
-        cProfile.runctx('exec(args)', {'args': args, 'exec': exec}, {}, 'exec')
-        p = pstats.Stats('exec')
-        p.strip_dirs().sort_stats('time').print_stats(8)
-    else:
-        exec(args)
+    if args.show_version:
+        print('turbo_seti: {}'.format(TURBO_SETI_VERSION))
+        print('blimpy: {}'.format(BLIMPY_VERSION))
+        sys.exit(0)
 
-def exec(args):
+    if args.filename == '':
+        os.system('turboSETI -h')
+        sys.exit(0)
+
+    if not os.path.exists(args.filename):
+        print("\nInput file {} does not exist!\n".format(args.filename))
+        sys.exit(86)
+
+    if args.flag_profile == "y":
+        cProfile.runctx('exec(args)', {'args': args, 'exec': exec_proc}, {}, filename='stats_file.bin')
+        p = pstats.Stats('stats_file.bin')
+        p.strip_dirs().sort_stats('time').print_stats(16)
+    else:
+        exec_proc(args)
+
+def exec_proc(args):
     r"""
     Interface to FindDoppler class, called by main().
 
@@ -99,8 +122,9 @@ def exec(args):
     try:
         t0 = time.time()
 
-
-        find_seti_event = FindDoppler(args.filename, max_drift=args.max_drift,
+        find_seti_event = FindDoppler(args.filename,
+                                      max_drift=args.max_drift,
+                                      min_drift=args.min_drift,
                                       snr=args.snr,
                                       out_dir=args.out_dir,
                                       append_output=(args.flag_append_output == "y"),
@@ -119,7 +143,6 @@ def exec(args):
         print('Search time: %5.2f min' % ((t1-t0)/60.))
 
     except Exception as e:
-        logging.exception(e)
         raise RuntimeError('[turboSETI] An exception occured in FindDoppler.') from e
 
 if __name__ == '__main__':

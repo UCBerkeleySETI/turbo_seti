@@ -1,46 +1,45 @@
-'''
-Package turbo_seti
-test_pipelines.py - Expand coverage for individual files in the
-                    turbo_seti/find_event folder, especially pipelines.
+r'''
+test_pipelines.py
 
-Date         Who            Description
-----------   -------------  --------------------------------------------
-2020-07-30   R. Elkins      Initial version as "test_pipelines.py"
-2020-08-01   R. Elkins      Renamed to "test_pipelines.py"
-2020-08-01   R. Elkins      Expand filter threshold coverage to 1, 2, & 3
-2020-08-18   R. Elkins      Fix test_pipelines execution to re-clean-up
-                            between find_plot_pipelines() executions.
-2020-12-12   R. Elkins      Issue #127 - use new filter_spec parameter.
+Using the 0000.h5 Voyager 2020 set of HDF5 files
+from http://blpd14.ssl.berkeley.edu/voyager_2020/single_coarse_channel/
+test the following:
+* FindDoppler seaarch
+* find_event_pipeline
+* plot_event_pipeline
 '''
 
 from time import time
 from shutil import rmtree
 from pathlib import Path
-from os import mkdir, remove, listdir
+from os import mkdir, listdir
 from tempfile import gettempdir
 import sys
-import os
 from urllib.error import HTTPError
+from argparse import ArgumentParser
+import imghdr
 import wget
+import pytest
 
 from turbo_seti.find_doppler.find_doppler import FindDoppler
 from turbo_seti.find_event.find_event_pipeline import find_event_pipeline
 from turbo_seti.find_event.plot_event_pipeline import plot_event_pipeline
-
+import pipelines_util as utl
 
 TESTDIR = gettempdir() + '/pipeline_testing/'
 PATH_DAT_LIST_FILE = TESTDIR + 'dat_files.lst'
 PATH_H5_LIST_FILE = TESTDIR + 'h5_files.lst'
 PATH_CSVF = TESTDIR + 'found_event_table.csv'
 
-
-URL_DIR = 'http://blpd0.ssl.berkeley.edu/parkes_testing/'
-H5_FILE_LIST = ['diced_Parkes_57941_12846_HIP33499_S_fine.h5',
-                'diced_Parkes_57941_13194_HIP33499_R_fine.h5',
-                'diced_Parkes_57941_13542_HIP33499_S_fine.h5',
-                'diced_Parkes_57941_13884_HIP33499_R_fine.h5',
-                'diced_Parkes_57941_14233_HIP33499_S_fine.h5',
-                'diced_Parkes_57941_14584_HIP33499_R_fine.h5']
+URL_DIR = 'http://blpd14.ssl.berkeley.edu/voyager_2020/single_coarse_channel/'
+H5_FILE_LIST = ['single_coarse_guppi_59046_80036_DIAG_VOYAGER-1_0011.rawspec.0000.h5',
+                'single_coarse_guppi_59046_80354_DIAG_VOYAGER-1_0012.rawspec.0000.h5',
+                'single_coarse_guppi_59046_80672_DIAG_VOYAGER-1_0013.rawspec.0000.h5',
+                'single_coarse_guppi_59046_80989_DIAG_VOYAGER-1_0014.rawspec.0000.h5',
+                'single_coarse_guppi_59046_81310_DIAG_VOYAGER-1_0015.rawspec.0000.h5',
+                'single_coarse_guppi_59046_81628_DIAG_VOYAGER-1_0016.rawspec.0000.h5']
+MAX_DRIFT = 2.0
+MIN_SNR = 10.0
 
 
 def oops(arg_text):
@@ -52,34 +51,34 @@ def oops(arg_text):
 
 
 def initialize():
-    '''
+    r'''
     Recreate working directory, TESTDIR.
     '''
     rmtree(TESTDIR, ignore_errors=True)
     mkdir(TESTDIR)
-    print('test_pipelines: Initialized')
+    print('test_pipelines_1: Initialized')
 
 
 def wgetter(arg_h5_name):
-    '''
+    r'''
     wget an HDF5 file from the Internet repository.
     arg_h5_name:  HDF5 file name
     '''
     url_h5 = URL_DIR + arg_h5_name
     path_h5 = TESTDIR + arg_h5_name
-    print('test_pipelines: Begin wget {} -> {} .....'.format(url_h5, path_h5))
+    print('test_pipelines_1: Begin wget {} -> {} .....'.format(url_h5, path_h5))
     time_start = time()
     try:
         wget.download(url_h5, path_h5, bar=False)
     except HTTPError as ex:
-        oops('test_pipelines: wget {}, failed: {}'.format(url_h5, repr(ex)))
+        oops('test_pipelines_1: wget {}, failed: {}'.format(url_h5, repr(ex)))
     time_stop = time()
-    print('test_pipelines: End wget ({}), et = {:.1f} seconds'
+    print('test_pipelines_1: End wget ({}), et = {:.1f} seconds'
           .format(arg_h5_name, time_stop - time_start))
 
 
 def make_one_dat_file(arg_h5_name):
-    '''
+    r'''
     Make a single DAT file:
     * Instantiate the FindDoppler class object.
     * With the object, search the H5, creating the DAT file
@@ -92,8 +91,8 @@ def make_one_dat_file(arg_h5_name):
     h5_path = TESTDIR + arg_h5_name
     time_start = time()
     doppler = FindDoppler(h5_path,
-                          max_drift=4,
-                          snr=10,
+                          max_drift=MAX_DRIFT,
+                          snr=MIN_SNR,
                           out_dir=TESTDIR)
     time_stop = time()
     print('make_one_dat_file: End FindDoppler({}), et = {:.1f} seconds'
@@ -101,7 +100,7 @@ def make_one_dat_file(arg_h5_name):
 
     print('make_one_dat_file: Begin Doppler search({}) .....'
           .format(arg_h5_name))
-    
+
     # ----------------------------------------------------------------------------
     # No more than 1 execution of this program because of dask methodology!
     # To do multiple dask partitions would cause initialization & cleanup chaos.
@@ -109,13 +108,13 @@ def make_one_dat_file(arg_h5_name):
     doppler.search(n_partitions=1)
     time_stop = time()
     # ----------------------------------------------------------------------------
-    
+
     print('make_one_dat_file: End Doppler search({}), et = {:.1f} seconds'
           .format(arg_h5_name, time_stop - time_start))
 
 
 def make_all_dat_files():
-    '''
+    r'''
     For each HDF5 file name,
     * Make one DAT file.
     * Add its name to the list of DAT files.
@@ -127,38 +126,29 @@ def make_all_dat_files():
             file_handle.write('{}\n'.format(TESTDIR + filename_dat))
 
 
-def find_plot_pipelines(need_init=True, filter_threshold=2):
-    '''
+def find_plot_pipelines(need_init=True, filter_threshold=3):
+    r'''
     Exercise find_event_pipeline() and plot_event_pipeline()
     '''
 
     main_time_start = time()
 
-    # If configured to do so, initialize temp directory.
+    # If configured to do so, initialize temp directory
+    # and fetch all of the HDF5 files from the Internet.
     if need_init:
         initialize()
-
-    # If configured to do so, fetch all of the HDF5 files from the Internet.
-    if need_init:
         for filename_h5 in H5_FILE_LIST:
             wgetter(filename_h5)
 
     # Make all of the DAT files.
     make_all_dat_files()
 
-    # Create the CSV file used by plot_event_pipeline.
     print('find_plot_pipelines: Filter threshold = ', filter_threshold)
     number_in_cadence = len(H5_FILE_LIST)
     print('find_plot_pipelines: Cadence length = ', number_in_cadence)
     print('find_plot_pipelines: find_event_pipeline({}) ...'
           .format(PATH_DAT_LIST_FILE))
 
-    # If CSV exists from a previous execution, remove it.
-    try:
-        remove(PATH_CSVF)
-    except:
-        pass
-    
     # With the list of DAT files, do find_event_pipeline()
     df_event = find_event_pipeline(PATH_DAT_LIST_FILE,
                                    filter_threshold=filter_threshold,
@@ -167,13 +157,13 @@ def find_plot_pipelines(need_init=True, filter_threshold=2):
                                    saving=True,
                                    csv_name=PATH_CSVF)
 
-    # CSV created?
+    # CSV file created?
     if not Path(PATH_CSVF).exists():
-        print('*** find_plot_pipelines: No CSV of events created')
-        return
+        raise ValueError('find_plot_pipelines: No CSV of events created')
 
     # An event CSV was created.
-    print('find_plot_pipelines: find_event_pipeline() returned dataframe:\n{}'.format(df_event))
+    # Validate the hit table file.
+    utl.validate_hittbl(df_event, PATH_CSVF, 'test_pipe_lines')
 
     # Make a list of the HDF5 files.
     print('find_plot_pipelines: making a list of HDF5 files in ({}) ...'
@@ -190,42 +180,59 @@ def find_plot_pipelines(need_init=True, filter_threshold=2):
                         filter_spec='f{}'.format(filter_threshold),
                         user_validation=False)
 
+    # Check that the right number of PNG files were created.
+    outdir_list = listdir(TESTDIR)
+    npngs = 0
+    for cur_file in outdir_list:
+        if cur_file.split('.')[-1] == 'png':
+            if imghdr.what(TESTDIR + cur_file) != 'png':
+                raise ValueError('find_plot_pipelines: File {} is not a PNG file'
+                                 .format(cur_file))
+            npngs += 1
+    if npngs != 6:
+        raise ValueError('find_plot_pipelines: Expected to find 6 PNG files but observed {}'
+                         .format(npngs))
+
+    # Stop the clock - we're done.
     main_time_stop = time()
-    
+
     print('find_plot_pipelines: End, et = {:.1f} seconds'
           .format(main_time_stop - main_time_start))
 
 
-def re_clean():
-    for x_file in sorted(listdir(TESTDIR)):
-        x_type = x_file.split('.')[-1]
-        if x_type != 'h5':
-            os.remove(TESTDIR + x_file)
-
-
-def test_pipelines(need_init=True, cleanup=True):
-    '''
-    Main testing procedure:
-    Test each filter threshold in find_event/find_events().
-    By default (unattended testing):
+@pytest.mark.order(1)
+def test_pipelines(need_init=True, cleanup=False):
+    r'''
+    This is the pytest entry point.
+    Test filter threshold 3 in find_plot_pipelines().
+    By default (pytest):
     * Initialization is done only once.
-    * Cleanup is performed at end.
+    * Cleanup is not performed at end.
     '''
-    print("\n===== test_pipelines: BEGIN =====")
-    
-    find_plot_pipelines(need_init=need_init, filter_threshold=1)
-    re_clean()
-    find_plot_pipelines(need_init=False, filter_threshold=2)
-    re_clean()
-    find_plot_pipelines(need_init=False, filter_threshold=3)
-    
+    print('\n===== test_pipelines_1: BEGIN =====')
+
+    find_plot_pipelines(need_init=need_init, filter_threshold=3)
+
     if cleanup:
         rmtree(TESTDIR, ignore_errors=True)
-    
-    print("\n===== test_pipelines: END =====")
+
+    print('\n===== test_pipelines_1: END =====')
+
+
+def main(args=None):
+    r'''Main Function Entry Point'''
+    pobj = ArgumentParser(description='Test find|plot pipelines.')
+    pobj.add_argument('-i', '--initialize', dest='flag_init', type=str,
+                   help='Initialize/download? (y/n) - no default')
+    pobj.add_argument('-c', '--cleanup', dest='flag_cleanup', type=str,
+                   help='Cleanup afterwards? (y/n) - no default')
+    if args is None:
+        args = pobj.parse_args()
+    else:
+        args = pobj.parse_args(args)
+    test_pipelines(need_init=(args.flag_init == 'y'),
+                   cleanup=(args.flag_cleanup == 'n'))
 
 
 if __name__ == '__main__':
-    # When run manually, no initialization nor cleanup is performed.
-    re_clean()
-    test_pipelines(need_init=False, cleanup=False)
+    main()

@@ -1,4 +1,4 @@
-coverage run --rcfile=.coveragerc --source=turbo_seti -m pytest -s
+coverage run --rcfile=.coveragerc --source=turbo_seti -m pytest
 EXITCODE=$?
 if [ $EXITCODE -ne 0 ]; then
     echo

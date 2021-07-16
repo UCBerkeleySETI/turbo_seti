@@ -13,8 +13,8 @@ def download_test_data():
         os.system('rm *.h5 *.fil *.dat *.log *.png 2> /dev/null')
     except:
         pass
-    os.system('wget http://blpd0.ssl.berkeley.edu/Voyager_data/Voyager1.single_coarse.fine_res.h5')
-    os.system('wget http://blpd14.ssl.berkeley.edu/voyager_2020/single_coarse_channel/single_coarse_guppi_59046_80036_DIAG_VOYAGER-1_0011.rawspec.0000.h5')
+    os.system('curl --url "http://blpd0.ssl.berkeley.edu/Voyager_data/Voyager1.single_coarse.fine_res.h5"  -o ./Voyager1.single_coarse.fine_res.h5')
+    os.system('curl --url "http://blpd14.ssl.berkeley.edu/voyager_2020/single_coarse_channel/single_coarse_guppi_59046_80036_DIAG_VOYAGER-1_0011.rawspec.0000.h5" -o ./single_coarse_guppi_59046_80036_DIAG_VOYAGER-1_0011.rawspec.0000.h5')
 
 
 def create_fil_from_voyager_h5(voyager_fp):
@@ -38,6 +38,7 @@ def flip_data(filename):
         fchN      = fch1_orig + (foff_orig * nchans)
         h['data'].attrs['foff'] = foff_orig * -1
         h['data'].attrs['fch1'] = fchN
+        h['data'].attrs['source_name'] = 'Voyager1Flipped'
 
         for ii in range(h['data'].shape[0]):
             print('\tFlipping %i/%i' % (ii+1, h['data'].shape[0]))

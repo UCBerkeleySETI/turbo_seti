@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import os
-import yaml
 import math
 import logging
 
@@ -36,8 +35,6 @@ class DATAHandle:
         Number of coarse channels.
     coarse_chans : list or None
         List of course channels.
-    mask : str, optional
-        Used to specify the frequency masking file-path.
     kernels : Kernels, optional
         Pre-configured class of Kernels.
     gpu_backend : bool, optional
@@ -64,7 +61,6 @@ class DATAHandle:
                 if not sigproc.is_filterbank(filename):
                     self.status = False
                     errmsg = 'Not a filterbank file: {}'.format(filename)
-                    logger.error(errmsg)
                     raise IOError(errmsg)
                 logger.info("Filterbank file detected. Attempting to create .h5 file in current directory...")
                 try:
@@ -72,7 +68,6 @@ class DATAHandle:
                 except:
                     self.status = False
                     errmsg = 'Unable to create .h5 file from: {}'.format(filename)
-                    logger.error(errmsg)
                     raise IOError(errmsg)
 
             self.filestat = os.stat(filename)
@@ -81,6 +76,7 @@ class DATAHandle:
             # Grab header from DATAH5
             dobj_master = DATAH5(filename, kernels=self.kernels)
             self.header = dobj_master.header
+            self.drift_rate_resolution = dobj_master.drift_rate_resolution
             dobj_master.close()
 
             # Load mask file from disk
@@ -93,7 +89,6 @@ class DATAHandle:
         else:
             self.status = False
             errmsg = "File {} doesn\'t exist, please check!".format(filename)
-            logger.error(errmsg)
             raise IOError(errmsg)
 
     def get_info(self):
@@ -174,10 +169,14 @@ class DATAHandle:
 
         """
         fil_file = Waterfall(self.filename)
-        bn = os.path.basename(self.filename)
-        new_filename = os.path.join(self.out_dir, bn.replace('.fil', '.h5'))
-        fil_file.write_to_hdf5(new_filename)
-        self.filename = new_filename
+        fil_path = os.path.basename(self.filename)
+        h5_path = os.path.join(self.out_dir, fil_path.replace('.fil', '.h5'))
+        try:
+            os.remove(h5_path)
+        except:
+            pass
+        fil_file.write_to_hdf5(h5_path)
+        self.filename = h5_path
 
     def __split_h5(self):
         r"""
@@ -203,7 +202,6 @@ class DATAHandle:
             fil_file = Waterfall(self.filename)
         except:
             errmsg = "Error encountered when trying to open file: {}".format(self.filename)
-            logger.error(errmsg)
             raise IOError(errmsg)
 
         #Finding lowest freq in file.
@@ -211,22 +209,21 @@ class DATAHandle:
         f0 = fil_file.header['fch1']
 
         #Looping over the number of coarse channels.
-        if self.n_coarse_chan is not None:
-            n_coarse_chan = self.n_coarse_chan
-        elif fil_file.header.get('n_coarse_chan', None) is not None:
-            n_coarse_chan = fil_file.header['n_coarse_chan']
-        else:
-            n_coarse_chan = int(fil_file.calc_n_coarse_chan())
+        if self.n_coarse_chan is None:
+            if fil_file.header.get('n_coarse_chan', None) is not None:
+                self.n_coarse_chan = fil_file.header['n_coarse_chan']
+            else:
+                self.n_coarse_chan = int(fil_file.calc_n_coarse_chan())
 
         # Only load coarse chans of interest -- or do all if not specified
         if self.coarse_chans in (None, ''):
-            self.coarse_chans = range(n_coarse_chan)
+            self.coarse_chans = range(self.n_coarse_chan)
 
         for chan in self.coarse_chans:
 
             #Calculate freq range for given course channel.
-            f_start = f0 + chan * (f_delt) * fil_file.n_channels_in_file / n_coarse_chan
-            f_stop = f0 + (chan + 1) * (f_delt) * fil_file.n_channels_in_file / n_coarse_chan
+            f_start = f0 + chan * (f_delt) * fil_file.n_channels_in_file / self.n_coarse_chan
+            f_stop = f0 + (chan + 1) * (f_delt) * fil_file.n_channels_in_file / self.n_coarse_chan
 
             if f_start > f_stop:
                 f_start, f_stop = f_stop, f_start
@@ -238,7 +235,7 @@ class DATAHandle:
                         'f_start': f_start,
                         'f_stop': f_stop,
                         'coarse_chan': chan,
-                        'n_coarse_chan': n_coarse_chan}
+                        'n_coarse_chan': self.n_coarse_chan}
 
             #This appends to a list of all data instance selections. So that all get processed later.
             data_list.append(data_obj)
@@ -289,7 +286,6 @@ class DATAH5:
                                       t_start=self.t_start, t_stop=self.t_stop, load_data=False)
         except:
             errmsg = "Error encountered when trying to open file: {}".format(filename)
-            logger.error(errmsg)
             raise IOError(errmsg)
 
         #Getting header
@@ -300,7 +296,6 @@ class DATAH5:
                 header = self.__make_data_header(self.fil_file.header)
         except:
             errmsg = "Error accessing header from file: {}".format(self.fil_file.header)
-            logger.error(errmsg)
             raise IOError(errmsg)
 
         self.header = header
@@ -311,8 +306,8 @@ class DATAH5:
         self.tsteps_valid = header['NAXIS2']
         self.tsteps = int(math.pow(2, math.ceil(np.log2(math.floor(self.tsteps_valid)))))
 
-        self.obs_length = self.tsteps_valid * header['DELTAT']
-        self.drift_rate_resolution = (1e6 * np.abs(header['DELTAF'])) / self.obs_length   # in Hz/sec
+        self.header['obs_length'] = self.tsteps_valid * header['DELTAT']
+        self.drift_rate_resolution = (1e6 * np.abs(header['DELTAF'])) / self.header['obs_length']   # in Hz/sec
         self.header['baryv'] = 0.0
         self.header['barya'] = 0.0
         self.header['coarse_chan'] = coarse_chan
@@ -342,6 +337,13 @@ class DATAH5:
             n_coarse_chan = int(self.fil_file.calc_n_coarse_chan())
         self.fil_file.blank_dc(n_coarse_chan)
 
+        dim_time = self.fil_file.data.shape[0]
+        if dim_time < 2:
+            msg = "data_handler.py:load_data: Cannot handle data with only 1 time step!"
+            logger.error(msg)
+            msg = "data shape = {}!".format(self.fil_file.data.shape)
+            raise ValueError(msg)
+
         spectra = self.kernels.np.squeeze(self.fil_file.data)
 
         # DCP APR 2020 -- COMMENTED OUT. THIS IS BREAKING STUFF IN CURRENT VERSION.
@@ -351,16 +353,19 @@ class DATAH5:
 
         # This check will add rows of zeros if the obs is too short
         # (and thus not a power of two rows).
-        if spectra.shape[0] != self.tsteps:
+        if spectra.shape[0] < self.tsteps:
             padding = self.kernels.np.zeros((self.tsteps-spectra.shape[0], self.fftlen))
             spectra = self.kernels.np.concatenate((spectra, padding), axis=0)
 
         self.tsteps_valid = self.tsteps
-        self.obs_length = self.tsteps * self.header['DELTAT']
+        self.header['obs_length'] = self.tsteps * self.header['DELTAT']
 
         if spectra.shape != (self.tsteps_valid, self.fftlen):
-            logger.error('Something is wrong with array size.')
-            raise IOError('Something is wrong with array size.')
+            msg = "data_handler.py:load_data: spectra.shape={}!".format(spectra.shape)
+            logger.error(msg)
+            msg = "data_handler.py:load_data: tsteps_valid={}, fftlen={}!" \
+                    .format(self.tsteps_valid, self.fftlen)
+            raise ValueError(msg)
 
         drift_indexes = self.load_drift_indexes()
 
@@ -381,6 +386,11 @@ class DATAH5:
         file_path = resource_filename('turbo_seti', f'drift_indexes/drift_indexes_array_{n}.txt')
 
         if not os.path.isfile(file_path):
+            dia_file = 'drift_indexes/drift_indexes_array_{}.txt'.format(n)
+            msg = "data_handler.py:load_drift_indexes: tsteps={}!".format(self.tsteps)
+            logger.error(msg)
+            msg = "data_handler.py:load_drift_indexes: {} not found!".format(dia_file)
+            logger.error(msg)
             raise ValueError("""Don't attempt to use High Time Resolution (HRT) files with turboSETI. """
                              """TurboSETI is designed to search for narrowband signals -- the maximum """
                              """doppler drift we can expect due to the motion of celestial bodies is a few Hz/s. """

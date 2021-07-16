@@ -1,0 +1,66 @@
+# encoding: utf-8
+# cython: profile=True
+import numpy as np
+from math import *
+import sys
+from libc.math cimport log2
+cimport numpy as np
+cimport cython
+from cython.view cimport array as cvarray
+
+def calc_drift_indexes(n):
+    fftlen = 16
+    tsteps = 2**n
+    tsteps_valid = tsteps
+    tdwidth = fftlen + 8*tsteps
+
+    tree_dedoppler = np.zeros([tsteps, tdwidth], dtype=np.float32)
+    #print tree_dedoppler.shape
+
+    for i in range(0, tsteps):
+        tree_dedoppler[tsteps_valid-1, i] = i
+
+   # print tree_dedoppler[:, 0:20]
+    cdef float [:] tree_dedoppler_view = tree_dedoppler.reshape(tsteps*tdwidth)
+
+    myrecord = taylor_flt_record(tree_dedoppler_view, tsteps*tdwidth, tsteps)
+    test_matrix = np.asarray(tree_dedoppler_view)
+    test_matrix = test_matrix.reshape((tsteps, tdwidth))
+
+    #print 'Comparing to the original array...\n'
+    #for i in range(0, tsteps):
+    #    for j in range(0, tdwidth):
+    #        print '%d\t'%tree_dedoppler[i, j],
+    #    print ' '
+
+
+    ibrev = np.zeros(tsteps, dtype='int32')
+    drift_indexes_array = np.zeros([tsteps/2 ,tsteps], dtype='int32')
+
+    for i in range(0, tsteps):
+        ibrev[i] = bitrev(i, int(np.log2(tsteps)))
+
+    test_matrix = test_matrix.reshape(tdwidth*tsteps)
+
+    k = -1
+    test_array = np.zeros(tsteps, dtype=np.int32)
+    
+    nstages = int(np.log2(tsteps))
+    recordbook = myrecord['stage%d'%(nstages-1)]
+    for i in range(tsteps/2, tsteps): # here, i -> tsteps_valid -1
+        for j in range(0, tsteps):
+            ikey = 'row%d_col0'%j
+            test_array[j] = recordbook[ikey][i][1]
+        #print 'tsteps_valid:\t', i+1
+        #print 'first column:\t', test_array
+        for j in range(0, tsteps):
+            #print "De-doppler rate: %f Hz/sec\n"%i
+            indx  = ibrev[j]
+            if test_array[indx] != k:
+                k = test_array[indx]
+                drift_indexes_array[i-(tsteps/2)][k]=j
+        #print "time index: %02d Sum: %02f"%(i, test_matrix[indx+j])
+        #print "drift_indexes[%d] = %d\n"%(k, i)
+    #print drift_indexes
+
+    np.save('drift_indexes_array_%d'%n, drift_indexes_array)

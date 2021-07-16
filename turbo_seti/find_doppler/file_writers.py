@@ -142,8 +142,8 @@ class FileWriter(GeneralWriter):
             Information to be written to file header.
 
         """
-        info_str = '# Source:%s\n# MJD: %18.12f\tRA: %s\tDEC: %s\n# DELTAT: %10.6f\tDELTAF(Hz): %10.6f\n'%\
-                   (header['SOURCE'],header['MJD'], header['RA'], header['DEC'], header['DELTAT'], header['DELTAF']*1e6)
+        info_str = '# Source:{}\n# MJD: {:18.12f}\tRA: {}\tDEC: {}\n# DELTAT: {:10.6f}\tDELTAF(Hz): {:10.6f}\tmax_drift_rate: {:10.6f}\tobs_length: {:10.6f}\n' \
+                   .format(header['SOURCE'],header['MJD'], header['RA'], header['DEC'], header['DELTAT'], header['DELTAF']*1e6, header['max_drift_rate'], header['obs_length'])
 
         self.write(info_str)
         self.write('# --------------------------\n')

@@ -76,13 +76,13 @@ class FindDoppler:
 
     """
     def __init__(self, datafile, max_drift=4.0, min_drift=0.00001, snr=25.0, out_dir='./', coarse_chans=None,
-                 obs_info=None, flagging=False, n_coarse_chan=None, kernels=None, gpu_backend=False,
+                 obs_info=None, flagging=False, n_coarse_chan=None, kernels=None, gpu_backend=False, gpu_id=0,
                  precision=2, append_output=False, log_level_int=logging.INFO):
 
         print(version_announcements)
 
         if not kernels:
-            self.kernels = Kernels(gpu_backend, precision)
+            self.kernels = Kernels(gpu_backend, precision, gpu_id)
         else:
             self.kernels = kernels
 
@@ -114,8 +114,8 @@ class FindDoppler:
         self.append_output = append_output
         self.parms = 'datafile={}, max_drift={}, min_drift={}, snr={}, out_dir={}, coarse_chans={}' \
                         .format(datafile, max_drift, min_drift, snr, out_dir, coarse_chans) \
-                    + ', flagging={}, n_coarse_chan={}, kernels={}, gpu_backend={}' \
-                        .format(flagging, self.n_coarse_chan, kernels, gpu_backend) \
+                    + ', flagging={}, n_coarse_chan={}, kernels={}, gpu_id={}, gpu_backend={}' \
+                        .format(flagging, self.n_coarse_chan, kernels, gpu_id, gpu_backend) \
                     + ', precision={}, append_output={}, log_level_int={}, obs_info={}' \
                         .format(precision, append_output, log_level_int, obs_info)
         if min_drift < 0 or max_drift < 0:
@@ -278,10 +278,6 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
     else:
         data_obj, spectra, drift_indices = load_the_data(d, fd.kernels.precision)
 
-    # Transfer data to device
-    spectra = fd.kernels.xp.asarray(spectra)
-    drift_indices = fd.kernels.xp.asarray(drift_indices)
-
     fileroot_out = filename_in.split('/')[-1].replace('.h5', '').replace('.fits', '').replace('.fil', '')
     if logwriter is None:
         logwriter = LogWriter('%s/%s_%i.log' % (out_dir.rstrip('/'), fileroot_out, coarse_channel))
@@ -304,13 +300,13 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
         ##EE This flags the edges of the PFF for BL data (with 3Hz res per channel).
         ##EE The PFF flat profile falls after around 100k channels.
         ##EE But it falls slowly enough that could use 50-80k channels.
-        median_flag = fd.kernels.xp.median(spectra)
+        median_flag = fd.kernels.np.median(spectra)
         #             spectra[:,:80000] = median_flag/float(tsteps)
         #             spectra[:,-80000:] = median_flag/float(tsteps)
 
         ##EE Flagging spikes in time series.
         time_series = spectra.sum(axis=1)
-        time_series_median = fd.kernels.xp.median(time_series)
+        time_series_median = fd.kernels.np.median(time_series)
 
         # Flagging spikes > 10 in SNR
         mask = (time_series - time_series_median) / time_series.std() > 10
@@ -320,7 +316,7 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
             spectra[mask, :] = time_series_median / float(fftlen)
 
     else:
-        median_flag = fd.kernels.xp.array([0], dtype=fd.kernels.float_type)
+        median_flag = 0
     logger.debug('median_flag={}'.format(median_flag))
 
     # allocate array for findopplering
@@ -335,7 +331,7 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
     tree_findoppler_flip = fd.kernels.xp.empty_like(tree_findoppler, dtype=fd.kernels.float_type)
 
     # build index mask for in-place tree doppler correction
-    ibrev = fd.kernels.xp.zeros(tsteps, dtype=fd.kernels.xp.int32)
+    ibrev = fd.kernels.np.zeros(tsteps, dtype=fd.kernels.np.int32)
 
     for i in range(0, tsteps):
         ibrev[i] = fd.kernels.bitrev(i, int(fd.kernels.np.log2(tsteps)))
@@ -360,14 +356,17 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
 
     # --------------------------------
     # Stats calc
-    the_median, the_stddev = comp_stats(spectra.sum(axis=0), xp=fd.kernels.xp)
+    the_median, the_stddev = comp_stats(spectra.sum(axis=0), xp=fd.kernels.np)
     logger.debug('comp_stats the_median={}, the_stddev={}'.format(the_median, the_stddev))
 
     # --------------------------------
     # Looping over drift_rate_nblock
     # --------------------------------
-    drift_rate_nblock = int(fd.kernels.xp.floor(max_drift / (data_obj.drift_rate_resolution * tsteps_valid)))
+    drift_rate_nblock = int(fd.kernels.np.floor(max_drift / (data_obj.drift_rate_resolution * tsteps_valid)))
     logger.debug('BEGIN looping over drift_rate_nblock, drift_rate_nblock={}.'.format(drift_rate_nblock))
+
+    # Transfer data to device
+    spectra = fd.kernels.xp.asarray(spectra, dtype=fd.kernels.float_type)
 
     ##EE-debuging        kk = 0
     drift_low = -1 * drift_rate_nblock
@@ -396,7 +395,7 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
             fd.kernels.tt.flt(tree_findoppler_flip, tsteps * tdwidth, tsteps)
             logger.debug("done...")
 
-            complete_drift_range = data_obj.drift_rate_resolution * fd.kernels.xp.array(
+            complete_drift_range = data_obj.drift_rate_resolution * fd.kernels.np.array(
                 range(-1 * tsteps_valid * (abs(drift_block) + 1) + 1,
                       -1 * tsteps_valid * (abs(drift_block)) + 1))
             bool_selected = (complete_drift_range <= -min_drift) & (complete_drift_range >= -max_drift)
@@ -440,15 +439,10 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
 
             # populate original array
             fd.kernels.xp.copyto(tree_findoppler_original, tree_findoppler)
-
             fd.kernels.tt.flt(tree_findoppler, tsteps * tdwidth, tsteps)
-            if (tree_findoppler == tree_findoppler_original).all():
-                logger.error("taylor_flt has no effect?")
-            else:
-                logger.debug("tree_findoppler changed")
 
             ##EE: Calculates the range of drift rates for a full drift block.
-            complete_drift_range = data_obj.drift_rate_resolution * fd.kernels.xp.array(
+            complete_drift_range = data_obj.drift_rate_resolution * fd.kernels.np.array(
                 range(tsteps_valid * (drift_block), tsteps_valid * (drift_block + 1)))
             bool_selected = (complete_drift_range >= min_drift) & (complete_drift_range <= max_drift)
             logger.debug('***** drift_block >= 0 selected drift range:\n{}'

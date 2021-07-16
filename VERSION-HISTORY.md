@@ -4,6 +4,7 @@ This file is a version history of turbo_seti amendments, beginning with version 
 
 | `YYYY_MM_DD` | `Version` | `Contents` |
 | :--: | :--: | :-- |
+| 2021-07-15 | 2.1.4 | Add GPU device selection with cli argument gpu_id. (issue #254). |
 | 2021-07-15 | 2.1.3 | Diagnose out of range time steps with correct messages (issue #256). |
 | | | Also, stop catching exceptions in seti_event.py which causes a cascade in tracebacks. |
 | 2021-07-10 | 2.1.2 | Diagnose non-cadence sets of files in find_event_pipeline (issue #250). |

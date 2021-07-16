@@ -14,9 +14,10 @@ class Kernels():
         Floating point precision.
 
     """
-    def __init__(self, gpu_backend=False, precision=2):
+    def __init__(self, gpu_backend=False, precision=2, gpu_id=0):
         self.gpu_backend = gpu_backend
         self.precision = precision
+        self.gpu_id = gpu_id
 
         if not self.has_gpu() and self.gpu_backend:
             print("Warning: Cupy not installed. The GPU will be disabled.")
@@ -43,6 +44,7 @@ class Kernels():
         if self.gpu_backend:
             self.xp = importlib.import_module("cupy")
             self.np = importlib.import_module("numpy")
+            self.xp.cuda.Device(self.gpu_id).use()
         else:
             self.xp = importlib.import_module("numpy")
             self.np = self.xp

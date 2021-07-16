@@ -54,6 +54,8 @@ def main(args=None):
                    help='Use a progress bar with dask? (y/n)')
     p.add_argument('-g', '--gpu', dest='flag_gpu', type=str, default='n',
                    help='Compute on the GPU? (y/n)')
+    p.add_argument('-d', '--gpu_id', dest='gpu_id', type=int, default=0,
+                   help='Use which GPU device? (0,1,...)')
     p.add_argument('-P', '--profile', dest='flag_profile', type=str, default='n',
                    help='Profile execution? (y/n)')
     p.add_argument('-S', '--single_precision', dest='flag_single_precision', type=str, default='n',
@@ -129,6 +131,7 @@ def exec_proc(args):
                                   obs_info=None,
                                   n_coarse_chan=args.n_coarse_chan,
                                   gpu_backend=(args.flag_gpu == "y"),
+                                  gpu_id=args.gpu_id,
                                   precision=1 if args.flag_single_precision == "y" else 2,
                                   log_level_int=log_level_int)
 

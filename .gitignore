@@ -14,7 +14,6 @@
 .venv*/
 .pytest_cache
 stats_file.bin
-turbo_seti/find_doppler/turbo_seti_version.py
 
 build/
 dist/

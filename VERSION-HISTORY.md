@@ -4,7 +4,8 @@ This file is a version history of turbo_seti amendments, beginning with version 
 
 | `YYYY_MM_DD` | `Version` | `Contents` |
 | :--: | :--: | :-- |
-| 2021-07-15 | 2.1.5 | Calculate normalized value inside hitsearch kernel on GPU-mode. |
+| 2021-07-15 | 2.1.6 | Calculate normalized value inside hitsearch kernel on GPU-mode. |
+| 2021-07-16 | 2.1.5 | Failed to pass the gpu_id from find_doppler.py to data_handler.py. (issue #254). |
 | 2021-07-15 | 2.1.4 | Add GPU device selection with cli argument gpu_id. (issue #254). |
 | 2021-07-15 | 2.1.3 | Diagnose out of range time steps with correct messages (issue #256). |
 | | | Also, stop catching exceptions in seti_event.py which causes a cascade in tracebacks. |

@@ -98,6 +98,7 @@ class FindDoppler:
                                       out_dir=out_dir,
                                       n_coarse_chan=n_coarse_chan,
                                       coarse_chans=coarse_chans,
+                                      gpu_id=gpu_id,
                                       kernels=self.kernels)
 
         self.n_coarse_chan = self.data_handle.n_coarse_chan

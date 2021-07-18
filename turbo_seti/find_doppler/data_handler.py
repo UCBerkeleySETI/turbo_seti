@@ -249,7 +249,7 @@ class DATAH5:
         self.shoulder_size = 0
         self.tdwidth = self.fftlen + self.shoulder_size * self.tsteps
 
-    def load_data(self):
+    def load_data(self, flag_blank_dc=True):
         r"""
         Read the spectra and drift indices from file.
 
@@ -261,11 +261,16 @@ class DATAH5:
         self.fil_file.read_data(f_start=self.f_start, f_stop=self.f_stop)
 
         #Blanking DC bin.
-        if self.n_coarse_chan is not None:
-            n_coarse_chan = self.n_coarse_chan
+        if flag_blank_dc:
+            logger.debug("blank_dc is enabled.")
+            if self.n_coarse_chan is not None:
+                n_coarse_chan = self.n_coarse_chan
+            else:
+                n_coarse_chan = int(self.fil_file.calc_n_coarse_chan())
+            self.fil_file.blank_dc(n_coarse_chan)
         else:
-            n_coarse_chan = int(self.fil_file.calc_n_coarse_chan())
-        self.fil_file.blank_dc(n_coarse_chan)
+            logger.debug("blank_dc is disabled.")
+
 
         dim_time = self.fil_file.data.shape[0]
         if dim_time < 2:

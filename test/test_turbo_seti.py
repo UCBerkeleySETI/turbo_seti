@@ -218,6 +218,14 @@ def test_turboSETI_entry_point():
     h5_5 = os.path.join(TESTDIR, OFFNIL_H5)
     args = [h5_5, "-P", "y", "-s", str(MIN_SNR), "-M", str(MAX_DRIFT), "-o", TESTDIR, ]
     seti_event.main(args)
+    print("\n===== test_turboSETI_entry_point 6 =====")
+    h5_5 = os.path.join(TESTDIR, VOYAH5)
+    args = [h5_5, "--blank_dc", "y", "-s", str(MIN_SNR), "-M", str(MAX_DRIFT), "-o", TESTDIR, ]
+    seti_event.main(args)
+    print("\n===== test_turboSETI_entry_point 7 =====")
+    h5_5 = os.path.join(TESTDIR, VOYAH5)
+    args = [h5_5, "--blank_dc", "n", "-s", str(MIN_SNR), "-M", str(MAX_DRIFT), "-o", TESTDIR, ]
+    seti_event.main(args)
 
 
 def test_make_waterfall_plots():
@@ -350,3 +358,4 @@ def test_flipx_kernel(kernels):
 if __name__ == "__main__":
     print("Please run: pytest test_turbo_seti.py")
     test_find_doppler_voyager()
+    test_turboSETI_entry_point()

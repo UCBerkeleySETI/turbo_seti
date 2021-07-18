@@ -73,11 +73,13 @@ class FindDoppler:
         Append output DAT & LOG files? (True/False)
     log_level_int : int, optional
         Python logging threshold level (INFO, DEBUG, or WARNING)
+    blank_dc : bool, optional
+        Use blank_dc() for spike smoothing.
 
     """
     def __init__(self, datafile, max_drift=4.0, min_drift=0.00001, snr=25.0, out_dir='./', coarse_chans=None,
                  obs_info=None, flagging=False, n_coarse_chan=None, kernels=None, gpu_backend=False, gpu_id=0,
-                 precision=2, append_output=False, log_level_int=logging.INFO):
+                 precision=2, append_output=False, log_level_int=logging.INFO, blank_dc=True):
 
         print(version_announcements)
 
@@ -113,10 +115,11 @@ class FindDoppler:
         self.status = True
         self.flagging = flagging
         self.append_output = append_output
+        self.flag_blank_dc = blank_dc
         self.parms = 'datafile={}, max_drift={}, min_drift={}, snr={}, out_dir={}, coarse_chans={}' \
                         .format(datafile, max_drift, min_drift, snr, out_dir, coarse_chans) \
-                    + ', flagging={}, n_coarse_chan={}, kernels={}, gpu_id={}, gpu_backend={}' \
-                        .format(flagging, self.n_coarse_chan, kernels, gpu_id, gpu_backend) \
+                    + ', flagging={}, n_coarse_chan={}, kernels={}, gpu_id={}, gpu_backend={}, blank_dc={}' \
+                        .format(flagging, self.n_coarse_chan, kernels, gpu_id, gpu_backend, blank_dc) \
                     + ', precision={}, append_output={}, log_level_int={}, obs_info={}' \
                         .format(precision, append_output, log_level_int, obs_info)
         if min_drift < 0 or max_drift < 0:
@@ -166,7 +169,6 @@ class FindDoppler:
 
         # As of 2.1.0, add max_drift_rate and obs_length to FileWriter header input
         header_in['max_drift_rate'] = self.max_drift
-        #header_in['obs_length'] was already set in data_handler.py DATAH __init__
 
         wfilename = filename_in.split('/')[-1].replace('.h5', '').replace('.fits', '').replace('.fil', '')
         path_log = '{}/{}.log'.format(self.out_dir.rstrip('/'), wfilename)
@@ -198,7 +200,7 @@ class FindDoppler:
 
         # Run serial version
         if n_partitions == 1:
-            sched = Scheduler(load_the_data, [ (l, self.kernels.precision) for l in self.data_handle.data_list ])
+            sched = Scheduler(load_the_data, [ (l, self.kernels.precision, self.flag_blank_dc) for l in self.data_handle.data_list ])
             for dl in self.data_handle.data_list:
                 search_coarse_channel(dl, self, dataloader=sched, filewriter=filewriter, logwriter=logwriter)
         # Run Parallel version via dask
@@ -216,7 +218,7 @@ class FindDoppler:
         t1 = time.time()
         self.last_logwriter(path_log, '\n===== Search time: {:.2f} minutes'.format((t1 - t0)/60.0))
 
-def load_the_data(d, precision):
+def load_the_data(d, precision, flag_blank_dc):
     data_obj = DATAH5(d['filename'],
                   f_start=d['f_start'],
                   f_stop=d['f_stop'],
@@ -224,7 +226,7 @@ def load_the_data(d, precision):
                   n_coarse_chan=d['n_coarse_chan'],
                   gpu_backend=False,
                   precision=precision)
-    spectra, drift_indices = data_obj.load_data()
+    spectra, drift_indices = data_obj.load_data(flag_blank_dc=flag_blank_dc)
     data_obj.close()
 
     return (data_obj, spectra, drift_indices)
@@ -277,7 +279,7 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
     if dataloader:
         data_obj, spectra, drift_indices = dataloader.get()
     else:
-        data_obj, spectra, drift_indices = load_the_data(d, fd.kernels.precision)
+        data_obj, spectra, drift_indices = load_the_data(d, fd.kernels.precision, fd.flag_blank_dc)
 
     fileroot_out = filename_in.split('/')[-1].replace('.h5', '').replace('.fits', '').replace('.fil', '')
     if logwriter is None:

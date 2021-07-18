@@ -11,6 +11,7 @@ import h5py
 from blimpy import Waterfall
 from blimpy.io import sigproc
 
+from .helper_functions import cut_the_mid_spike
 from .kernels import Kernels
 
 logger = logging.getLogger('data_handler')
@@ -267,7 +268,7 @@ class DATAH5:
                 n_coarse_chan = self.n_coarse_chan
             else:
                 n_coarse_chan = int(self.fil_file.calc_n_coarse_chan())
-            self.fil_file.blank_dc(n_coarse_chan)
+            cut_the_mid_spike(self.fil_file.data, n_coarse_chan)
         else:
             logger.debug("blank_dc is disabled.")
 

@@ -1,6 +1,38 @@
 #!/usr/bin/env python
 
 import numpy as np
+import logging
+
+
+def cut_the_mid_spike(data_array, n_coarse_chan):
+    """ Cut the mid-point spike in coarse channels.
+
+    Removes the DC spike in the centre of each coarse channel bin.
+
+    Parameters
+    ----------
+    data_array : ndarray
+        Full data array.
+    n_coarse_chan : int
+        Number of coarse channels.
+    """
+    logger = logging.getLogger('cut_the_mid_spike')
+    if not type(n_coarse_chan) != "int":
+        logger.error("Number of coarse channels is not an integer, no action taken!")
+        return
+    if n_coarse_chan < 1:
+        logger.error = "Number of coarse channels < 1, no action taken!"
+        return
+
+    n_fine_chan = data_array.shape[-1]
+    n_fine_chan_per_coarse_chan = int(n_fine_chan / n_coarse_chan) # ratio of fine channels to coarse channels
+
+    mid_chan = int(n_fine_chan_per_coarse_chan / 2)
+
+    for ii in range(n_coarse_chan):
+        ss = ii * n_fine_chan_per_coarse_chan
+        # Replace the mid point value with the neighbour's value.
+        data_array[..., ss + mid_chan] = data_array[..., ss + mid_chan + 1]
 
 
 def chan_freq(header, fine_channel, tdwidth, ref_frame):

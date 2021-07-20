@@ -47,6 +47,7 @@ The primary method of launching regression testing is through the use of the `py
 | `test_pipelines_1.py` | Test source for exercising/validation of `find_event_pipeline.py` and `plot_event_pipeline.py`. |
 | `test_pipelines_2.py` | Same as `test_pipelines_1.py` except it tests observation file cadences that start with "OFF" target instead of starting with "ON" target. |
 | `test_pipelines_3.py` | Test source for exercising/validation of `find_event_pipeline.py` when the collection of input files are a complex cadence. |
+| `test_pipelines_4.py` | Test source for exercising/validation of `run_pipeline.py`. |
 | `test_plot_dat.py` | Test source for exercising/validation of `plot_dat.py`. |
 | `test_turbo_seti.py` | Test source for exercising/validation of a variety of turbo_seti functions. |
 

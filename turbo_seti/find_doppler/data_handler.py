@@ -11,7 +11,6 @@ import h5py
 from blimpy import Waterfall
 from blimpy.io import sigproc
 
-from .helper_functions import cut_the_mid_spike
 from .kernels import Kernels
 
 logger = logging.getLogger('data_handler')
@@ -42,7 +41,6 @@ class DATAHandle:
         Use GPU accelerated Kernels.
     precision : int {2: float64, 1: float32}, optional
         Floating point precision.
-
     """
     def __init__(self, filename=None, out_dir='./', n_coarse_chan=None, coarse_chans=None,
                  kernels=None, gpu_backend=False, precision=2, gpu_id=0):
@@ -133,7 +131,7 @@ class DATAHandle:
 
         #Instancing file.
         try:
-            fil_file = Waterfall(self.filename)
+            fil_file = Waterfall(self.filename, load_data=False)
         except:
             errmsg = "Error encountered when trying to open file: {}".format(self.filename)
             raise IOError(errmsg)
@@ -250,28 +248,15 @@ class DATAH5:
         self.shoulder_size = 0
         self.tdwidth = self.fftlen + self.shoulder_size * self.tsteps
 
-    def load_data(self, flag_blank_dc=True):
+    def load_data(self):
         r"""
         Read the spectra and drift indices from file.
 
         Returns
         -------
         spectra, drift indices : ndarray, ndarray
-
         """
         self.fil_file.read_data(f_start=self.f_start, f_stop=self.f_stop)
-
-        #Blanking DC bin.
-        if flag_blank_dc:
-            logger.debug("blank_dc is enabled.")
-            if self.n_coarse_chan is not None:
-                n_coarse_chan = self.n_coarse_chan
-            else:
-                n_coarse_chan = int(self.fil_file.calc_n_coarse_chan())
-            cut_the_mid_spike(self.fil_file.data, n_coarse_chan)
-        else:
-            logger.debug("blank_dc is disabled.")
-
 
         dim_time = self.fil_file.data.shape[0]
         if dim_time < 2:

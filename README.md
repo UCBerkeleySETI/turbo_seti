@@ -62,6 +62,10 @@ Already included is NUMBA Just-in-Time (JIT) CPU performance enhancements. Howev
 1. Install pypi package "cupy":  `python3 -m pip install cupy`
 2. Run the executable this way:  `turboSETI <FULL_PATH_TO_INPUT_HDF5_FILE> -g y [OTHER OPTIONS]`
 
+Once you are using a GPU, you may also want to use the `--single_precision=y` flag, to use float32 rather than float64 processing. Each of
+these changes has the potential to roughly double turboSETI's speed, although performance improvements always depend on the details of
+your hardware and data set.
+
 ## Usage
 
 ### Expected Input File Format

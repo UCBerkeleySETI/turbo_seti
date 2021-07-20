@@ -4,37 +4,6 @@ import numpy as np
 import logging
 
 
-def cut_the_mid_spike(data_array, n_coarse_chan):
-    """ Cut the mid-point spike in coarse channels.
-
-    Removes the DC spike in the centre of each coarse channel bin.
-
-    Parameters
-    ----------
-    data_array : ndarray
-        Full data array.
-    n_coarse_chan : int
-        Number of coarse channels.
-    """
-    logger = logging.getLogger('cut_the_mid_spike')
-    if not type(n_coarse_chan) != "int":
-        logger.error("Number of coarse channels is not an integer, no action taken!")
-        return
-    if n_coarse_chan < 1:
-        logger.error = "Number of coarse channels < 1, no action taken!"
-        return
-
-    n_fine_chan = data_array.shape[-1]
-    n_fine_chan_per_coarse_chan = int(n_fine_chan / n_coarse_chan) # ratio of fine channels to coarse channels
-
-    mid_chan = int(n_fine_chan_per_coarse_chan / 2)
-
-    for ii in range(n_coarse_chan):
-        ss = ii * n_fine_chan_per_coarse_chan
-        # Replace the mid point value with the neighbour's value.
-        data_array[..., ss + mid_chan] = data_array[..., ss + mid_chan + 1]
-
-
 def chan_freq(header, fine_channel, tdwidth, ref_frame):
     r"""
     Find channel frequency.
@@ -130,8 +99,8 @@ def FlipX(outbuf, xdim, ydim, xp=None):
 
 
 def comp_stats(np_arr, xp=None):
-    r"""
-    Compute median and stddev of floating point vector array in a fast way, without using the outliers.
+    """
+    Compute median and stddev of floating point vector array in a fast way, discarding outliers.
 
     Parameters
     ----------
@@ -142,18 +111,17 @@ def comp_stats(np_arr, xp=None):
 
     Returns
     -------
-    the_median, the_stddev : float, float
-      Median and standard deviation of input array.
+    the_median, the_stddev : numpy.float32, numpy.float32
+      Median and standard deviation of input array with outliers removed.
 
     """
     if not xp:
       xp = np
 
-    new_vec = xp.sort(np_arr)
+    low, median, high = xp.percentile(np_arr, [5, 50, 95])
+    drop_high = np_arr[np_arr <= high]
+    drop_outliers = drop_high[drop_high >= low]
+    stdev = drop_outliers.std()
 
-    #Removing the lowest 5% and highest 5% of data, this takes care of outliers.
-    new_vec = new_vec[int(len(new_vec)*.05):int(len(new_vec)*.95)]
-    the_median = xp.median(new_vec)
-    the_stddev = new_vec.std()
+    return median.astype(xp.float32), stdev
 
-    return the_median, the_stddev

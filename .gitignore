@@ -23,3 +23,4 @@ exec
 .coverage
 htmlcov
 coverage.xml
+*profile.svg

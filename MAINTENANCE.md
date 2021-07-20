@@ -26,6 +26,7 @@ The primary method of launching regression testing is through the use of the `py
 * Running the full suite of regression tests is invoked by executing `pytest` with no parameters specified.  It is possible to run a single regression test file by specifying it as an argument to `pytest`.  For example, if one wishes to only run the find event tests, the following is the command line to use: `pytest test/test_find_event.py`.
 * It is **highly encouraged** for developers to perform regression testing frequently in order to avoid surprises later on.
 * Once, development activity on the local machine is complete and the last regression test has run verifying the absence of negative side effects, then the new and/or modified turbo_seti files can be uploaded to the developer's fork github site.
+* Be sure to bump the version in `setup.py` and add an entry to `VERSION-HISTORY.md`.
 * At the fork github site, the developer can request a pull clicking on the `Pull request` button.  This automatically starts the PR process mentioned in the introduction section.
 
 ### Testing Artifacts

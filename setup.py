@@ -1,15 +1,6 @@
-# To increment version
-# Check you have ~/.pypirc filled in
-# git tag x.y.z
-# git push && git push --tags
-# rm -rf dist; python setup.py sdist bdist_wheel
-# auditwheel repair dist/*.whl -w dist/ (Linux)
-# TEST: twine upload --repository-url https://test.pypi.org/legacy/ dist/*
-# twine upload dist/*
-
 from setuptools import setup, find_packages
 
-__version__ = "2.1.7"
+__version__ = "2.1.8"
 
 with open("turbo_seti/find_doppler/turbo_seti_version.py", "w") as fh:
     fh.write("TURBO_SETI_VERSION = '{}'\n".format(__version__))

@@ -4,6 +4,7 @@ This file is a version history of turbo_seti amendments, beginning with version 
 
 | `YYYY_MM_DD` | `Version` | `Contents` |
 | :--: | :--: | :-- |
+| 2021-07-22 | 2.1.9 | Performance improvement in gpu mode: default to single-precision (32-bit). |
 | 2021-07-20 | 2.1.8 | Performance improvements and fix min_drift to prevent near-min-drift hits. |
 | 2021-07-18 | 2.1.7 | Create a turbo_seti clone of blank_dc that is optional and uses a different strategy (issue #262). |
 | 2021-07-15 | 2.1.6 | Calculate normalized value inside hitsearch kernel on GPU-mode. |

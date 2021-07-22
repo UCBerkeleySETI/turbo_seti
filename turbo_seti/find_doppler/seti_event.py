@@ -60,7 +60,7 @@ def main(args=None):
                    help='Use which GPU device? (0,1,...)')
     p.add_argument('-P', '--profile', dest='flag_profile', type=str, default='n',
                    help='Profile execution? (y/n)')
-    p.add_argument('-S', '--single_precision', dest='flag_single_precision', type=str, default='n',
+    p.add_argument('-S', '--single_precision', dest='flag_single_precision', type=str, default='y',
                    help='Use single precision (float32)? (y/n)')
     p.add_argument('-a', '--append_output', dest='flag_append_output', type=str, default='n',
                    help='Append output DAT & LOG files? (y/n)')

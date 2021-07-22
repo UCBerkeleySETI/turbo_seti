@@ -285,12 +285,12 @@ def test_data_handler(kernels):
     assert dh.status
 
 
-@pytest.mark.parametrize("kernels", TESTS)
-def test_dask(kernels):
+### Do not run dask partitions with GPU due to GPU RAM availability issues.
+def test_dask():
     r""" Test dask capability on Voyager data """
     print("\n===== test_dask ===== begin")
     filename_h5 = os.path.join(TESTDIR, VOYAH5)
-    FD = FindDoppler(datafile=filename_h5, max_drift=MAX_DRIFT, out_dir=TESTDIR, kernels=kernels)
+    FD = FindDoppler(datafile=filename_h5, max_drift=MAX_DRIFT, out_dir=TESTDIR)
     print("===== test_dask ===== n_partitions=None")
     FD.search()
     print("===== test_dask ===== n_partitions=2")
@@ -300,7 +300,7 @@ def test_dask(kernels):
     print("===== test_dask ===== merge resulted in a DAT for both flipped and unflipped H5")
     unflipped_dat = filename_h5.replace('.h5', '.dat')
     filename_h5 = os.path.join(TESTDIR, VOYAH5FLIPPED)
-    FD = FindDoppler(datafile=filename_h5, max_drift=MAX_DRIFT, out_dir=TESTDIR, kernels=kernels)
+    FD = FindDoppler(datafile=filename_h5, max_drift=MAX_DRIFT, out_dir=TESTDIR)
     FD.search(n_partitions=2)
     flipped_dat = filename_h5.replace('.h5', '.dat')
     assert os.path.exists(unflipped_dat)

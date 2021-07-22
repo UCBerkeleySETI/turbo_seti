@@ -79,7 +79,7 @@ class FindDoppler:
     """
     def __init__(self, datafile, max_drift=4.0, min_drift=0.00001, snr=25.0, out_dir='./', coarse_chans=None,
                  obs_info=None, flagging=False, n_coarse_chan=None, kernels=None, gpu_backend=False, gpu_id=0,
-                 precision=2, append_output=False, log_level_int=logging.INFO, blank_dc=True):
+                 precision=1, append_output=False, log_level_int=logging.INFO, blank_dc=True):
 
         print(version_announcements)
 

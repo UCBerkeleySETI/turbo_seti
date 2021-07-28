@@ -114,7 +114,6 @@ class DATAHandle:
             os.remove(h5_path)
         except:
             pass
-        #fil_file.write_to_hdf5(h5_path)
         write_to_h5(fil_file, h5_path)
         self.filename = h5_path
 

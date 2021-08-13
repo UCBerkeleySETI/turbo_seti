@@ -1,4 +1,5 @@
 import os
+import numpy as np
 import cupy as cp
 
 kernels_file = os.path.join(os.path.dirname(__file__), 'kernels.cu')
@@ -21,12 +22,23 @@ def hitsearch(numBlocks, blockSize, call):
         CUDA Kernel number of blocks.
     blockSize : tuple
         CUDA Kernel block size.
-    call : tuple
+    call : [int, ndarray, float, float, ndarray, ndarray, ndarray, float, float]
         Tuple of parameters required by `hitsearch`.
 
     """
 
-    assert isinstance(call[2], float)
+    try:
+        assert isinstance(call[0], int)
+        assert isinstance(call[1], cp._core.core.ndarray)
+        assert isinstance(call[2], float)
+        assert isinstance(call[3], float)
+        assert isinstance(call[4], cp._core.core.ndarray)
+        assert isinstance(call[5], cp._core.core.ndarray)
+        assert isinstance(call[6], cp._core.core.ndarray)
+        assert isinstance(call[7], np.float32)
+        assert isinstance(call[8], np.float32)
+    except:
+        raise ValueError("Check the `call` types of the `hitsearch` method.")
 
     if call[1].dtype == cp.float64:
         _hitsearch_float64(numBlocks, blockSize, call)

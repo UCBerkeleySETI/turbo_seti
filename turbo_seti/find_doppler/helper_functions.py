@@ -123,5 +123,4 @@ def comp_stats(np_arr, xp=None):
     drop_outliers = drop_high[drop_high >= low]
     stdev = drop_outliers.std()
 
-    return median.astype(xp.float32), stdev
-
+    return median.astype(xp.float32), stdev.astype(xp.float32)

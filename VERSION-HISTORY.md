@@ -4,6 +4,7 @@ This file is a version history of turbo_seti amendments, beginning with version 
 
 | `YYYY_MM_DD` | `Version` | `Contents` |
 | :--: | :--: | :-- |
+| 2021-08-17 | 2.1.12 | Fix "AttributeError: module 'cupy' has no attribute '_core'". (issue #272). |
 | 2021-08-12 | 2.1.11 | Specific MeerKAT files cause erratic behaviour in GPU mode (issue #270). |
 | 2021-07-22 | 2.1.10 | The data_handler crashed during conversion of a 59 GiB filterbank file (issue #267). |
 | 2021-07-22 | 2.1.9 | Performance improvement in gpu mode: default to single-precision (32-bit). |

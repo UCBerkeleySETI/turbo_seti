@@ -29,12 +29,12 @@ def hitsearch(numBlocks, blockSize, call):
 
     try:
         assert isinstance(call[0], int)
-        assert isinstance(call[1], cp._core.core.ndarray)
+        assert isinstance(call[1], cp.ndarray)
         assert isinstance(call[2], float)
         assert isinstance(call[3], float)
-        assert isinstance(call[4], cp._core.core.ndarray)
-        assert isinstance(call[5], cp._core.core.ndarray)
-        assert isinstance(call[6], cp._core.core.ndarray)
+        assert isinstance(call[4], cp.ndarray)
+        assert isinstance(call[5], cp.ndarray)
+        assert isinstance(call[6], cp.ndarray)
         assert isinstance(call[7], np.float32)
         assert isinstance(call[8], np.float32)
     except:

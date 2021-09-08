@@ -259,7 +259,7 @@ def load_the_data(d, precision):
         Spectra data array.  Set by the data_handler.py load_data function.
     drift_indexes: numpy.ndarray
         Drift index matrix.  Set by the data_handler.py load_data function.
-    '''
+    """
     data_obj = DATAH5(d['filename'],
                   f_start=d['f_start'],
                   f_stop=d['f_stop'],

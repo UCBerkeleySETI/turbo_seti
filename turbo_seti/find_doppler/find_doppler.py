@@ -43,41 +43,50 @@ class FindDoppler:
     Parameters
     ----------
     datafile : string
-        Inputted filename (.h5 or .fil)
+        Input filename (.h5 or .fil)
     max_drift : float
-        Max drift rate in Hz/second.
+        Maximum drift rate in Hz/second.
     min_drift : float
-        Min drift rate in Hz/second.
+        Minimum drift rate in Hz/second.
     snr : float
-        Signal to Noise Ratio - A ratio bigger than 1 to 1 has more signal than noise.
+        Minimum Signal to Noise Ratio (SNR) - A ratio bigger than 1 to 1 has more signal than noise.
     out_dir : string
         Directory where output files should be placed. By default this is the
         current working directory.
     coarse_chans : list(int)
-        The inputted comma separated list of coarse channels to analyze, if any. By default,
+        The input comma-separated list of coarse channels to analyze, if any. By default,
         all coarse channels will be searched. Use this to search only specified channels,
         e.g. [7,12] will search channels 7 and 12 only.
     obs_info : dict
-        Used to hold info found on file, including info about pulsars, RFI, and SEFD.
+        Used to hold information found on file, including info about pulsars, RFI, and SEFD.
     flagging : bool
-        Flags the edges of the PFF for BL data (with 3Hz res per channel).
+        Flags the edges of the PFF for BL data (with 3Hz res per channel)? (True/False)
+        Anybody - please improve this cryptic description.
     n_coarse_chan : int
-        Number of coarse channels in file.
+        Number of coarse channels in the file.
+        If None (default), blimpy will make this determination (undesirable, in general).
     kernels : Kernels, optional
         Pre-configured class of Kernels.
     gpu_backend : bool, optional
-        Use GPU accelerated Kernels.
+        Use GPU accelerated Kernels? (True/False)
+    gpu_id : int
+        If gpu_backend=True, then this is the GPU device to use.
+        Default is 0.
     precision : int {2: float64, 1: float32}, optional
-        Floating point precision.
+        Floating point precision for the GPU.
+        The default is 1 (recommended).
     append_output : bool, optional
         Append output DAT & LOG files? (True/False)
+        Default is False.
+        DEPRECATED.
     log_level_int : int, optional
         Python logging threshold level (INFO, DEBUG, or WARNING)
+        Default is logging.INFO.
     blank_dc : bool, optional
-        Remove the DC spike.
-
+        Remove the DC spike? (True/False)
+        Default is True (recommended).
     """
-    def __init__(self, datafile, max_drift=4.0, min_drift=0.00001, snr=25.0, out_dir='./', coarse_chans=None,
+    def __init__(self, datafile, max_drift=10.0, min_drift=0.00001, snr=25.0, out_dir='./', coarse_chans=None,
                  obs_info=None, flagging=False, n_coarse_chan=None, kernels=None, gpu_backend=False, gpu_id=0,
                  precision=1, append_output=False, log_level_int=logging.INFO, blank_dc=True):
 
@@ -133,8 +142,10 @@ class FindDoppler:
 
         Parameters
         ----------
-        arg_text : TYPE
-            Text message to include at end of file.
+        arg_path : str
+            Path of log for the final log entries.
+        arg_text : str
+            Text message to include at end of the log file.
 
         Returns
         -------
@@ -153,14 +164,26 @@ class FindDoppler:
         Parameters
         ----------
         n_partitions : int
-            Number of Dask threads to use in parallel. Defaults to single-thread.
+            Number of Dask partitions (processes) to use in parallel. Defaults to single-partition (process).
         progress_bar : str {'y', 'n'}, optional
             Enable command-line progress bar.
 
+        Returns
+        -------
+        None.
+
         Notes
         -----
-        Can use dask to launch multiple drift searches in parallel.
-
+        self.data_handle.data_list : the list of coarse channel records for searching,
+             created by self.data_handle = DATAHandle() during __init__() execution.
+        
+        If using dask (n_partitions > 1): 
+        * Launch multiple drift searches in parallel.
+        * Each search works on a single coarse channel record.
+        * n_partitions governs the maximum number of partitions to run in parallel.
+        Else, the searches are done in sequence of coarse channel records.
+        
+        It is not recommended to mix dask partitions with GPU mode as this could cause GPU queuing.
         """
         t0 = time.time()
 
@@ -219,6 +242,24 @@ class FindDoppler:
         self.last_logwriter(path_log, '\n===== Search time: {:.2f} minutes'.format((t1 - t0)/60.0))
 
 def load_the_data(d, precision):
+    r"""
+    Load the DATAH5 object, spectra matrix, and the associated drift indexes.
+
+    Parameters
+    ----------
+    d : dict
+        Course channel record created by data_handler.py DATAHandle __split_h5.
+    precision : int {2: float64, 1: float32}
+        Floating point precision for the GPU.
+    
+    Returns
+    -------
+    data_obj : DATAH5 object
+    spectra : numpy.ndarray
+        Spectra data array.  Set by the data_handler.py load_data function.
+    drift_indexes: numpy.ndarray
+        Drift index matrix.  Set by the data_handler.py load_data function.
+    '''
     data_obj = DATAH5(d['filename'],
                   f_start=d['f_start'],
                   f_stop=d['f_stop'],
@@ -238,9 +279,14 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
     Parameters
     ----------
     data_dict : dict
-        File's waterfall data handler.
-        Required keys: {'filename','f_start', 'f_stop', 'coarse_chan', 'n_coarse_chan'}
-    find_doppler_instance : FindDoppler
+        Course channel record created by data_handler.py DATAHandle __split_h5.
+        Contains the following fields:
+        * filename : file path (repeated in each record)
+        * f_start : start frequency of coarse channel
+        * f_stop : stop frequency of coarse channel
+        * coarse_chan : coarse channel number
+        * n_coarse_chan : total number of coarse channels (repeated in each record)
+    find_doppler_instance : FindDoppler object
         Instance of FindDoppler class.
     logwriter : LogWriter, optional
         A LogWriter to write log output into. If None, one will be created.
@@ -250,12 +296,12 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
     Returns
     -------
     : bool
-        Returns True if successful (needed for dask).
+        Returns True if no exceptions occur (needed for dask).
 
     Notes
     -----
     This function is separate from the FindDoppler class to allow parallelization. This should not be called
-    directly, but rather via the `FindDoppler.search()` or `FindDoppler.search_dask()` routines.
+    directly, but rather via the FindDoppler.search() routine.
 
     """
     global logger
@@ -486,10 +532,10 @@ def populate_tree(fd, spectra, tree_findoppler, nframes, tdwidth, tsteps, fftlen
 
     Parameters
     ----------
-    fd : FindDoppler
+    fd : FindDoppler object
         Instance of FindDoppler class.
     spectra : ndarray
-        Spectra calculated from file.
+        Spectra matrix.
     tree_findoppler : ndarray
         Tree to be populated with spectra.
     nframes : int

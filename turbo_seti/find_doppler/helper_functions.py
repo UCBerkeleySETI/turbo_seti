@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import numpy as np
-import logging
 
 
 def chan_freq(header, fine_channel, tdwidth, ref_frame):
@@ -11,10 +10,10 @@ def chan_freq(header, fine_channel, tdwidth, ref_frame):
 
     Parameters
     ----------
-      header : 
-      fine_channel : 
-      tdwidth : 
-      ref_frame : 
+      header :
+      fine_channel :
+      tdwidth :
+      ref_frame :
 
     Returns
     -------
@@ -25,15 +24,16 @@ def chan_freq(header, fine_channel, tdwidth, ref_frame):
     chan_index = fine_channel - (tdwidth-fftlen)/2
     chanfreq = header['FCNTR'] + (chan_index - fftlen/2)*header['DELTAF']
     # apply doppler correction
-    if ref_frame == 1:
-        chanfreq = (1 - header['baryv']) * chanfreq
+    #if ref_frame == 1:
+        # baryv was always 0.  What is the point?
+        # chanfreq = (1 - header['baryv']) * chanfreq
     return chanfreq
 
 
 def bitrev(inval, nbits):
     r"""
     This function bit-reverses the given value "inval" with the number of bits, "nbits".
-    
+
     Parameters
     ----------
     inval : int
@@ -42,7 +42,7 @@ def bitrev(inval, nbits):
       The length of inval in bits. If user only wants the bit-reverse of a certain amount of bits of
       inval, nbits is the amount of bits to be reversed counting from the least significant (rightmost)
       bit. Any bits beyond this length will not be reversed and will be truncated from the result.
-    
+
     Returns
     -------
     : int
@@ -93,7 +93,7 @@ def FlipX(outbuf, xdim, ydim, xp=None):
 
     """
     if not xp:
-      xp = np
+        xp = np
 
     xp.copyto(outbuf, outbuf.reshape((ydim, xdim))[:, ::-1].ravel())
 
@@ -116,7 +116,7 @@ def comp_stats(np_arr, xp=None):
 
     """
     if not xp:
-      xp = np
+        xp = np
 
     low, median, high = xp.percentile(np_arr, [5, 50, 95])
     drop_high = np_arr[np_arr <= high]

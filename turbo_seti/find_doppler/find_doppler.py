@@ -248,7 +248,7 @@ def load_the_data(cchan_dict, precision):
     Parameters
     ----------
     cchan_dict : dict
-        A single course channel object created by data_handler.py DATAHandle __split_h5.
+        A single coarse channel object created by data_handler.py DATAHandle __split_h5.
     precision : int {2: float64, 1: float32}
         Floating point precision for the GPU.
 
@@ -279,12 +279,12 @@ def search_coarse_channel(cchan_dict, fd, dataloader=None, logwriter=None, filew
     Parameters
     ----------
     cchan_dict : dict
-        A single course channel object created by data_handler.py DATAHandle __split_h5.
+        A single coarse channel object created by data_handler.py DATAHandle __split_h5.
         Contains the following fields:
         * filename : file path (common to all objects)
         * f_start : start frequency of coarse channel
         * f_stop : stop frequency of coarse channel
-        * coarse_chan : coarse channel number
+        * cchan_id : coarse channel number
         * n_coarse_chan : total number of coarse channels (common to all objects)
     fd : FindDoppler object
         Instance of the FindDoppler class.

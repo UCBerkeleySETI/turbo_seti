@@ -213,7 +213,7 @@ class FileWriter(GeneralWriter):
         info_str += '%14.6f\t'%freq_end #freq_end:
         info_str += '%s\t'%obs_info['SEFDs_val'][this_one] #SEFD:
         info_str += '%14.6f\t'%obs_info['SEFDs_freq'][this_one] #SEFD_mid_freq:
-        info_str += '%i\t'%header['coarse_chan']
+        info_str += '%i\t'%header['cchan_id']
         info_str += '%i\t'%total_n_candi #
         info_str +='\n'
         self.write(info_str)

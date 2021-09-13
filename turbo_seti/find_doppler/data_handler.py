@@ -39,12 +39,14 @@ class DATAHandle:
     kernels : Kernels, optional
         Pre-configured class of Kernels.
     gpu_backend : bool, optional
-        Use GPU accelerated Kernels.
+        Use GPU accelerated Kernels?
     precision : int {2: float64, 1: float32}, optional
-        Floating point precision.
+        Floating point precision.  Default: 1.
+    gpu_id : int
+        If  gpu_backend=True, then this is the device ID to use.
     """
     def __init__(self, filename=None, out_dir='./', n_coarse_chan=None, coarse_chans=None,
-                 kernels=None, gpu_backend=False, precision=2, gpu_id=0):
+                 kernels=None, gpu_backend=False, precision=1, gpu_id=0):
         if not kernels:
             self.kernels = Kernels(gpu_backend, precision, gpu_id)
         else:
@@ -73,13 +75,13 @@ class DATAHandle:
             self.filesize = self.filestat.st_size/(1024.0**2)
 
             # Grab header from DATAH5
-            dobj_master = DATAH5(filename, kernels=self.kernels, gpu_id=gpu_id)
-            self.header = dobj_master.header
-            self.drift_rate_resolution = dobj_master.drift_rate_resolution
-            dobj_master.close()
+            datah5_obj = DATAH5(filename, kernels=self.kernels, gpu_id=gpu_id)
+            self.header = datah5_obj.header
+            self.drift_rate_resolution = datah5_obj.drift_rate_resolution
+            datah5_obj.close()
 
             # Split the file
-            self.data_list = self.__split_h5()
+            self.cchan_list = self.__split_h5()
             self.status = True
 
         else:
@@ -97,8 +99,8 @@ class DATAHandle:
             Header of the blimpy file.
 
         """
-        fil_file = Waterfall(self.filename, load_data=False)
-        return fil_file.header
+        wf = Waterfall(self.filename, load_data=False)
+        return wf.header
 
     def __make_h5_file(self):
         r"""
@@ -107,14 +109,14 @@ class DATAHandle:
         to the (new) filename.
 
         """
-        fil_file = Waterfall(self.filename, load_data=False)
+        wf = Waterfall(self.filename, load_data=False)
         fil_path = os.path.basename(self.filename)
         h5_path = os.path.join(self.out_dir, fil_path.replace('.fil', '.h5'))
         try:
             os.remove(h5_path)
         except:
             pass
-        write_to_h5(fil_file, h5_path)
+        write_to_h5(wf, h5_path)
         self.filename = h5_path
 
     def __split_h5(self):
@@ -123,58 +125,67 @@ class DATAHandle:
 
         Returns
         -------
-        data_list : list[DATAH5]
-            Where each list member contains a DATAH5 object
-            for each of the coarse channels in the file.
+        chan_list : list
+            Where each list member contains a coarse channel dict object
+            for each coarse channel in the file.
+            
+            Dict fields:
+            * filename : file path (common to all objects)
+            * f_start : start frequency of coarse channel
+            * f_stop : stop frequency of coarse channel
+            * coarse_chan_id : coarse channel number (identifier)
+            * n_coarse_chan : total number of coarse channels (common to all objects)
 
         """
-        data_list = []
+        cchan_list = []
 
-        #Instancing file.
+        # Create a Waterfall object
         try:
-            fil_file = Waterfall(self.filename, load_data=False)
+            wf = Waterfall(self.filename, load_data=False)
         except:
             errmsg = "Error encountered when trying to open file: {}".format(self.filename)
             raise IOError(errmsg)
 
         #Finding lowest freq in file.
-        f_delt = fil_file.header['foff']
-        f0 = fil_file.header['fch1']
+        f_delt = wf.header['foff']
+        f0 = wf.header['fch1']
 
         #Looping over the number of coarse channels.
         if self.n_coarse_chan is None:
-            if fil_file.header.get('n_coarse_chan', None) is not None:
-                self.n_coarse_chan = fil_file.header['n_coarse_chan']
+            if wf.header.get('n_coarse_chan', None) is not None:
+                self.n_coarse_chan = wf.header['n_coarse_chan']
             else:
-                self.n_coarse_chan = int(fil_file.calc_n_coarse_chan())
+                self.n_coarse_chan = int(wf.calc_n_coarse_chan())
 
         # Only load coarse chans of interest -- or do all if not specified
         if self.coarse_chans in (None, ''):
             self.coarse_chans = range(self.n_coarse_chan)
 
-        for chan in self.coarse_chans:
+        for cchan_id in self.coarse_chans:
 
-            #Calculate freq range for given course channel.
-            f_start = f0 + chan * (f_delt) * fil_file.n_channels_in_file / self.n_coarse_chan
-            f_stop = f0 + (chan + 1) * (f_delt) * fil_file.n_channels_in_file / self.n_coarse_chan
+            # Calculate the frequency range for the given course channel (cchan_id).
+            f_start = f0 + cchan_id * (f_delt) * wf.n_channels_in_file / self.n_coarse_chan
+            f_stop = f0 + (cchan_id + 1) * (f_delt) * wf.n_channels_in_file / self.n_coarse_chan
 
             if f_start > f_stop:
                 f_start, f_stop = f_stop, f_start
 
-            data_obj = {'filename': self.filename,
+            # Instantiate the coarse channel object.
+            cchan_obj = {'filename': self.filename,
                         'f_start': f_start,
                         'f_stop': f_stop,
-                        'coarse_chan': chan,
+                        'cchan_id': cchan_id,
                         'n_coarse_chan': self.n_coarse_chan}
 
-            #This appends to a list of all data instance selections. So that all get processed later.
-            data_list.append(data_obj)
+            # Append coarse channel object to list.
+            cchan_list.append(cchan_obj)
 
-        return data_list
+        return cchan_list
 
 class DATAH5:
     r"""
-    This class is where the waterfall data is loaded, as well as the header info.
+    This class is where the waterfall data is loaded, as well as the DATAH5 header info.
+    Don't be surprised at the use of FITS header names! [?]
     It creates other attributes related to the dedoppler search (load_drift_indexes).
 
     Parameters
@@ -190,13 +201,15 @@ class DATAH5:
     t_stop : int
         Stop integration ID.
     coarse_chan : int
+        Coarse channel ID.
     n_coarse_chan : int
+        Total number of coarse channels.
     kernels : Kernels
         Pre-configured class of kernels.
 
     """
     def __init__(self, filename, f_start=None, f_stop=None, t_start=None, t_stop=None,
-                 coarse_chan=1, n_coarse_chan=None, kernels=None, gpu_backend=False, precision=2, gpu_id=0):
+                 cchan_id=0, n_coarse_chan=None, kernels=None, gpu_backend=False, precision=1, gpu_id=0):
         self.filename = filename
         self.closed = False
         self.f_start = f_start
@@ -210,7 +223,7 @@ class DATAH5:
         else:
             self.kernels = kernels
 
-        #Instancing file.
+        # Create a Waterfall object instance.
         try:
             self.fil_file = Waterfall(filename, f_start=self.f_start, f_stop=self.f_stop,
                                       t_start=self.t_start, t_stop=self.t_stop, load_data=False)
@@ -218,7 +231,7 @@ class DATAH5:
             errmsg = "Error encountered when trying to open file: {}".format(filename)
             raise IOError(errmsg)
 
-        #Getting header
+        # Create a header used by the search.
         try:
             if self.n_coarse_chan:
                 header = self.__make_data_header(self.fil_file.header, coarse=True)
@@ -233,14 +246,12 @@ class DATAH5:
         self.fftlen = header['NAXIS1']
 
         #EE To check if swapping tsteps_valid and tsteps is more appropriate.
-        self.tsteps_valid = header['NAXIS2']
+        self.tsteps_valid = int(self.fil_file.n_ints_in_file)
         self.tsteps = int(math.pow(2, math.ceil(np.log2(math.floor(self.tsteps_valid)))))
 
         self.header['obs_length'] = self.tsteps_valid * header['DELTAT']
         self.drift_rate_resolution = (1e6 * np.abs(header['DELTAF'])) / self.header['obs_length']   # in Hz/sec
-        self.header['baryv'] = 0.0
-        self.header['barya'] = 0.0
-        self.header['coarse_chan'] = coarse_chan
+        self.header['cchan_id'] = cchan_id
 
         #EE For now I'm not using a shoulder. This is ok as long as
         ##  I'm analyzing each coarse channel individually.
@@ -360,9 +371,7 @@ class DATAH5:
             base_header['NAXIS1'] = int(header['nchans'])
             base_header['FCNTR'] = float(header['fch1']) + header['foff'] * base_header['NAXIS1'] / 2
 
-        #other header values.
-        base_header['NAXIS'] = 2
-        base_header['NAXIS2'] = int(self.fil_file.n_ints_in_file)
+        # Return base_header to caller.
         return base_header
 
     def close(self):

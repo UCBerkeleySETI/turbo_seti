@@ -174,15 +174,15 @@ class FindDoppler:
 
         Notes
         -----
-        self.data_handle.data_list : the list of coarse channel records for searching,
+        self.data_handle.cchan_list : the list of coarse channel objects for searching,
              created by self.data_handle = DATAHandle() during __init__() execution.
-        
-        If using dask (n_partitions > 1): 
+
+        If using dask (n_partitions > 1):
         * Launch multiple drift searches in parallel.
-        * Each search works on a single coarse channel record.
+        * Each search works on a single coarse channel object.
         * n_partitions governs the maximum number of partitions to run in parallel.
-        Else, the searches are done in sequence of coarse channel records.
-        
+        Else, the searches are done in sequence of the coarse channel objects.
+
         It is not recommended to mix dask partitions with GPU mode as this could cause GPU queuing.
         """
         t0 = time.time()
@@ -223,13 +223,13 @@ class FindDoppler:
 
         # Run serial version
         if n_partitions == 1:
-            sched = Scheduler(load_the_data, [ (l, self.kernels.precision) for l in self.data_handle.data_list ])
-            for dl in self.data_handle.data_list:
-                search_coarse_channel(dl, self, dataloader=sched, filewriter=filewriter, logwriter=logwriter)
+            sched = Scheduler(load_the_data, [ (cchan_obj, self.kernels.precision) for cchan_obj in self.data_handle.cchan_list ])
+            for cchan_obj in self.data_handle.cchan_list:
+                search_coarse_channel(cchan_obj, self, dataloader=sched, filewriter=filewriter, logwriter=logwriter)
         # Run Parallel version via dask
         else:
             print("FindDoppler.search: Using {} dask partitions".format(n_partitions))
-            b = db.from_sequence(self.data_handle.data_list, npartitions=n_partitions)
+            b = db.from_sequence(self.data_handle.cchan_list, npartitions=n_partitions)
             if progress_bar == 'y':
                 with ProgressBar():
                     b.map(search_coarse_channel, self).compute()
@@ -241,53 +241,53 @@ class FindDoppler:
         t1 = time.time()
         self.last_logwriter(path_log, '\n===== Search time: {:.2f} minutes'.format((t1 - t0)/60.0))
 
-def load_the_data(d, precision):
+def load_the_data(cchan_dict, precision):
     r"""
     Load the DATAH5 object, spectra matrix, and the associated drift indexes.
 
     Parameters
     ----------
-    d : dict
-        Course channel record created by data_handler.py DATAHandle __split_h5.
+    cchan_dict : dict
+        A single coarse channel object created by data_handler.py DATAHandle __split_h5.
     precision : int {2: float64, 1: float32}
         Floating point precision for the GPU.
-    
+
     Returns
     -------
-    data_obj : DATAH5 object
+    datah5_obj : DATAH5 object (complex!)
     spectra : numpy.ndarray
         Spectra data array.  Set by the data_handler.py load_data function.
     drift_indexes: numpy.ndarray
         Drift index matrix.  Set by the data_handler.py load_data function.
     """
-    data_obj = DATAH5(d['filename'],
-                  f_start=d['f_start'],
-                  f_stop=d['f_stop'],
-                  coarse_chan=d['coarse_chan'],
-                  n_coarse_chan=d['n_coarse_chan'],
+    datah5_obj = DATAH5(cchan_dict['filename'],
+                  f_start=cchan_dict['f_start'],
+                  f_stop=cchan_dict['f_stop'],
+                  cchan_id=cchan_dict['cchan_id'],
+                  n_coarse_chan=cchan_dict['n_coarse_chan'],
                   gpu_backend=False,
                   precision=precision)
-    spectra, drift_indices = data_obj.load_data()
-    data_obj.close()
+    spectra, drift_indices = datah5_obj.load_data()
+    datah5_obj.close()
 
-    return (data_obj, spectra, drift_indices)
+    return (datah5_obj, spectra, drift_indices)
 
-def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, logwriter=None, filewriter=None):
+def search_coarse_channel(cchan_dict, fd, dataloader=None, logwriter=None, filewriter=None):
     r"""
     Run a turboseti search on a single coarse channel.
 
     Parameters
     ----------
-    data_dict : dict
-        Course channel record created by data_handler.py DATAHandle __split_h5.
+    cchan_dict : dict
+        A single coarse channel object created by data_handler.py DATAHandle __split_h5.
         Contains the following fields:
-        * filename : file path (repeated in each record)
+        * filename : file path (common to all objects)
         * f_start : start frequency of coarse channel
         * f_stop : stop frequency of coarse channel
-        * coarse_chan : coarse channel number
-        * n_coarse_chan : total number of coarse channels (repeated in each record)
-    find_doppler_instance : FindDoppler object
-        Instance of FindDoppler class.
+        * cchan_id : coarse channel number
+        * n_coarse_chan : total number of coarse channels (common to all objects)
+    fd : FindDoppler object
+        Instance of the FindDoppler class.
     logwriter : LogWriter, optional
         A LogWriter to write log output into. If None, one will be created.
     filewriter : FileWriter, optional
@@ -300,52 +300,49 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
 
     Notes
     -----
-    This function is separate from the FindDoppler class to allow parallelization. This should not be called
-    directly, but rather via the FindDoppler.search() routine.
-
+    This function is separate from the FindDoppler class to allow parallelization.
+    This should not be called directly, but rather via the FindDoppler.search() routine.
+    One exception: turboseti_search package.
     """
     global logger
 
-    d = data_dict
-    fd = find_doppler_instance
+    # Fetch the identifier of this coarse channel to search.
+    this_coarse_channel = cchan_dict['cchan_id']
 
-    out_dir = fd.out_dir
-    filename_in = fd.data_handle.filename
-    header_in = fd.data_handle.header
-    min_drift = fd.min_drift
-    max_drift = fd.max_drift
-    snr = fd.snr
-    obs_info = fd.obs_info
-    flagging = fd.flagging
-    coarse_channel = d['coarse_chan']
-    logger = logging.getLogger(logger_name + '.' + str(coarse_channel))
+    # Set up logging to include the coarse channel identifier.
+    logger = logging.getLogger(logger_name + '.' + str(this_coarse_channel))
     logger.setLevel(fd.log_level_int)
 
     # Load data from file
     if dataloader:
-        data_obj, spectra, drift_indices = dataloader.get()
+        datah5_obj, spectra, drift_indices = dataloader.get()
     else:
-        data_obj, spectra, drift_indices = load_the_data(d, fd.kernels.precision)
+        datah5_obj, spectra, drift_indices = load_the_data(cchan_dict, fd.kernels.precision)
 
-    fileroot_out = filename_in.split('/')[-1].replace('.h5', '').replace('.fits', '').replace('.fil', '')
+    fileroot_out = fd.data_handle.filename.split('/')[-1].replace('.h5', '').replace('.fits', '').replace('.fil', '')
     if logwriter is None:
-        logwriter = LogWriter('%s/%s_%i.log' % (out_dir.rstrip('/'), fileroot_out, coarse_channel))
+        logwriter = LogWriter('%s/%s_%i.log' % (fd.out_dir.rstrip('/'),
+                              fileroot_out,
+                              this_coarse_channel))
     if filewriter is None:
-        filewriter = FileWriter('%s/%s_%i.dat' % (out_dir.rstrip('/'), fileroot_out, coarse_channel), header_in)
+        filewriter = FileWriter('%s/%s_%i.dat' % (fd.out_dir.rstrip('/'),
+                                fileroot_out,
+                                this_coarse_channel),
+                                fd.data_handle.header)
 
-    tsteps = data_obj.tsteps
-    tsteps_valid = data_obj.tsteps_valid
-    tdwidth = data_obj.tdwidth
-    fftlen = data_obj.fftlen
+    tsteps = datah5_obj.tsteps
+    tsteps_valid = datah5_obj.tsteps_valid
+    tdwidth = datah5_obj.tdwidth
+    fftlen = datah5_obj.fftlen
     nframes = tsteps_valid
-    shoulder_size = data_obj.shoulder_size
+    shoulder_size = datah5_obj.shoulder_size
 
     logger.debug('===== coarse_channel={}, f_start={}, f_stop={}'
-                .format(coarse_channel, d['f_start'], d['f_stop']))
+                .format(this_coarse_channel, cchan_dict['f_start'], cchan_dict['f_stop']))
     logger.debug('flagging={}, tsteps={}, tsteps_valid={}, tdwidth={}, fftlen={}, nframes={}, shoulder_size={}'
-                 .format(flagging, tsteps, tsteps_valid, tdwidth, fftlen, nframes, shoulder_size))
+                 .format(fd.flagging, tsteps, tsteps_valid, tdwidth, fftlen, nframes, shoulder_size))
 
-    if flagging:
+    if fd.flagging:
         ##EE This flags the edges of the PFF for BL data (with 3Hz res per channel).
         ##EE The PFF flat profile falls after around 100k channels.
         ##EE But it falls slowly enough that could use 50-80k channels.
@@ -418,16 +415,16 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
     max_point = fd.kernels.np.max(spectra)
     max_possible_line_sum = max_point * spectra.shape[0]
     max_possible_snr = (max_possible_line_sum - the_median) / the_stddev
-    if max_possible_snr < snr:
+    if max_possible_snr < fd.snr:
         logger.debug("Maximum possible SNR is %s so we can skip this coarse channel.", max_possible_snr)
         filewriter.close()
         logwriter.close()
         return True
-    
+
     # --------------------------------
     # Looping over drift_rate_nblock
     # --------------------------------
-    drift_rate_nblock = int(fd.kernels.np.floor(max_drift / (data_obj.drift_rate_resolution * tsteps_valid)))
+    drift_rate_nblock = int(fd.kernels.np.floor(fd.max_drift / (datah5_obj.drift_rate_resolution * tsteps_valid)))
     logger.debug('BEGIN looping over drift_rate_nblock, drift_rate_nblock={}.'.format(drift_rate_nblock))
 
     # Transfer data to device
@@ -460,14 +457,14 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
             fd.kernels.tt.flt(tree_findoppler_flip, tsteps * tdwidth, tsteps)
             logger.debug("done...")
 
-            complete_drift_range = data_obj.drift_rate_resolution * fd.kernels.np.array(
+            complete_drift_range = datah5_obj.drift_rate_resolution * fd.kernels.np.array(
                 range(-1 * tsteps_valid * (abs(drift_block) + 1) + 1,
                       -1 * tsteps_valid * (abs(drift_block)) + 1))
-            bool_selected = complete_drift_range >= -max_drift
+            bool_selected = complete_drift_range >= -fd.max_drift
             logger.debug('***** drift_block <= 0 selected drift range:\n%s', complete_drift_range[bool_selected])
             for k, drift_rate in enumerate(complete_drift_range[bool_selected]):
                 # DCP 2020.04 -- WAR to drift rate in flipped files
-                if data_obj.header['DELTAF'] < 0:
+                if datah5_obj.header['DELTAF'] < 0:
                     drift_rate = -drift_rate
 
                 indx = ibrev[drift_indices[::-1][bool_selected][k]] * tdwidth
@@ -478,7 +475,7 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
                 # Reverse spectrum back
                 spectrum = spectrum[::-1]
 
-                hitsearch(fd, spectrum, specstart, specend, snr, drift_rate, data_obj.header,
+                hitsearch(fd, spectrum, specstart, specend, fd.snr, drift_rate, datah5_obj.header,
                           tdwidth, max_val, 0, the_median, the_stddev)
 
         # ----------------------------------------------------------------------
@@ -495,31 +492,31 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
             fd.kernels.tt.flt(tree_findoppler, tsteps * tdwidth, tsteps)
 
             ##EE: Calculates the range of drift rates for a full drift block.
-            complete_drift_range = data_obj.drift_rate_resolution * fd.kernels.np.array(
+            complete_drift_range = datah5_obj.drift_rate_resolution * fd.kernels.np.array(
                 range(tsteps_valid * (drift_block), tsteps_valid * (drift_block + 1)))
-            bool_selected = complete_drift_range <= max_drift
+            bool_selected = complete_drift_range <= fd.max_drift
             logger.debug('***** drift_block >= 0 selected drift range:\n%s', complete_drift_range[bool_selected])
             for k, drift_rate in enumerate(complete_drift_range[bool_selected]):
                 indx = ibrev[drift_indices[k]] * tdwidth
 
                 # DCP 2020.04 -- WAR to drift rate in flipped files
-                if data_obj.header['DELTAF'] < 0:
+                if datah5_obj.header['DELTAF'] < 0:
                     drift_rate = -drift_rate
 
                 # SEARCH POSITIVE DRIFT RATES
                 spectrum = tree_findoppler[indx: indx + tdwidth]
 
-                hitsearch(fd, spectrum, specstart, specend, snr, drift_rate, data_obj.header,
+                hitsearch(fd, spectrum, specstart, specend, fd.snr, drift_rate, datah5_obj.header,
                           tdwidth, max_val, 0, the_median, the_stddev)
 
     # Writing the top hits to file.
     logger.debug('END looping over drift_rate_nblock.')
-    filewriter = tophitsearch(fd, tree_findoppler_original, max_val, tsteps, data_obj.header, tdwidth,
-                              fftlen, min_drift, max_drift, data_obj.header['obs_length'],
-                              logwriter=logwriter, filewriter=filewriter, obs_info=obs_info)
+    filewriter = tophitsearch(fd, tree_findoppler_original, max_val, tsteps, datah5_obj.header, tdwidth,
+                              fftlen, fd.min_drift, fd.max_drift, datah5_obj.header['obs_length'],
+                              logwriter=logwriter, filewriter=filewriter, obs_info=fd.obs_info)
 
     logger.debug("Total number of candidates for coarse channel " +
-                str(data_obj.header['coarse_chan']) + " is: %i" % max_val.total_n_hits)
+                str(datah5_obj.header['cchan_id']) + " is: %i" % max_val.total_n_hits)
     filewriter.close()
     logwriter.close()
     return True
@@ -575,16 +572,20 @@ def populate_tree(fd, spectra, tree_findoppler, nframes, tdwidth, tsteps, fftlen
 
         ##EE copy spectra into tree_findoppler, leaving two regions in each side blank (each region of tsteps*(shoulder_size/2) in size).
         # Copy spectra into tree_findoppler, with rolling.
-        fd.kernels.xp.copyto(tree_findoppler[sind_a:sind_a+fftlen], fd.kernels.xp.roll(spectra[i], roll * i * direction))
+        fd.kernels.xp.copyto(tree_findoppler[sind_a:sind_a+fftlen],
+                             fd.kernels.xp.roll(spectra[i],
+                             roll * i * direction))
 
         ##EE loads the end part of the current spectrum into the left hand side black region in tree_findoppler (comment below says "next spectra" but for that need i+1...bug?)
         #load end of current spectra into left hand side of next spectra
-        fd.kernels.xp.copyto(tree_findoppler[sind_b:sind_b+size], spectra[i, fftlen-size:fftlen])
+        fd.kernels.xp.copyto(tree_findoppler[sind_b:sind_b+size],
+                             spectra[i, fftlen-size:fftlen])
 
     return tree_findoppler
 
 
-def hitsearch(fd, spectrum, specstart, specend, hitthresh, drift_rate, header, tdwidth, max_val, reverse,
+def hitsearch(fd, spectrum, specstart, specend, snr_thresh, drift_rate, header,
+              tdwidth, max_val, reverse,
               the_median, the_stddev):
     r"""
     Searches for hits at given drift rate. A hit occurs in each channel if > hitthresh.
@@ -598,7 +599,7 @@ def hitsearch(fd, spectrum, specstart, specend, hitthresh, drift_rate, header, t
         First index to search for hit in spectrum.
     specend : int
         Last index to search for hit in spectrum.
-    hitthresh : float
+    snr_thresh : float
         Signal to noise ratio used as threshold for determining hits.
     drift_rate : float
         Drift rate at which we are searching for hits.
@@ -621,7 +622,7 @@ def hitsearch(fd, spectrum, specstart, specend, hitthresh, drift_rate, header, t
         length = specend - specstart
         numBlocks = (length + blockSize - 1) // blockSize
         spectrum_tmp = fd.kernels.xp.copy(spectrum[specstart:specend])
-        call = (length, spectrum_tmp, float(hitthresh), float(drift_rate),
+        call = (length, spectrum_tmp, float(snr_thresh), float(drift_rate),
                 max_val.maxsnr, max_val.maxdrift, max_val.total_n_hits,
                 the_median, the_stddev)
         fd.kernels.hitsearch((numBlocks,), (blockSize,), call)
@@ -633,7 +634,7 @@ def hitsearch(fd, spectrum, specstart, specend, hitthresh, drift_rate, header, t
         spectrum /= the_stddev
 
         hits = 0
-        for i in (spectrum[specstart:specend] > hitthresh).nonzero()[0] + specstart:
+        for i in (spectrum[specstart:specend] > snr_thresh).nonzero()[0] + specstart:
             k = (tdwidth - 1 - i) if reverse else i
 
             if logger.level == logging.DEBUG:

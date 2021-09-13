@@ -61,7 +61,7 @@ def find_doppler(filename_fil, kernels):
 
     find_seti_event.flagging = True
     t0 = time.time()
-    for dummy, data_dict in enumerate(find_seti_event.data_handle.data_list):
+    for dummy, data_dict in enumerate(find_seti_event.data_handle.cchan_list):
         search_coarse_channel(data_dict, find_seti_event, filewriter=None, logwriter=None)
     t_taken = time.time() - t0
     print("Time taken for search_coarse_channe() [with flagging]: %2.2fs" % t_taken)

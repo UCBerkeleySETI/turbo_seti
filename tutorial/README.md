@@ -1,5 +1,4 @@
-TURBO_SETI TUTORIAL
-=============================
+### Usage of turbo_seti ###
 
 ### Intro
 

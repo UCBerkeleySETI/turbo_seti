@@ -49,11 +49,11 @@ It was originally based on `dedoppler` [dedoppler](http://github.com/cs150bf/gbt
 
 If you have not yet installed blimpy, do so in this manner:
 
-`python3 -m pip install -U git+https://github.com/UCBerkeleySETI/blimpy`
+`python3 -m pip install --user -U git+https://github.com/UCBerkeleySETI/blimpy`
 
 Then, install turbo_seti directly from this repository:
 
-`python3 -m pip install -U git+https://github.com/UCBerkeleySETI/turbo_seti`
+`python3 -m pip install --user -U git+https://github.com/UCBerkeleySETI/turbo_seti`
 
 ## NVIDIA GPU Users
 

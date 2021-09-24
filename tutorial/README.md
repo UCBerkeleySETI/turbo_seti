@@ -19,7 +19,7 @@ The two tutorials are as follows:
 * ```tutorial_1.ipynb``` - This exposes details of the event pipelines after the search completes and is therefore more complex.
 * ```tutorial_2.ipynb``` - A simpler approach (same results) for analyzing candidate events.
 
-Both tutorials require the execution of an initialization noyebook before using them: ```init.ipynb```.  This will download the set of 6 Parkes HDF5 files into a directory called "turboseti" under the user's home directory.
+Both tutorials require the execution of an initialization noyebook before using them: ```initialise.ipynb```.  This will download the set of 6 Parkes HDF5 files into a directory called "turboseti" under the user's home directory.
 
 After the files are downloaded, install the latest version of turbo_seti, in one of two ways:
 

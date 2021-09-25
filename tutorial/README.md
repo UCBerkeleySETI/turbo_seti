@@ -2,13 +2,13 @@
 
 ### Intro
 
-The turbo_seti package is a Python tool, used and developed by SETI researchers at the Berkeley SETI Research Center. The alogorithm of the code in the find_doppler directory searches for narrow band signals which have a doppler drift, a feature expected from an alien source with a non-zero acceleration relative to our receivers on Earth. 
+The turbo_seti package is a Python tool, used and developed by SETI researchers at the Berkeley SETI Research Center. The purpose of the code in the find_doppler directory is to search for narrow band signals that have a doppler drift, a feature expected from an alien source with a non-zero acceleration relative to our receivers on Earth. 
 
-We'll search some HDF5 files that have been condensed to a single coarse channel and are routinely used for testing the code. They are located here: http://blpd0.ssl.berkeley.edu/parkes_testing/ (total download size of 294 MB).
+We'll search some HDF5 files that have been condensed into a single coarse channel and are routinely used for testing the code. They are located here: http://blpd14.ssl.berkeley.edu/voyager_2020/single_coarse_channel/ (total download size of 288 MB).
 
-Typical SETI searches, such as described by https://arxiv.org/pdf/1906.07750.pdf, have used drift rates of up to ±4 Hz and a minimum signal-to-noise ratio of 10. We'll adapt those parameters for these tutorials.
+Typical SETI searches, such as described by https://arxiv.org/pdf/1906.07750.pdf, have used drift rates of up to ±4 Hz/s and a minimum signal-to-noise ratio of 10. We'll adapt those parameters for these tutorials.
 
-There are 2 methods of executing a turbo_seti search and event processing after package installation:
+There are 2 methods of executing a turbo_seti search processing after package installation:
 1) Run the ```turboSETI``` executable at the bash (or Windows equivalent) command line in a terminal window.
 2) Develop and run your own Python program which leverages the ```FindDoppler``` class and its functions.
 
@@ -16,7 +16,7 @@ Contained herein are two tutorials that display both methods:
 * ```tutorial_1.ipynb``` - The simplest approach for searching and analyzing candidate events.  This is the recommended approach for most scientific work.
 * ```tutorial_2.ipynb``` - Functionally equivalent to the first tutorial and exposes details of the event pipeline functions after the search completes.  This is a bit more complex model for use on a daily basis.
 
-Both tutorials require the execution of an initialization noyebook before using them: ```initialise.ipynb```.  This will download the set of 6 Parkes HDF5 files into a directory called "turboseti" under the user's home directory.
+Both tutorials require the execution of an initialization notebook before using them: ```initialise.ipynb```.  This will download a set of 6 Voyager 2020 HDF5 files into a directory called "turboseti" under the user's home directory.
 
 After the files are downloaded, install the latest version of turbo_seti, in one of two ways:
 

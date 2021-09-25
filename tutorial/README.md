@@ -1,6 +1,6 @@
 ### Usage of the turbo_seti tutorials ###
 
-The turbo_seti package is a Python tool, used and developed by SETI researchers at the Berkeley SETI Research Center. The purpose of the code in the find_doppler directory is to search for narrow band signals that have a doppler drift, a feature expected from an alien source with a non-zero acceleration relative to our receivers on Earth. 
+The turbo_seti package is a Python tool, used and developed by SETI researchers at the Berkeley SETI Research Center. The turbo_seti search algorithm looks for narrow band signals that have a doppler drift, a feature expected from an alien source with a non-zero acceleration relative to our receivers on Earth. 
 
 We'll search some HDF5 files that have been condensed into a single coarse channel and are routinely used for testing the code. They are located here: http://blpd14.ssl.berkeley.edu/voyager_2020/single_coarse_channel/ (total download size of 288 MB).
 

@@ -8,15 +8,13 @@ We'll search some HDF5 files that have been condensed to a single coarse channel
 
 Typical SETI searches, such as described by https://arxiv.org/pdf/1906.07750.pdf, have used drift rates of up to ±4 Hz and a minimum signal-to-noise ratio of 10. We'll adapt those parameters for these tutorials.
 
-There are 2 methods of executing a turbo_seti search after package installation:
+There are 2 methods of executing a turbo_seti search and event processing after package installation:
 1) Run the ```turboSETI``` executable at the bash (or Windows equivalent) command line in a terminal window.
 2) Develop and run your own Python program which leverages the ```FindDoppler``` class and its functions.
 
-Contained herein are 2 tutorials that focus on method #2.  Once either of these tutorials have been successfully completed, then the use of method #1 will be straight-forward (run ```turboSETI -h``` for details).
-
-The two tutorials are as follows:
-* ```tutorial_1.ipynb``` - This exposes details of the event pipelines after the search completes and is therefore more complex.
-* ```tutorial_2.ipynb``` - A simpler approach (same results) for analyzing candidate events.
+Contained herein are two tutorials that display both methods:
+* ```tutorial_1.ipynb``` - The simplest approach for searching and analyzing candidate events.  This is the recommended approach for most scientific work.
+* ```tutorial_2.ipynb``` - Functionally equivalent to the first tutorial and exposes details of the event pipeline functions after the search completes.  This is a bit more complex model for use on a daily basis.
 
 Both tutorials require the execution of an initialization noyebook before using them: ```initialise.ipynb```.  This will download the set of 6 Parkes HDF5 files into a directory called "turboseti" under the user's home directory.
 

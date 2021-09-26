@@ -1,22 +1,27 @@
 De-Doppler Search
 =================
 
+turboSETI Command Main Program
+------------------------------
+.. automodule:: turbo_seti.find_doppler.seti_event
+    :members:
+
 Find Doppler
 ------------
 
 .. automodule:: turbo_seti.find_doppler.find_doppler
    :members:
 
-File Writers
-------------
-
-.. automodule:: turbo_seti.find_doppler.file_writers
-   :members:
-
 Data Handler
 ------------
 
 .. automodule:: turbo_seti.find_doppler.data_handler
+   :members:
+
+File Writers
+------------
+
+.. automodule:: turbo_seti.find_doppler.file_writers
    :members:
 
 Kernels
@@ -53,3 +58,9 @@ Helper Functions
 
 .. automodule:: turbo_seti.find_doppler.helper_functions
     :members:
+
+Merge DAT and LOG Files
+-----------------------
+.. automodule:: turbo_seti.find_doppler.merge_dats_logs
+    :members:
+

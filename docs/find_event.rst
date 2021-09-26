@@ -18,6 +18,12 @@ Authors
 - Version 2.0 - Sofia Sheikh (ssheikhmsa@gmail.com) and Karen Perez (kip2105@columbia.edu)
 - Version 1.0 - Emilio Enriquez (jeenriquez@gmail.com)
 
+plotSETI Command Main Program
+-----------------------------
+
+.. automodule:: turbo_seti.find_event.run_pipelines
+   :members:
+
 Find Event Pipeline
 -------------------
 
@@ -28,6 +34,12 @@ Find Event
 ----------
 
 .. automodule:: turbo_seti.find_event.find_event
+   :members:
+
+Plot DAT
+--------
+
+.. automodule:: turbo_seti.find_event.plot_dat
    :members:
 
 Plot Event Pipeline

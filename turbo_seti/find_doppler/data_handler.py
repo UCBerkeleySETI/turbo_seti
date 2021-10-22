@@ -152,8 +152,9 @@ class DATAHandle:
 
         #Looping over the number of coarse channels.
         if self.n_coarse_chan is None:
-            if wf.header.get('n_coarse_chan', None) is not None:
-                self.n_coarse_chan = wf.header['n_coarse_chan']
+            if wf.header.get('nfpc', None) is not None:
+                self.n_coarse_chan = int(0.01 + wf.header['nchans'] / wf.header['nfpc'])
+                logger.info("nfpc={}, nchans={}, n_coarse_chan={}".format(wf.header['nfpc'], wf.header['nchans'], self.n_coarse_chan))
             else:
                 self.n_coarse_chan = int(wf.calc_n_coarse_chan())
 

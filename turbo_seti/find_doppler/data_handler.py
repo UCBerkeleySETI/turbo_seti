@@ -128,7 +128,7 @@ class DATAHandle:
         chan_list : list
             Where each list member contains a coarse channel dict object
             for each coarse channel in the file.
-            
+
             Dict fields:
             * filename : file path (common to all objects)
             * f_start : start frequency of coarse channel
@@ -150,12 +150,19 @@ class DATAHandle:
         f_delt = wf.header['foff']
         f0 = wf.header['fch1']
 
-        #Looping over the number of coarse channels.
-        if self.n_coarse_chan is None:
-            if wf.header.get('nfpc', None) is not None:
-                self.n_coarse_chan = int(0.01 + wf.header['nchans'] / wf.header['nfpc'])
-                logger.info("nfpc={}, nchans={}, n_coarse_chan={}".format(wf.header['nfpc'], wf.header['nchans'], self.n_coarse_chan))
-            else:
+        # Determine the number of coarse channels.
+        if self.n_coarse_chan is None: # no specifictaion from user
+            if wf.header.get('nfpc', None) is not None: # nfpc is specified in file header
+                self.n_coarse_chan = wf.header['nfpc']  # Store it in the DATAHandle object.
+                if  self.n_coarse_chan < 1: # nfpc valid?
+                    errmsg = "header field NFPC must be > 0 but I saw {}.  Defaulting to blimpy!".format(self.n_coarse_chan)
+                    logger.warning(errmsg)
+                    self.n_coarse_chan = int(wf.calc_n_coarse_chan())
+                else:  # nfpc is ok.  Use it to calculate the number of coarse channels.
+                    self.n_coarse_chan = int(0.01 + wf.header['nchans'] / wf.header['nfpc'])
+                    logger.info("nfpc={}, nchans={}, n_coarse_chan={}"
+                                .format(wf.header['nfpc'], wf.header['nchans'], self.n_coarse_chan))
+            else: # nfpc is NOT in the file header.
                 self.n_coarse_chan = int(wf.calc_n_coarse_chan())
 
         # Only load coarse chans of interest -- or do all if not specified
@@ -279,11 +286,9 @@ class DATAH5:
             raise ValueError(msg)
 
         spectra = self.kernels.np.squeeze(self.fil_file.data)
-
-        # DCP APR 2020 -- COMMENTED OUT. THIS IS BREAKING STUFF IN CURRENT VERSION.
-        #Arrange data in ascending order in freq if not already in that format.
-        #if self.header['DELTAF'] < 0.0:
-        #    spectra = spectra[:,::-1]
+        logger.info("Spectra 3x3 postage stamp (0, 0, 0:3): {}".format(spectra[0, 0:3]))
+        logger.info("::::::::::::::::::::::::: (1, 0, 0:3): {}".format(spectra[1, 0:3]))
+        logger.info("::::::::::::::::::::::::: (2, 0, 0:3): {}".format(spectra[2, 0:3]))
 
         # This check will add rows of zeros if the obs is too short
         # (and thus not a power of two rows).

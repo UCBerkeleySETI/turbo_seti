@@ -4,6 +4,7 @@ This file is a version history of turbo_seti amendments, beginning with version 
 
 | `YYYY_MM_DD` | `Version` | `Contents` |
 | :--: | :--: | :-- |
+| 2021-10-23 | 2.1.15 | Print a 3x3 data postage stamp when loading data. (issue #280) |
 | 2021-10-22 | 2.1.14 | Support new metadata field, NFPC. (issue #278). |
 | 2021-09-13 | 2.1.13 | Make find_doppler easier to read and amend. (issue #274). |
 | 2021-08-17 | 2.1.12 | Fix "AttributeError: module 'cupy' has no attribute '_core'". (issue #272). |

@@ -318,6 +318,10 @@ def search_coarse_channel(cchan_dict, fd, dataloader=None, logwriter=None, filew
         datah5_obj, spectra, drift_indices = dataloader.get()
     else:
         datah5_obj, spectra, drift_indices = load_the_data(cchan_dict, fd.kernels.precision)
+    if this_coarse_channel == 0:
+        logger.info("Spectra 3x3 postage stamp (0, 0, 0:3): {}".format(spectra[0, 0:3]))
+        logger.info("::::::::::::::::::::::::: (1, 0, 0:3): {}".format(spectra[1, 0:3]))
+        logger.info("::::::::::::::::::::::::: (2, 0, 0:3): {}".format(spectra[2, 0:3]))
 
     fileroot_out = fd.data_handle.filename.split('/')[-1].replace('.h5', '').replace('.fits', '').replace('.fil', '')
     if logwriter is None:

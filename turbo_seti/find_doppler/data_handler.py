@@ -286,9 +286,6 @@ class DATAH5:
             raise ValueError(msg)
 
         spectra = self.kernels.np.squeeze(self.fil_file.data)
-        logger.debug("Spectra 3x3 postage stamp (0, 0, 0:3): {}".format(spectra[0, 0:3]))
-        logger.debug("::::::::::::::::::::::::: (1, 0, 0:3): {}".format(spectra[1, 0:3]))
-        logger.debug("::::::::::::::::::::::::: (2, 0, 0:3): {}".format(spectra[2, 0:3]))
 
         # This check will add rows of zeros if the obs is too short
         # (and thus not a power of two rows).

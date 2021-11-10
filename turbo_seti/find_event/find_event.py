@@ -134,7 +134,7 @@ def read_dat(filename):
 def calc_freq_range(hit, delta_t=0.0, max_dr=True, follow=False):
     r"""
     Calculates a range of frequencies where RFI in an off-source could
-    be related to a hit in an on-source given a freq and drift_rate.
+    be related to a hit in an on-source, given a freq and drift_rate.
 
     Parameters
     ----------
@@ -186,7 +186,7 @@ def follow_event(hit, on_table, get_count=True):
     """
 
     #uses calc_freq_range to see how much the hit *should* have drifted by
-    freq_range = calc_freq_range(hit,delta_t=on_table['delta_t'].values[0],max_dr=False,follow=True)
+    freq_range = calc_freq_range(hit, delta_t=on_table['delta_t'].values[0], max_dr=False, follow=True)
 
     #looks at the on (next given observation) to see if there are any
     #hits that could plausibly be related to the first one
@@ -203,6 +203,32 @@ def follow_event(hit, on_table, get_count=True):
         return 0
 
     return new_on_table
+
+
+def not_yet_seen(mylist, argument):
+    """
+    Search a list to see if argument is already there.
+
+    Parameters
+    ----------
+    mylist : list
+        List of things that have been already seen.
+    argument : int
+        An integer to add to list if not alreay seen.
+
+    Returns
+    -------
+    bool
+       True :: Not yet seen so the argument was added.
+       False :: Already seen.
+    """
+    for ii in mylist:
+        if ii == argument:
+            return False
+
+    mylist.insert(0, argument)
+    return True
+
 
 
 def find_events(dat_file_list, SNR_cut=10, check_zero_drift=False, filter_threshold=3, on_off_first='ON', complex_cadence=False):
@@ -297,37 +323,36 @@ def find_events(dat_file_list, SNR_cut=10, check_zero_drift=False, filter_thresh
             number_of_ons = int(np.ceil(len(dat_file_list) / 2.0))
 
     #reading in the list of files
-    for i, dat_file in enumerate(dat_file_list):
+    for ii, dat_file in enumerate(dat_file_list):
         if complex_cadence:
-            on_off_indicator = int(complex_cadence[i])
+            on_off_indicator = int(complex_cadence[ii])
             number_of_ons += on_off_indicator
         #Checking if the file is an on or off observation
         #if off
-        if (i%2 == odd_even_indicator and complex_cadence == False) \
+        if (ii%2 == odd_even_indicator and complex_cadence == False) \
         or (on_off_indicator == 0 and complex_cadence != False):
             #Using read_dat function to read the .dat file
-            #and create the pandas hit table for off sources
-            off_table_i = read_dat(dat_file)
-            nhits = len(off_table_i)
+            #and create the pandas hit table for OFF sources
+            off_table_ii = read_dat(dat_file)
+            nhits = len(off_table_ii)
             print('Loaded %i hits from %s (OFF)'%(nhits, dat_file))
             if nhits > 0:
-                off_table_i['status'] = 'off_table_%i'%off_count
+                off_table_ii['status'] = 'off_table_{}'.format(off_count)
                 #Grouping all of the off hits into one table
-                off_table_list.append(off_table_i)
-                off_count+=1
+                off_table_list.append(off_table_ii)
+                off_count += 1
 
-        #if on
         else:
             #Using read_dat function to read the .dat file
-            #and create the pandas hit table for on sources
-            on_table_i = read_dat(dat_file)
-            nhits = len(on_table_i)
+            #and create the pandas hit table for ON sources
+            on_table_ii = read_dat(dat_file)
+            nhits = len(on_table_ii)
             print('Loaded %i hits from %s (ON)'%(nhits, dat_file))
             if nhits > 0:
-                on_table_i['status'] = 'on_table_%i'%on_count
+                on_table_ii['status'] = 'on_table_{}'.format(on_count)
                 #Grouping all of the on hits into one table
-                on_table_list.append(on_table_i)
-                on_count+=1
+                on_table_list.append(on_table_ii)
+                on_count += 1
 
     #If there are no hits on any on target, return to caller
     if len(on_table_list) < 1:
@@ -359,8 +384,9 @@ def find_events(dat_file_list, SNR_cut=10, check_zero_drift=False, filter_thresh
 
     #Obtain the start times for each hit in the first on table
     ref_time = float(on_table[on_table['status'] == 'on_table_1']['MJD'].unique()[0])
+
     #Calculating and saving delta_t, in seconds, to follow a given hit from
-    #the first on table to see if it appears in the following on tables
+    #the first ON table to see if it appears in subsequent ON tables
     on_table['delta_t'] = on_table['MJD'].apply(lambda x:
         (float(x) - ref_time)*3600*24)
 
@@ -435,26 +461,29 @@ def find_events(dat_file_list, SNR_cut=10, check_zero_drift=False, filter_thresh
     #are present in ALL on observations
 
     for i in range(1, number_of_ons + 1):
-        on_but_not_off_table_list.append(not_in_off_table[not_in_off_table['status'] == 'on_table_%i'%i])
+        on_but_not_off_table_list.append(not_in_off_table[not_in_off_table['status'] == 'on_table_{}'.format(i)])
     empty_counter = 0
     for hit_list in on_but_not_off_table_list:
         if hit_list.empty is True:
             empty_counter += 1
     if empty_counter == 0:
-        first_on = on_but_not_off_table_list[0]#
+        first_on = on_but_not_off_table_list[0]
+
+
         def hit_func(hit):
             """
-
+            Embedded hit_func()
             Args:
               hit:
 
             Returns:
-
+                counter, int
             """
-            val = 0
-            for i in range(1, len(on_but_not_off_table_list)):
-                val += follow_event(hit, on_but_not_off_table_list[i])
-            return val
+            counter = 0
+            for ii in range(1, len(on_but_not_off_table_list)):
+                counter += follow_event(hit, on_but_not_off_table_list[ii])
+            return counter
+
 
         first_on['in_n_ons'] = first_on.apply(hit_func, axis=1)
         in_all_ons_table = first_on[first_on['in_n_ons'] == number_of_ons - 1]
@@ -462,11 +491,14 @@ def find_events(dat_file_list, SNR_cut=10, check_zero_drift=False, filter_thresh
         #Create list of events.
         filter_3_event_list = []
 
+        # Create an event table of unique entries.
+        singularities = []
         for hit_index, hit in in_all_ons_table.iterrows():
             for table in on_but_not_off_table_list:
-                temp_table = follow_event(hit,table,get_count=False)
+                temp_table = follow_event(hit, table, get_count=False)
                 temp_table['Hit_ID'] = hit['Source']+'_'+str(hit_index)
-                filter_3_event_list += [temp_table]
+                if not_yet_seen(singularities, temp_table.iloc[0]['TopHitNum']):
+                    filter_3_event_list += [temp_table]
 
     else:
         print('NOTE: At least one of the on tables is empty - no events across this cadence :(')
@@ -475,10 +507,11 @@ def find_events(dat_file_list, SNR_cut=10, check_zero_drift=False, filter_thresh
 
     if len(in_all_ons_table) > 0:
         best_events_table = pd.concat(filter_3_event_list)
-        print('Found a total of %i events across this cadence!'%(int(len(best_events_table)/3)))
+        print('Found a total of {} events across this cadence!'.format(len(best_events_table)))
         end_search(t0)
         return best_events_table
 
     print('NOTE: Found no events across this cadence :(')
     end_search(t0)
     return None
+

@@ -36,8 +36,8 @@ $ conda install pip
 
 Now let's install the required packages:
 ```
-$ ~/.conda/envs/turboseti/bin/pip install -U blimpy      # <--- used by turbo_seti for Filterbank file access
-$ ~/.conda/envs/turboseti/bin/pip install -U turbo_seti  # <--- the latest stable turbo_seti
+$ python3 -m pip install -U blimpy      # <--- used by turbo_seti for Filterbank file access
+$ python3 -m pip install -U turbo_seti  # <--- the latest stable turbo_seti
 ```
 
 If you are trying out a new experimental version of turbo_seti, then the turbo_seti install step is a little different.  For example,

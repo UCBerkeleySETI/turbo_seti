@@ -42,7 +42,7 @@ $ python3 -m pip install -U turbo_seti  # <--- the latest stable turbo_seti
 
 If you are trying out a new experimental version of turbo_seti, then the turbo_seti install step is a little different.  For example,
 ```
-$ ~/.conda/envs/turboseti/bin/pip install -U git+https://github.com/texadactyl/turbo_seti
+$ python3 -m pip install -U git+https://github.com/texadactyl/turbo_seti
 ```
 
 Now we need to install into the turboseti environment as an IPython kernel, so we can use it in Jupyter:

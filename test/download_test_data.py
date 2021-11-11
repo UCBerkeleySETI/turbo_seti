@@ -2,6 +2,7 @@ import os
 import sys
 
 import h5py
+import hdf5plugin
 
 HERE = os.path.split(os.path.abspath(__file__))[0]
 MIN_SIZE = 40000000

@@ -36,10 +36,13 @@ $ conda install pip
 
 Now let's install the required packages:
 ```
-$ ~/.conda/envs/turboseti/bin/pip install git+https://github.com/UCBerkeleySETI/blimpy
-~/.conda/envs/turboseti/bin/pip is the location of your pip. This may be different depending on your configuration.
-blimpy is the file I/O for BL SETI. It will automatically gather all required packages for turboseti
-$ ~/.conda/envs/turboseti/bin/pip install git+https://github.com/UCBerkeleySETI/turboseti
+$ ~/.conda/envs/turboseti/bin/pip install -U blimpy      # <--- used by turbo_seti for Filterbank file access
+$ ~/.conda/envs/turboseti/bin/pip install -U turbo_seti  # <--- the latest stable turbo_seti
+```
+
+If you are trying out a new experimental version of turbo_seti, then the turbo_seti install step is a little different.  For example,
+```
+$ ~/.conda/envs/turboseti/bin/pip install -U git+https://github.com/texadactyl/turbo_seti
 ```
 
 Now we need to install into the turboseti environment as an IPython kernel, so we can use it in Jupyter:

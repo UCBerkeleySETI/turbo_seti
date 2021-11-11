@@ -143,6 +143,7 @@ def generate_fil_file(outpath, flag_fascending, flag_sign_drift_rate):
 
     # Save the frame as a filterbank file.
     frame.save_fil(filename=outpath)
+    print("generate_fil_file: generated {}".format(outpath))
     del frame
 
 

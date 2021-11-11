@@ -30,6 +30,8 @@ TESTDIR = gettempdir() + '/pipeline_testing/'
 PATH_DAT_LIST_FILE = TESTDIR + 'dat_files.lst'
 PATH_H5_LIST_FILE = TESTDIR + 'h5_files.lst'
 PATH_CSVF = TESTDIR + 'found_event_table.csv'
+FILTER_THRESHOLD = 3
+N_EVENTS = 2
 
 URL_DIR = 'http://blpd14.ssl.berkeley.edu/voyager_2020/single_coarse_channel/'
 H5_FILE_LIST = ['single_coarse_guppi_59046_80036_DIAG_VOYAGER-1_0011.rawspec.0000.h5',
@@ -126,7 +128,7 @@ def make_all_dat_files():
             file_handle.write('{}\n'.format(TESTDIR + filename_dat))
 
 
-def find_plot_pipelines(need_init=True, filter_threshold=3):
+def find_plot_pipelines(need_init=True, filter_threshold=FILTER_THRESHOLD):
     r'''
     Exercise find_event_pipeline() and plot_event_pipeline()
     '''
@@ -139,9 +141,8 @@ def find_plot_pipelines(need_init=True, filter_threshold=3):
         initialize()
         for filename_h5 in H5_FILE_LIST:
             wgetter(filename_h5)
-
-    # Make all of the DAT files.
-    make_all_dat_files()
+        # Make all of the DAT files.
+        make_all_dat_files()
 
     print('find_plot_pipelines: Filter threshold = ', filter_threshold)
     number_in_cadence = len(H5_FILE_LIST)
@@ -163,7 +164,7 @@ def find_plot_pipelines(need_init=True, filter_threshold=3):
 
     # An event CSV was created.
     # Validate the hit table file.
-    utl.validate_hittbl(df_event, PATH_CSVF, 'test_pipe_lines')
+    utl.validate_hittbl(df_event, PATH_CSVF, 'test_pipe_lines', N_EVENTS)
 
     # Make a list of the HDF5 files.
     print('find_plot_pipelines: making a list of HDF5 files in ({}) ...'
@@ -189,9 +190,9 @@ def find_plot_pipelines(need_init=True, filter_threshold=3):
                 raise ValueError('find_plot_pipelines: File {} is not a PNG file'
                                  .format(cur_file))
             npngs += 1
-    if npngs != 6:
-        raise ValueError('find_plot_pipelines: Expected to find 6 PNG files but observed {}'
-                         .format(npngs))
+    if npngs != N_EVENTS:
+        raise ValueError('find_plot_pipelines: Expected to find {} PNG files but observed {}'
+                         .format(N_EVENTS, npngs))
 
     # Stop the clock - we're done.
     main_time_stop = time()
@@ -201,20 +202,16 @@ def find_plot_pipelines(need_init=True, filter_threshold=3):
 
 
 @pytest.mark.order(1)
-def test_pipelines(need_init=True, cleanup=False):
+def test_pipelines(need_init=True):
     r'''
     This is the pytest entry point.
     Test filter threshold 3 in find_plot_pipelines().
     By default (pytest):
     * Initialization is done only once.
-    * Cleanup is not performed at end.
     '''
     print('\n===== test_pipelines_1: BEGIN =====')
 
-    find_plot_pipelines(need_init=need_init, filter_threshold=3)
-
-    if cleanup:
-        rmtree(TESTDIR, ignore_errors=True)
+    find_plot_pipelines(need_init=need_init, filter_threshold=FILTER_THRESHOLD)
 
     print('\n===== test_pipelines_1: END =====')
 
@@ -223,15 +220,15 @@ def main(args=None):
     r'''Main Function Entry Point'''
     pobj = ArgumentParser(description='Test find|plot pipelines.')
     pobj.add_argument('-i', '--initialize', dest='flag_init', type=str,
-                   help='Initialize/download? (y/n) - no default')
-    pobj.add_argument('-c', '--cleanup', dest='flag_cleanup', type=str,
-                   help='Cleanup afterwards? (y/n) - no default')
+                      default="y",
+                      help='Initialize/download? (y/n).  Default: y')
+
     if args is None:
         args = pobj.parse_args()
     else:
         args = pobj.parse_args(args)
-    test_pipelines(need_init=(args.flag_init == 'y'),
-                   cleanup=(args.flag_cleanup == 'n'))
+
+    test_pipelines(need_init=(args.flag_init == 'y'))
 
 
 if __name__ == '__main__':

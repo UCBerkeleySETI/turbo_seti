@@ -23,6 +23,7 @@ PLOTDIR = TESTDIR + 'plots/'
 PATH_DAT_LIST_FILE = TESTDIR + 'dat_files_2.lst'
 PATH_H5_LIST_FILE = TESTDIR + 'h5_files_2.lst'
 PATH_CSVF = TESTDIR + 'found_event_table_2.csv'
+N_EVENTS = 2
 
 
 def oops(arg_text):
@@ -98,7 +99,7 @@ def find_plot_pipelines(filter_threshold=3,
 
     # An event CSV was created.
     # Validate the hit table file.
-    utl.validate_hittbl(df_event, PATH_CSVF, 'test_pipe_lines_2')
+    utl.validate_hittbl(df_event, PATH_CSVF, 'test_pipe_lines_2', N_EVENTS)
 
     # Do the plots for all of the HDF5/DAT file pairs.
     print('===== plot_event_pipeline #1 (plot_dir does not yet exist) BEGIN =====')
@@ -125,7 +126,7 @@ def find_plot_pipelines(filter_threshold=3,
                 raise ValueError('find_plot_pipelines_2: File {} is not a PNG file'
                                  .format(cur_file))
             npngs += 1
-    if npngs != 6:
+    if npngs != N_EVENTS:
         raise ValueError('find_plot_pipelines_2: Expected to find 6 PNG files but observed {}'
                          .format(npngs))
 

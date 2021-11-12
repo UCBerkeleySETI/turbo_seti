@@ -14,19 +14,9 @@ Contained herein are two tutorials that display both methods:
 * ```tutorial_1.ipynb``` - The simplest approach for searching and analyzing candidate events.  This is the recommended approach for most scientific work.
 * ```tutorial_2.ipynb``` - Functionally equivalent to the first tutorial and exposes details of the event pipeline functions after the search completes.  This is a bit more complex model for use on a daily basis.
 
-Both tutorials require the execution of an initialization notebook before using them: ```initialise.ipynb```.  This will download a set of 6 Voyager 2020 HDF5 files into a directory called "turboseti" under the user's home directory.
+Both tutorials require the execution of an initialization notebook before using them: ```initialise.ipynb```.  This will download a set of 6 Voyager 2020 HDF5 files into a directory called "turbo_seti_data" under the user's home directory.
 
-After the files are downloaded, install the latest version of turbo_seti, in one of two ways:
-
-1) The methodology described in the README.md on the front page of this Github site.  This could be a direct install, inside a ```Docker``` image, or as part of a ```venv``` virtual machine.
-
-2) As part of a ```conda``` environment created following an Anaconda/Miniconda installation.
-
-If you followed installation method #1, you are ready to execute either tutorial.
-
-If you intend to follow installation method #2, then the remainder of this README.md describes how to create a new ```conda``` environment and add it to a Jupyter Notebook.
-
-First we'll need to set up an anaconda environment by running the following commands in the bash terminal (or Windows equivalent):
+After the files are downloaded, we'll need to set up a conda environment by running the following commands in the bash terminal (or Windows equivalent):
 ```
 $ conda deactivate
 $ conda create -n turboseti # The string "turboseti" after -n is arbitrary.  The name of your environment can be any of your choosing.
@@ -40,8 +30,7 @@ $ python3 -m pip install -U blimpy      # <--- used by turbo_seti for Filterbank
 $ python3 -m pip install -U turbo_seti  # <--- the latest stable turbo_seti
 ```
 
-If you are trying out a new experimental version of turbo_seti, then the turbo_seti install step is a little different.
-For example,
+If you are trying out a new experimental version of turbo_seti, then the turbo_seti install step is a little different.  For example,
 ```
 $ python3 -m pip install -U git+https://github.com/texadactyl/turbo_seti
 ```

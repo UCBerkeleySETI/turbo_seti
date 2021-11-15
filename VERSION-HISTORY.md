@@ -4,7 +4,7 @@ This file is a version history of turbo_seti amendments, beginning with version 
 
 | `YYYY_MM_DD` | `Version` | `Contents` |
 | :--: | :--: | :-- |
-| 2021-11-10 | 2.1.17 | Fix to find_event.py. (issue #283) |
+| 2021-11-10 | 2.1.17 | Fix to find_event.py which was generating too many events & plots. (issue #283) |
 | 2021-10-28 | 2.1.16 | Print a 3x3 data postage stamp when loading data for coarse channel 0 only. (issue #280) |
 | 2021-10-23 | 2.1.15 | Print a 3x3 data postage stamp when loading data. (issue #280) |
 | 2021-10-22 | 2.1.14 | Support new metadata field, NFPC. (issue #278). |

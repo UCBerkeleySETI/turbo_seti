@@ -114,17 +114,17 @@ def test_find_event():
 
     subtest_calc_freq_range()
     
-    # Assert that 3 hits are in tables 1, 3, and 5 - 9 events.
+    # Assert that 3 hits are in tables 1, 3, and 5 but only 3 events.
     evt_table = find_events(dat_file_list, SNR_cut=10, check_zero_drift=False, 
                             filter_threshold=3, on_off_first='ON', complex_cadence=False)
     print("evt_table:", evt_table)
-    assert len(evt_table) == 9
+    assert len(evt_table) == 3
 
-    # Using the SNR threshold, weed out all but hit 2 in tables 1, 3, and 5 - 3 events.
+    # Using the SNR threshold, weed out all but hit 2 in tables 1, 3, and 5 but only 1 event.
     evt_table = find_events(dat_file_list, SNR_cut=200, check_zero_drift=False, 
                             filter_threshold=3, on_off_first='ON', complex_cadence=False)
     print("evt_table:", evt_table)
-    assert len(evt_table) == 3
+    assert len(evt_table) == 1
 
     # Drop filter threshold to 2.  Drop SNR back to 10.
     # Hit 4 in table 1 should be added as a 10th event.

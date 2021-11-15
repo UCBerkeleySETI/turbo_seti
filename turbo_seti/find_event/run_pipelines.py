@@ -33,7 +33,7 @@ HELP_EPILOGUE = \
 """
 Top Hit Filtering (--filter_threshold)
 --------------------------------------
-1 : Select all top hits from the DAT file as events.
+1 : Select all top hits from the DAT files.
 2 : Select only those top hits that are in at least one ON file AND not in any OFF files.
 3 : Select only those top hits that are in all ON files AND not in any OFF files.
 Default: 2.

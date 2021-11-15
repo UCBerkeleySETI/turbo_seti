@@ -1,4 +1,18 @@
-#!/usr/bin/env python
+"""
+turbo_seti doppler search module
+================================
+
+This module is deeply dependent on classes and functions in data_handler.py.
+
+Main class: FindDoppler
+
+Independent functions:
+    search_coarse_channel - for a given coarse channel, doppler search.
+    load_the_data - loads everything needed by search_coarse_channel.
+    populate_tree - populate "tree_findoppler" used by several functions.
+    hitsearch - Searches for hits at given drift rate.
+    tophitsearch - Searches for hits with largest SNR within 2*tsteps fine frequency channels.
+"""
 
 import os
 import time
@@ -319,9 +333,8 @@ def search_coarse_channel(cchan_dict, fd, dataloader=None, logwriter=None, filew
     else:
         datah5_obj, spectra, drift_indices = load_the_data(cchan_dict, fd.kernels.precision)
     if this_coarse_channel == 0:
-        logger.info("Spectra 3x3 postage stamp (0, 0, 0:3): {}".format(spectra[0, 0:3]))
-        logger.info("::::::::::::::::::::::::: (1, 0, 0:3): {}".format(spectra[1, 0:3]))
-        logger.info("::::::::::::::::::::::::: (2, 0, 0:3): {}".format(spectra[2, 0:3]))
+        logger.info("Spectra 0 1st 3 values: {}".format(spectra[0, 0:3]))
+        logger.info("Spectra 1 1st 3 values: : {}".format(spectra[1, 0:3]))
 
     fileroot_out = fd.data_handle.filename.split('/')[-1].replace('.h5', '').replace('.fits', '').replace('.fil', '')
     if logwriter is None:

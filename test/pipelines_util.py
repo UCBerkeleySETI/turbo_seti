@@ -4,17 +4,16 @@ import numpy as np
 import pandas as pd
 
 
-EXP_SOURCE = ['VOYAGER-1'] * 6
-EXP_TOPHITNUM = [1, 1, 1, 2, 2, 2]
-EXP_STATUS = ['on_table_1', 'on_table_2', 'on_table_3',
-              'on_table_1', 'on_table_2', 'on_table_3']
-EXP_CHANINDX = [651879, 651964, 652058, 659989, 660074, 660166]
-SNR_LOW = np.array([21.0, 10.0, 17.0, 185.0, 78.0, 140.0])
-SNR_HIGH = np.array([24.0, 12.0, 20.0, 199.0, 85.0, 148.0])
+EXP_SOURCE = ['VOYAGER-1'] * 2
+EXP_TOPHITNUM = [1, 2]
+EXP_STATUS = ['on_table_1', 'on_table_1']
+EXP_CHANINDX = [651879, 659989]
+SNR_LOW = np.array([21.0, 192.0])
+SNR_HIGH = np.array([24.0, 194.0])
 CSV_DELIM = ','
 
 
-def validate_hittbl(arg_pd_df, arg_csvf, arg_caller):
+def validate_hittbl(arg_pd_df, arg_csvf, arg_caller, arg_n_events):
     r'''
     Read in the CSV file into a raw Pandas DataFrame.
     Check that specific columns have the expected values:
@@ -25,9 +24,9 @@ def validate_hittbl(arg_pd_df, arg_csvf, arg_caller):
     df = pd.read_csv(arg_csvf, sep=CSV_DELIM)
     #df.drop('Unnamed: 0')
     nrows = len(df)
-    if nrows != 6:
-        raise ValueError('validate_csvf: Expected 6 rows but observed {} rows'
-                         .format(nrows))
+    if nrows != arg_n_events:
+        raise ValueError('validate_csvf: Expected {} rows but observed {} rows'
+                         .format(arg_n_events, nrows))
 
     csv_source = df['Source'].tolist()
     csv_tophitnum = df['TopHitNum'].tolist()

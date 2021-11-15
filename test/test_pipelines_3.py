@@ -12,6 +12,7 @@ from turbo_seti.find_event.find_event_pipeline import find_event_pipeline
 from fb_cases_util import generate_fil_file, make_one_dat_file
 import pipelines_util as utl
 
+N_EVENTS = 2
 TESTDIR = gettempdir() + '/pipeline_testing/'
 PATH_CSVF = TESTDIR + 'found_event_table_3.csv'
 CSV_DELIM = ','
@@ -102,7 +103,7 @@ def test_pipeline_same_source():
 
     # An event CSV was created.
     # Validate the hit table file.
-    utl.validate_hittbl(df_event, PATH_CSVF, 'test_pipeline_same_source')
+    utl.validate_hittbl(df_event, PATH_CSVF, 'test_pipeline_same_source', N_EVENTS)
     print('\n===== test_pipeline_same_source: END =====')
  
 
@@ -163,7 +164,7 @@ def try_mixed(arg_list, init_needed=True):
 
     # An event CSV was created.
     # Validate the hit table file.
-    utl.validate_hittbl(df_event, PATH_CSVF, 'test_pipeline_mixed')
+    utl.validate_hittbl(df_event, PATH_CSVF, 'test_pipeline_mixed', N_EVENTS)
 
     print('\n===== try_mixed: END =====')
 
@@ -181,4 +182,4 @@ def test_pipeline_mixed(init_needed=True):
 if __name__ == '__main__':
     test_pipeline_same_source()
     test_pipeline_wrong_source()
-    test_pipeline_mixed(init_needed=False)
+    test_pipeline_mixed(init_needed=True)

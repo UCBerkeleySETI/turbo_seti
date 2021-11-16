@@ -334,7 +334,7 @@ def search_coarse_channel(cchan_dict, fd, dataloader=None, logwriter=None, filew
         datah5_obj, spectra, drift_indices = load_the_data(cchan_dict, fd.kernels.precision)
     if this_coarse_channel == 0:
         logger.info("Spectra 0 1st 3 values: {}".format(spectra[0, 0:3]))
-        logger.info("Spectra 1 1st 3 values: : {}".format(spectra[1, 0:3]))
+        logger.info("Spectra 1 1st 3 values: {}".format(spectra[1, 0:3]))
 
     fileroot_out = fd.data_handle.filename.split('/')[-1].replace('.h5', '').replace('.fits', '').replace('.fil', '')
     if logwriter is None:

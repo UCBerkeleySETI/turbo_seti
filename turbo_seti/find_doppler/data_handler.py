@@ -1,4 +1,6 @@
-#!/usr/bin/env python
+"""
+Filterbank data handler for the find_doppler.py functions.
+"""
 
 import os
 import math
@@ -64,12 +66,7 @@ class DATAHandle:
                     errmsg = 'Not a filterbank file: {}'.format(filename)
                     raise IOError(errmsg)
                 logger.info("Filterbank file detected. Attempting to create .h5 file in current directory...")
-                try:
-                    self.__make_h5_file()
-                except:
-                    self.status = False
-                    errmsg = 'Unable to create .h5 file from: {}'.format(filename)
-                    raise IOError(errmsg)
+                self.__make_h5_file()
 
             self.filestat = os.stat(filename)
             self.filesize = self.filestat.st_size/(1024.0**2)
@@ -150,20 +147,27 @@ class DATAHandle:
         f_delt = wf.header['foff']
         f0 = wf.header['fch1']
 
-        # Determine the number of coarse channels.
-        if self.n_coarse_chan is None: # no specifictaion from user
-            if wf.header.get('nfpc', None) is not None: # nfpc is specified in file header
-                self.n_coarse_chan = wf.header['nfpc']  # Store it in the DATAHandle object.
-                if  self.n_coarse_chan < 1: # nfpc valid?
-                    errmsg = "header field NFPC must be > 0 but I saw {}.  Defaulting to blimpy!".format(self.n_coarse_chan)
+        # Determine the number of coarse channels: user, blimpy, of header nfpc field.
+        if self.n_coarse_chan is not None: # specifictaion from user
+            logger.info("From user, n_coarse_chan={}".format(self.n_coarse_chan))
+        else: # no specifictaion from user
+            self.nfpc = wf.header.get('nfpc', None) # Store nfpc value in the DATAHandle object.
+            if self.nfpc is not None: # nfpc is specified in file header
+                if self.nfpc < 1: # nfpc valid?
+                    errmsg = "Filterbank header field NFPC must be > 0 but I saw {}.  Defaulting to blimpy!" \
+                             .format(self.nfpc)
                     logger.warning(errmsg)
                     self.n_coarse_chan = int(wf.calc_n_coarse_chan())
-                else:  # nfpc is ok.  Use it to calculate the number of coarse channels.
-                    self.n_coarse_chan = int(0.01 + wf.header['nchans'] / wf.header['nfpc'])
-                    logger.info("nfpc={}, nchans={}, n_coarse_chan={}"
-                                .format(wf.header['nfpc'], wf.header['nchans'], self.n_coarse_chan))
-            else: # nfpc is NOT in the file header.
+                    logger.info("From blimpy, n_coarse_chan={}"
+                                .format(self.n_coarse_chan))
+                else:  # nfpc is valid.  Use it to calculate the number of coarse channels.
+                    self.n_coarse_chan = int(0.01 + wf.header['nchans'] / self.nfpc)
+                    logger.info("From nfpc={}, n_fine_nchans={} and n_coarse_chan={}"
+                                .format(self.nfpc, wf.header['nchans'], self.n_coarse_chan))
+            else: # nfpc is NOT in the file header, not specified by user.
                 self.n_coarse_chan = int(wf.calc_n_coarse_chan())
+                logger.info("From blimpy, n_coarse_chan={}"
+                            .format(self.n_coarse_chan))
 
         # Only load coarse chans of interest -- or do all if not specified
         if self.coarse_chans in (None, ''):

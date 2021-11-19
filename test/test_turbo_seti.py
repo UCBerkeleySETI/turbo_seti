@@ -264,13 +264,6 @@ def test_data_handler(kernels):
     with pytest.raises(IOError):
         data_handler.DATAHandle(filename=os.path.abspath(__file__), kernels=kernels)
     filename_fil = os.path.join(TESTDIR, VOYAFIL)
-    with pytest.raises(IOError):
-        out_dir = os.path.join(tempfile.mkdtemp()) + '/NO/SUCH/DIRECTORY'
-        dh = data_handler.DATAHandle(filename=filename_fil,
-                                     out_dir=out_dir,
-                                     n_coarse_chan=42,
-                                     coarse_chans=None,
-                                     kernels=kernels)
     dh = data_handler.DATAHandle(filename=filename_fil,
                                  out_dir=os.path.join(tempfile.mkdtemp()),
                                  n_coarse_chan=42,

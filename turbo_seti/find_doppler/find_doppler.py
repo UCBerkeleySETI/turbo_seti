@@ -605,13 +605,29 @@ def hitsearch(fd, spectrum, specstart, specend, snr_thresh, drift_rate, header,
               tdwidth, max_val, reverse,
               the_median, the_stddev):
     r"""
-    Searches for hits at given drift rate. A hit occurs in each channel if > hitthresh.
+    Searches for hits that exceed the given SNR threshold. 
+
+    Note that the "max" arrays share the index values as any given spectrum.
+    They represent maximums with respect to the frequency columns.
+
+    Let S be the subspectrum given by spectrum[specstart:specend].
+    Set hit-counter to 0.
+    For each element of S,
+        Subtract the given median and divide that result by the given standard deviation,
+           giving the new element value.
+        if the element value > snr_thresh then
+            Increment hit-counter
+            If element value > current max SNR using the common index then 
+                Set the current max SNR at the common index = this element.
+                Set the current max drift rate at the common index  = drift rate of this element.
+    Increment the grand total of hits by the hit-counter.
 
     Parameters
     ----------
     fd : FindDoppler
         Instance of FindDoppler class.
     spectrum : ndarray
+        Array of data values along the frequency axis of length = FFT length.
     specstart : int
         First index to search for hit in spectrum.
     specend : int
@@ -623,8 +639,10 @@ def hitsearch(fd, spectrum, specstart, specend, snr_thresh, drift_rate, header,
     header : dict
         Header in fits header format. See data_handler.py's DATAH5 class header.
     tdwidth : int
+        FFT Length = # fine channels / # coarse channels.
     max_val : max_vals
         Object to be filled with max values from this search and then returned.
+        Length of each subarray = FFT length.
     reverse : int
         Used to flag whether fine channel should be reversed.
 

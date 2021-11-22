@@ -40,14 +40,13 @@ version_announcements = '\nturbo_seti version {}\nblimpy version {}\nh5py versio
 class max_vals:
     r"""
     Class used to initialize some maximums.
-
     """
     def __init__(self):
-        self.maxsnr = None
-        self.maxdrift = None
-        self.maxsmooth = None
-        self.maxid = None
-        self.total_n_hits = None
+        # For each index value of the FFT length:
+        self.maxsnr = None        # Signal with the maximum SNR
+        self.maxdrift = None      # Drift rate of signal
+        # This is an array of ONE element:
+        self.total_n_hits = None  # Accumulated total number of hits.
 
 
 class FindDoppler:
@@ -405,10 +404,6 @@ def search_coarse_channel(cchan_dict, fd, dataloader=None, logwriter=None, filew
         max_val.maxsnr = fd.kernels.xp.zeros(tdwidth, dtype=fd.kernels.float_type)
     if max_val.maxdrift is None:
         max_val.maxdrift = fd.kernels.xp.zeros(tdwidth, dtype=fd.kernels.float_type)
-    if max_val.maxsmooth is None:
-        max_val.maxsmooth = fd.kernels.xp.zeros(tdwidth, dtype=fd.kernels.xp.uint8)
-    if max_val.maxid is None:
-        max_val.maxid = fd.kernels.xp.zeros(tdwidth, dtype=fd.kernels.xp.uint32)
     if max_val.total_n_hits is None:
         max_val.total_n_hits = fd.kernels.xp.zeros(1, dtype=fd.kernels.xp.uint32)
 
@@ -493,7 +488,7 @@ def search_coarse_channel(cchan_dict, fd, dataloader=None, logwriter=None, filew
                 spectrum = spectrum[::-1]
 
                 hitsearch(fd, spectrum, specstart, specend, fd.snr, drift_rate, datah5_obj.header,
-                          tdwidth, max_val, 0, the_median, the_stddev)
+                          tdwidth, max_val, the_median, the_stddev)
 
         # ----------------------------------------------------------------------
         # Positive drift rates search.
@@ -524,19 +519,20 @@ def search_coarse_channel(cchan_dict, fd, dataloader=None, logwriter=None, filew
                 spectrum = tree_findoppler[indx: indx + tdwidth]
 
                 hitsearch(fd, spectrum, specstart, specend, fd.snr, drift_rate, datah5_obj.header,
-                          tdwidth, max_val, 0, the_median, the_stddev)
+                          tdwidth, max_val, the_median, the_stddev)
 
     # Writing the top hits to file.
     logger.debug('END looping over drift_rate_nblock.')
-    filewriter = tophitsearch(fd, tree_findoppler_original, max_val, tsteps, datah5_obj.header, tdwidth,
-                              fftlen, fd.min_drift, fd.max_drift, datah5_obj.header['obs_length'],
-                              logwriter=logwriter, filewriter=filewriter, obs_info=fd.obs_info)
+    tophitsearch(fd, tree_findoppler_original, max_val, tsteps, datah5_obj.header, tdwidth,
+                 fftlen, fd.min_drift, fd.max_drift, datah5_obj.header['obs_length'],
+                 logwriter=logwriter, filewriter=filewriter, obs_info=fd.obs_info)
 
     logger.debug("Total number of candidates for coarse channel " +
                 str(datah5_obj.header['cchan_id']) + " is: %i" % max_val.total_n_hits)
     filewriter.close()
     logwriter.close()
-    return True
+
+    return True ## NEEDED for dask
 
 
 def populate_tree(fd, spectra, tree_findoppler, nframes, tdwidth, tsteps, fftlen,
@@ -602,10 +598,9 @@ def populate_tree(fd, spectra, tree_findoppler, nframes, tdwidth, tsteps, fftlen
 
 
 def hitsearch(fd, spectrum, specstart, specend, snr_thresh, drift_rate, header,
-              tdwidth, max_val, reverse,
-              the_median, the_stddev):
+              tdwidth, max_val, the_median, the_stddev):
     r"""
-    Searches for hits that exceed the given SNR threshold. 
+    Searches for hits that exceed the given SNR threshold.
 
     Note that the "max" arrays share the index values as any given spectrum.
     They represent maximums with respect to the frequency columns in the range (0, FFT length).
@@ -617,7 +612,7 @@ def hitsearch(fd, spectrum, specstart, specend, snr_thresh, drift_rate, header,
            giving the new element value.
         if the element value > snr_thresh then
             Increment hit-counter
-            If element value > current max SNR using the common index then 
+            If element value > current max SNR using the common index then
                 Set the current max SNR at the common index = this element.
                 Set the current max drift rate at the common index  = drift rate of this element.
     Increment the grand total of hits by the hit-counter.
@@ -643,8 +638,6 @@ def hitsearch(fd, spectrum, specstart, specend, snr_thresh, drift_rate, header,
     max_val : max_vals
         Object to be filled with max values from this search and then returned.
         Length of each subarray = FFT length.
-    reverse : int
-        Used to flag whether fine channel should be reversed.
 
     """
     global logger
@@ -674,20 +667,18 @@ def hitsearch(fd, spectrum, specstart, specend, snr_thresh, drift_rate, header,
         # We offset each index value returned by np.nonzero()[0] by specstart
         # in order to use the returned index set on the original spectrum array.
         for i in (spectrum[specstart:specend] > snr_thresh).nonzero()[0] + specstart:
-            k = (tdwidth - 1 - i) if reverse else i
 
             if logger.level == logging.DEBUG:
-                info_str = 'Hit found at SNR %f! %s\t' % (spectrum[i], '(reverse)' if reverse else '')
+                info_str = 'Hit found at SNR %f!\t' % (spectrum[i])
                 info_str += 'Spectrum index: %d, Drift rate: %f\t' % (i, drift_rate)
-                info_str += 'Uncorrected frequency: %f\t' % chan_freq(header, k, tdwidth, 0)
-                info_str += 'Corrected frequency: %f' % chan_freq(header, k, tdwidth, 1)
+                info_str += 'Uncorrected frequency: %f\t' % chan_freq(header, i, tdwidth, 0)
+                info_str += 'Corrected frequency: %f' % chan_freq(header, i, tdwidth, 1)
                 logger.debug(info_str)
 
             hits += 1
-            if spectrum[i] > max_val.maxsnr[k]:
-                max_val.maxsnr[k] = spectrum[i]
-                max_val.maxdrift[k] = drift_rate
-                max_val.maxid[k] = hits
+            if spectrum[i] > max_val.maxsnr[i]:
+                max_val.maxsnr[i] = spectrum[i]
+                max_val.maxdrift[i] = drift_rate
 
         max_val.total_n_hits[0] += hits
 
@@ -759,5 +750,3 @@ def tophitsearch(fd, tree_findoppler_original, max_val, tsteps, header, tdwidth,
                                                   max_val.total_n_hits[0], obs_info=obs_info)
         else:
             logger.error('No filewriter available in tophitsearch.')
-
-    return filewriter

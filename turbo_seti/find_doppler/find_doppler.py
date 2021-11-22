@@ -608,7 +608,7 @@ def hitsearch(fd, spectrum, specstart, specend, snr_thresh, drift_rate, header,
     Searches for hits that exceed the given SNR threshold. 
 
     Note that the "max" arrays share the index values as any given spectrum.
-    They represent maximums with respect to the frequency columns.
+    They represent maximums with respect to the frequency columns in the range (0, FFT length).
 
     Let S be the subspectrum given by spectrum[specstart:specend].
     Set hit-counter to 0.

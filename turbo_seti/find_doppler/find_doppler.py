@@ -669,6 +669,10 @@ def hitsearch(fd, spectrum, specstart, specend, snr_thresh, drift_rate, header,
         spectrum /= the_stddev
 
         hits = 0
+
+        # Loop for all spectrum elements that exceed the given SNR threshold.
+        # We offset each index value returned by np.nonzero()[0] by specstart
+        # in order to use the returned index set on the original spectrum array.
         for i in (spectrum[specstart:specend] > snr_thresh).nonzero()[0] + specstart:
             k = (tdwidth - 1 - i) if reverse else i
 

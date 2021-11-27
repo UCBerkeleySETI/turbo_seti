@@ -144,8 +144,8 @@ class FindDoppler:
                         .format(flagging, self.n_coarse_chan, kernels, gpu_id, gpu_backend, blank_dc) \
                     + ', precision={}, append_output={}, log_level_int={}, obs_info={}' \
                         .format(precision, append_output, log_level_int, obs_info)
-        if min_drift < 0 or max_drift < 0:
-            raise ValueError('Both min_drift({}) and max_drift({}) must be nonnegative'
+        if (min_drift < 0) or (max_drift < 0) or (min_drift > max_drift):
+            raise ValueError("Both min_drift({}) and max_drift({}) must be nonnegative.\nAlso, min_drift must be < max_drift"
                              .format(min_drift, max_drift))
 
 
@@ -487,8 +487,10 @@ def search_coarse_channel(cchan_dict, fd, dataloader=None, logwriter=None, filew
                 # Reverse spectrum back
                 spectrum = spectrum[::-1]
 
-                hitsearch(fd, spectrum, specstart, specend, fd.snr, drift_rate, datah5_obj.header,
-                          tdwidth, max_val, the_median, the_stddev)
+                if abs(drift_rate) > fd.min_drift:
+                    hitsearch(fd, spectrum, specstart, specend, fd.snr, 
+                              drift_rate, datah5_obj.header,
+                              tdwidth, max_val, the_median, the_stddev)
 
         # ----------------------------------------------------------------------
         # Positive drift rates search.
@@ -518,13 +520,15 @@ def search_coarse_channel(cchan_dict, fd, dataloader=None, logwriter=None, filew
                 # SEARCH POSITIVE DRIFT RATES
                 spectrum = tree_findoppler[indx: indx + tdwidth]
 
-                hitsearch(fd, spectrum, specstart, specend, fd.snr, drift_rate, datah5_obj.header,
-                          tdwidth, max_val, the_median, the_stddev)
+                if abs(drift_rate) > fd.min_drift:
+                    hitsearch(fd, spectrum, specstart, specend, fd.snr, 
+                              drift_rate, datah5_obj.header,
+                              tdwidth, max_val, the_median, the_stddev)
 
     # Writing the top hits to file.
     logger.debug('END looping over drift_rate_nblock.')
     tophitsearch(fd, tree_findoppler_original, max_val, tsteps, datah5_obj.header, tdwidth,
-                 fftlen, fd.min_drift, fd.max_drift, datah5_obj.header['obs_length'],
+                 fftlen, fd.max_drift, datah5_obj.header['obs_length'],
                  logwriter=logwriter, filewriter=filewriter, obs_info=fd.obs_info)
 
     logger.debug("Total number of candidates for coarse channel " +
@@ -597,8 +601,8 @@ def populate_tree(fd, spectra, tree_findoppler, nframes, tdwidth, tsteps, fftlen
     return tree_findoppler
 
 
-def hitsearch(fd, spectrum, specstart, specend, snr_thresh, drift_rate, header,
-              tdwidth, max_val, the_median, the_stddev):
+def hitsearch(fd, spectrum, specstart, specend, snr_thresh, drift_rate,
+              header, tdwidth, max_val, the_median, the_stddev):
     r"""
     Searches for hits that exceed the given SNR threshold.
 
@@ -628,7 +632,7 @@ def hitsearch(fd, spectrum, specstart, specend, snr_thresh, drift_rate, header,
     specend : int
         Last index to search for hit in spectrum.
     snr_thresh : float
-        Signal to noise ratio used as threshold for determining hits.
+        Minimum signal to noise ratio for candidacy.
     drift_rate : float
         Drift rate at which we are searching for hits.
     header : dict
@@ -683,7 +687,7 @@ def hitsearch(fd, spectrum, specstart, specend, snr_thresh, drift_rate, header,
         max_val.total_n_hits[0] += hits
 
 def tophitsearch(fd, tree_findoppler_original, max_val, tsteps, header, tdwidth, fftlen,
-                 min_drift, max_drift, obs_length, logwriter=None, filewriter=None, obs_info=None):
+                 max_drift, obs_length, logwriter=None, filewriter=None, obs_info=None):
     r"""
     This finds the hits with largest SNR within 2*tsteps frequency channels.
 
@@ -700,10 +704,8 @@ def tophitsearch(fd, tree_findoppler_original, max_val, tsteps, header, tdwidth,
     tdwidth : int
     fftlen : int
         Length of fast fourier transform (fft) matrix
-    min_drift : float
-        Min drift rate in Hz/second
     max_drift : float
-        Max drift rate in Hz/second
+        Maximum drift rate in Hz/second
     obs_length : float,
     logwriter : LogWriter, optional
         Logwriter to which we should write if we find a top hit.
@@ -736,10 +738,6 @@ def tophitsearch(fd, tree_findoppler_original, max_val, tsteps, header, tdwidth,
             continue
 
         drate = max_val.maxdrift[i]
-        if abs(drate.item()) < min_drift:
-            logger.debug("drift rate %s is below min drift", drate.item())
-            continue
-
         info_str = "Top hit found! SNR {:f}, Drift Rate {:f}, index {}" \
                    .format(maxsnr[i], drate.item(), i)
         logger.info(info_str)

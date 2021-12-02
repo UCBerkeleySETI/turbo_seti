@@ -110,25 +110,34 @@ def test_find_event():
         TESTDIR + "dat5_hits.dat"              
     ]
 
+    h5_file_list = [
+        TESTDIR + "dat1_hits.h5",
+        TESTDIR + "dat2_off.h5",
+        TESTDIR + "dat3_hits.h5",
+        TESTDIR + "dat4_off.h5",
+        TESTDIR + "dat5_hits.h5"              
+    ]
+
     write_all_dat_files(dat_table_list, dat_file_list)
+    write_all_dat_files(dat_table_list, h5_file_list)
 
     subtest_calc_freq_range()
     
     # Assert that 3 hits are in tables 1, 3, and 5 but only 3 events.
-    evt_table = find_events(dat_file_list, SNR_cut=10, check_zero_drift=False, 
+    evt_table = find_events(dat_file_list, h5_file_list, SNR_cut=10, check_zero_drift=False, 
                             filter_threshold=3, on_off_first='ON', complex_cadence=False)
     print("evt_table:", evt_table)
     assert len(evt_table) == 3
 
     # Using the SNR threshold, weed out all but hit 2 in tables 1, 3, and 5 but only 1 event.
-    evt_table = find_events(dat_file_list, SNR_cut=200, check_zero_drift=False, 
+    evt_table = find_events(dat_file_list, h5_file_list, SNR_cut=200, check_zero_drift=False, 
                             filter_threshold=3, on_off_first='ON', complex_cadence=False)
     print("evt_table:", evt_table)
     assert len(evt_table) == 1
 
     # Drop filter threshold to 2.  Drop SNR back to 10.
     # Hit 4 in table 1 should be added as a 10th event.
-    evt_table = find_events(dat_file_list, SNR_cut=10, check_zero_drift=False, 
+    evt_table = find_events(dat_file_list, h5_file_list, SNR_cut=10, check_zero_drift=False, 
                             filter_threshold=2, on_off_first='ON', complex_cadence=False)
     print("evt_table:", evt_table)
     assert len(evt_table) == 10

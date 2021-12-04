@@ -24,4 +24,3 @@ exec
 htmlcov
 coverage.xml
 *profile.svg
-test/test_pipelines_5.py

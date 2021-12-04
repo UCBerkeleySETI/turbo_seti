@@ -40,7 +40,7 @@ class PathRecord:
         return repr((self.path_dat, self.tstart, self.source_name))
 
 
-def get_file_header(dat_path):
+def get_file_header(filepath_h5):
     r'''
     Extract and return the target's source name from the DAT file path.
 
@@ -53,14 +53,10 @@ def get_file_header(dat_path):
     -------
     header : Waterfall header object
 
-    Notes
-    -----
-    The HDF5 file is ASSUMED(!!) to be resident in the same directory of the DAT file.
-    The file name of the HDF5 file is identical to that of the DAT file
-    except for the file extension (.h5 instead of .dat).
+    
 
     '''
-    filepath_h5 = dat_path.replace('.dat', '.h5')
+    #filepath_h5 = dat_path.replace('.dat', '.h5')
     wf = Waterfall(filepath_h5, load_data=False)
     return wf.container.header
 
@@ -72,7 +68,7 @@ def close_enough(x, y):
     return False
 
 
-def find_event_pipeline(dat_file_list_str, SNR_cut=10, check_zero_drift=False, filter_threshold=3,
+def find_event_pipeline(dat_file_list_str,h5_file_list_str=None, SNR_cut=10, check_zero_drift=False, filter_threshold=3,
                         on_off_first='ON', number_in_cadence=6, on_source_complex_cadence=False,
                         saving=True, csv_name=None, user_validation=False,
                         sortby_tstart=True):
@@ -93,6 +89,18 @@ def find_event_pipeline(dat_file_list_str, SNR_cut=10, check_zero_drift=False, f
         cadence length is 2, maximum cadence length is
         unspecified (currently tested up to 6).
         Example: ABACAD|ABACAD|ABACAD
+    h5_file_list_str : str | None
+        The string name of a plaintext file ending in .lst
+        that contains the filenames of .h5 files, each on a
+        new line, that were created with seti_event.py. The
+        .lst should contain a set of cadences (ON observations
+        alternating with OFF observations). The cadence can be
+        of any length, given that the ON source is every other
+        file. This includes Breakthrough Listen standard ABACAD
+        as well as OFF first cadences like BACADA. Minimum
+        cadence length is 2, maximum cadence length is
+        unspecified (currently tested up to 6).
+
     SNR_cut : int
         The threshold SNR below which hits in the ON source
         will be disregarded. For the least strict thresholding,
@@ -146,6 +154,10 @@ def find_event_pipeline(dat_file_list_str, SNR_cut=10, check_zero_drift=False, f
         * a Pandas dataframe with all the events that were found.
         * None, if no events were found.
 
+    Notes
+    -----
+    The HDF5 file is ASSUMED(!!) to have the same name as .dat files.
+
     Examples
     --------
     >>> import find_event_pipeline;
@@ -172,21 +184,40 @@ def find_event_pipeline(dat_file_list_str, SNR_cut=10, check_zero_drift=False, f
         complex_cadence = on_source_complex_cadence
 
     # Get a list of the DAT files.
-    dat_file_list = open(dat_file_list_str).readlines()
-    dat_file_list = [files.replace('\n','') for files in dat_file_list]
-    dat_file_list = [files.replace(',','') for files in dat_file_list]
-    n_files = len(dat_file_list)
-
     # Get source names and build path_record list.
     source_name_list = []
     path_record = []
-    for dat in dat_file_list:
-        header = get_file_header(dat)
-        source_name = header["source_name"]
-        tstart = header["tstart"]
-        path_record.append(PathRecord(dat, tstart, source_name, header["fch1"],
-                                      header["foff"], header["nchans"]))
-        source_name_list.append(source_name)
+
+    # Get a list of the DAT/h5 files.
+    def list_of_files(dat_file_list_str):
+        dat_file_list = open(dat_file_list_str).readlines()
+        dat_file_list = [files.replace('\n','') for files in dat_file_list]
+        dat_file_list = [files.replace(',','') for files in dat_file_list]
+        n_files = len(dat_file_list)
+        return n_files, dat_file_list
+    n_files, dat_file_list = list_of_files(dat_file_list_str)
+    if h5_file_list_str is None:
+        h5_file_list = dat_file_list
+        for hf in h5_file_list:
+            header = get_file_header(hf.replace('.dat', '.h5'))
+            source_name = header["source_name"]
+            tstart = header["tstart"]
+            path_record.append(PathRecord(hf, tstart, source_name, header["fch1"],
+                                        header["foff"], header["nchans"]))
+            source_name_list.append(source_name)
+    else:
+        hn_files, h5_file_list = list_of_files(h5_file_list_str)
+        for hf in h5_file_list:
+            header = get_file_header(hf)
+            for dat in dat_file_list: # O(n^2) TODO: create tests in pytest
+                if os.path.basename(dat).replace('.dat','.h5')==os.path.basename(hf):
+                    source_name = header["source_name"]
+                    tstart = header["tstart"]
+                    path_record.append(PathRecord(dat, tstart, source_name, header["fch1"],
+                                            header["foff"], header["nchans"]))
+                    source_name_list.append(source_name)
+    
+    
 
     # If sorting by header.tstart, then rewrite the dat_file_list in header.tstart order.
     if sortby_tstart:

@@ -5,7 +5,7 @@ from numpy import isclose
 from turbo_seti.find_event.find_event import calc_freq_range, find_events
 
 TESTDIR = gettempdir() + '/test_find_event/'
-RTOL_DIFF = 0.001 # isclose(), 0.1%
+RTOL_DIFF = 0.001 # numpy.isclose(), 0.1%
 
 # Hits 1-3 in table 1 are in all 3 ON tables and in no OFF tables.
 # Hit 4 in table 1 is in one ON table and in no OFF tables.

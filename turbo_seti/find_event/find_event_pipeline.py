@@ -188,7 +188,7 @@ def find_event_pipeline(dat_file_list_str,h5_file_list_str=None, SNR_cut=10, che
     source_name_list = []
     path_record = []
 
-    # Get a list of the DAT files.
+    # Get a list of the DAT/h5 files.
     def list_of_files(dat_file_list_str):
         dat_file_list = open(dat_file_list_str).readlines()
         dat_file_list = [files.replace('\n','') for files in dat_file_list]
@@ -209,7 +209,7 @@ def find_event_pipeline(dat_file_list_str,h5_file_list_str=None, SNR_cut=10, che
         hn_files, h5_file_list = list_of_files(h5_file_list_str)
         for hf in h5_file_list:
             header = get_file_header(hf)
-            for dat in dat_file_list: # O(n^2) TODO: test on big cadences for efficiency
+            for dat in dat_file_list: # O(n^2) TODO: create tests in pytest
                 if os.path.basename(dat).replace('.dat','.h5')==os.path.basename(hf):
                     source_name = header["source_name"]
                     tstart = header["tstart"]

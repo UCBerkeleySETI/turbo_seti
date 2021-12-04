@@ -14,12 +14,18 @@ import pipelines_util as utl
 
 N_EVENTS = 2
 TESTDIR = gettempdir() + '/pipeline_testing/'
+#H5DIR = gettempdir() + '/pipeline_testing/h5_dir/' TODO: create h5 files for test in new dir
+PATH_DAT_LIST_FILE = TESTDIR + 'dat_files_5.lst'
+PATH_H5_LIST_FILE = TESTDIR + 'h5_files_5.lst'
 PATH_CSVF = TESTDIR + 'found_event_table_3.csv'
 CSV_DELIM = ','
-PATH_DAT_LIST_FILE = TESTDIR + 'dat_files_3.lst'
 DAT_LIST_ONS = [TESTDIR + 'single_coarse_guppi_59046_80036_DIAG_VOYAGER-1_0011.rawspec.0000.dat',
                 TESTDIR + 'single_coarse_guppi_59046_80672_DIAG_VOYAGER-1_0013.rawspec.0000.dat',
                 TESTDIR + 'single_coarse_guppi_59046_81310_DIAG_VOYAGER-1_0015.rawspec.0000.dat'
+               ]
+H5_LIST_ONS = [TESTDIR + 'single_coarse_guppi_59046_80036_DIAG_VOYAGER-1_0011.rawspec.0000.h5',
+                TESTDIR + 'single_coarse_guppi_59046_80672_DIAG_VOYAGER-1_0013.rawspec.0000.h5',
+                TESTDIR + 'single_coarse_guppi_59046_81310_DIAG_VOYAGER-1_0015.rawspec.0000.h5'
                ]
 PATH_IRRELEVANT_FIL = TESTDIR + 'abc.fil'
 FILE_IRRELEVANT_DAT = 'abc.dat'
@@ -106,7 +112,40 @@ def test_pipeline_same_source():
     utl.validate_hittbl(df_event, PATH_CSVF, 'test_pipeline_same_source', N_EVENTS)
     print('\n===== test_pipeline_same_source: END =====')
  
+def test_pipeline_separate_h5_source():
+    print('\n===== test_pipeline_separate_h5_source: BEGIN =====')
 
+    # Make the dat list.
+    with open(PATH_DAT_LIST_FILE, 'w') as fh:
+        for path_dat in DAT_LIST_ONS:
+            fh.write('{}\n'.format(path_dat))
+    # Make the h5 list.
+    with open(PATH_H5_LIST_FILE, 'w') as fh:
+            for path_dat in H5_LIST_ONS:
+                fh.write('{}\n'.format(path_dat))
+
+    # With the list of DAT and h5 files, do find_event_pipeline()
+    df_event = find_event_pipeline(PATH_DAT_LIST_FILE, PATH_H5_LIST_FILE,
+                                   filter_threshold=3,
+                                   number_in_cadence=3,
+                                   user_validation=False,
+                                   saving=True,
+                                   on_source_complex_cadence='VOYAGER-1',
+                                   csv_name=PATH_CSVF)
+
+    # df_event should not be nil.
+    if df_event is None:
+        raise ValueError('test_pipeline_same_source: returned pandas df is None!')       
+
+    # CSV file created?
+    if not Path(PATH_CSVF).exists():
+        raise ValueError('test_pipeline_same_source: No CSV of events created')
+
+    # An event CSV was created.
+    # Validate the hit table file.
+    utl.validate_hittbl(df_event, PATH_CSVF, 'test_pipeline_same_source', N_EVENTS)
+    print('\n===== test_pipeline_same_source: END =====')
+ 
 def test_pipeline_wrong_source():
     print('\n===== test_pipeline_wrong_source: BEGIN =====')
 

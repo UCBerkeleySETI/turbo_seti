@@ -4,6 +4,14 @@ import sys
 import h5py
 import hdf5plugin
 
+try:
+    import pytest_order.settings
+    print("pytest_order (required) is installed.")
+except:
+    print("\n*** Missing required module 'pytest_order'.")
+    print("*** Please run `python3 -m pip install -r requirements_test.txt.\n")
+    sys.exit(86)
+
 HERE = os.path.split(os.path.abspath(__file__))[0]
 MIN_SIZE = 40000000
 

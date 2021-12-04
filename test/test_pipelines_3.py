@@ -13,6 +13,7 @@ from shutil import rmtree
 from tempfile import gettempdir
 from pathlib import Path
 from turbo_seti.find_event.find_event_pipeline import find_event_pipeline
+from turbo_seti.find_event.plot_event_pipeline import plot_event_pipeline
 from fb_cases_util import generate_fil_file, make_one_dat_file
 import pipelines_util as utl
 
@@ -163,6 +164,13 @@ def test_pipeline_h5_dat_separated():
     # An event CSV was created.
     # Validate the hit table file.
     utl.validate_hittbl(df_event, PATH_CSVF, 'test_pipeline_same_source', N_EVENTS)
+
+    # Plots!
+    plot_event_pipeline(PATH_CSVF,
+                        PATH_H5_LIST_FILE,
+                        filter_spec=3,
+                        user_validation=False)
+
     print('\n===== test_pipeline_h5_dat_separated: END =====')
 
 def test_pipeline_wrong_source():

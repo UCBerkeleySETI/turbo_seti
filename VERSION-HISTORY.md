@@ -4,7 +4,8 @@ This file is a version history of turbo_seti amendments, beginning with version 
 
 | `YYYY_MM_DD` | `Version` | `Contents` |
 | :--: | :--: | :-- |
-| 2021-12-05 | 2.1.21 | Add the ability to entertain .h5 files and .dat files in separate directories (issue #291) |
+| 2021-12-05 | 2.1.22 | Add the ability to entertain .h5 files and .dat files in separate directories - part 2 (issue #294) |
+| 2021-12-04 | 2.1.21 | Add the ability to entertain .h5 files and .dat files in separate directories - part 1 (issue #291) |
 | 2021-12-01 | 2.1.20 | Add source code reference to the Read the Docs documentation. |
 | 2021-11-29 | 2.1.19 | Fix to find_doppler.py for potentially lost signals in hitsearch. (issue #290) |
 | 2021-11-19 | 2.1.18 | Fix to data_handler.py for handling of the NFPC header field from the new rawspec. (issue #285) |

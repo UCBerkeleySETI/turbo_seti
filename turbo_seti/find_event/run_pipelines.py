@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 Main program module for executable plotSETI.
 Facilitates the automation of 2 large functions:
@@ -15,13 +14,13 @@ import matplotlib
 from blimpy import __version__ as BLIMPY_VERSION
 from turbo_seti.find_event.find_event_pipeline import find_event_pipeline
 from turbo_seti.find_event.plot_event_pipeline import plot_event_pipeline
+from turbo_seti.find_doppler.turbo_seti_version import TURBO_SETI_VERSION
 
 # This file is in the find_event directory.
 # The version file is next door in the find_doppler directory (sibling).
 CURDIR = os.path.abspath(os.path.join(__file__, os.pardir))
 UPDIR = os.path.abspath(os.path.join(CURDIR, os.pardir))
 sys.path.append(UPDIR + "/find_doppler")
-from turbo_seti_version import TURBO_SETI_VERSION
 
 # 3 standard intermediate files:
 NAME_CSVF = "found_event_table.csv"
@@ -62,14 +61,14 @@ def clean_event_stuff(path_out_dir):
         os.remove(deader)
 
 
-def make_lists(path_h5_dir, path_h5_list, path_dat_list):
-    r"""Create 2 files, a list of .h5 files and a list of .dat files."""
+def make_lists(path_h5_dir, path_h5_list, path_dat_dir, path_dat_list):
+    r"""Create a list of .h5 files and a list of .dat files."""
+    with open(path_h5_list, "w") as fh_h5:
+        for path_h5 in sorted(glob.glob("{}/*.h5".format(path_h5_dir))):
+            fh_h5.write("{}\n".format(path_h5))
     with open(path_dat_list, "w") as fh_dat:
-        with open(path_h5_list, "w") as fh_h5:
-            for path_h5 in sorted(glob.glob("{}/*.h5".format(path_h5_dir))):
-                path_dat = path_h5.replace(".h5", ".dat")
-                fh_h5.write("{}\n".format(path_h5))
-                fh_dat.write("{}\n".format(path_dat))
+        for path_dat in sorted(glob.glob("{}/*.dat".format(path_dat_dir))):
+            fh_dat.write("{}\n".format(path_dat))
 
 
 def main(args=None):
@@ -87,11 +86,13 @@ def main(args=None):
                                         formatter_class=RawDescriptionHelpFormatter,
                                         epilog=HELP_EPILOGUE)
 
-    parser.add_argument("input_dir_path", type=str, default="", nargs="?",
-                        help="Path to the directory holding the set of .h5/.dat file pairs")
+    parser.add_argument("h5_dir", type=str, default="", nargs="?",
+                        help="Path to the directory holding the set of .h5 files")
+    parser.add_argument("-d", "--dat_dir", dest="dat_dir", type=str, default=None,
+                        help="Path to the directory holding the set of .dat files. Default: h5_path. ")
     parser.add_argument("-o", "--out_dir", dest="out_dir", type=str, default="./",
-                        help="Path to the output directory. Default: current directory (.). ")
-    parser.add_argument("-f", "--filter_threshold", dest="filt_thresh", type=int,
+                        help="Path to the output directory. Default: current directory (.).")
+    parser.add_argument("-f", "--filter_threshold", dest="filter_threshold", type=int,
                         choices=[1, 2, 3], default=2,
                         help="Specification for how strict the top hit filtering will be.")
     parser.add_argument("-s", "--snr_threshold", dest="snr_threshold", type=float, default=10.0,
@@ -116,13 +117,17 @@ def main(args=None):
         print("blimpy: {}".format(BLIMPY_VERSION))
         return 0
 
-    if args.input_dir_path == "":
+    if args.h5_dir == "":
+        print("\nThe .h5 directory must be specified!\n")
         os.system("plotSETI -h")
         return 0
 
-    if not os.path.exists(args.input_dir_path):
-        print("\nInput directory {} does not exist!\n".format(args.input_dir_path))
+    if not os.path.exists(args.h5_dir):
+        print("\nThe .h5 directory {} does not exist!\n".format(args.h5_dir))
         return 86
+
+    if args.dat_dir is None:
+        args.dat_dir = args.h5_dir
 
     return execute_pipelines(args)
 
@@ -142,30 +147,32 @@ def execute_pipelines(args):
         if len(args.source_name) < 1:
             print("\n*** plotSETI: Complex cadence requires a source_name.  Bye-bye.")
             sys.exit(86)
-            
+
     else:
         complex_cadence = False
         if args.cadence == "on":
             first_file = "ON"
         else:
             first_file = "OFF"
-    from_dir = os.path.abspath(args.input_dir_path) + "/"
-    dest_dir = os.path.abspath(args.out_dir) + "/"
-    if not os.path.exists(dest_dir):
-        os.mkdir(dest_dir)
+    h5_dir = os.path.abspath(args.h5_dir) + "/"
+    dat_dir = os.path.abspath(args.dat_dir) + "/"
+    out_dir = os.path.abspath(args.out_dir) + "/"
+    if not os.path.exists(out_dir):
+        os.mkdir(out_dir)
 
     # Establish output pathnames,
-    path_h5_list = dest_dir + NAME_H5_LIST
-    path_dat_list = dest_dir + NAME_DAT_LIST
-    path_csvf = dest_dir + NAME_CSVF
-    clean_event_stuff(dest_dir)
-    make_lists(from_dir, path_h5_list, path_dat_list)
+    path_h5_list = out_dir + NAME_H5_LIST
+    path_dat_list = out_dir + NAME_DAT_LIST
+    path_csvf = out_dir + NAME_CSVF
+    clean_event_stuff(out_dir)
+    make_lists(h5_dir, path_h5_list, dat_dir, path_dat_list)
 
     # Run find_event_pipeline()
     number_in_cadence = len(open(path_h5_list).readlines())
     if complex_cadence:
         df_check = find_event_pipeline(path_dat_list,
-                            filter_threshold = args.filt_thresh,
+                            path_h5_list,
+                            filter_threshold = args.filter_threshold,
                             number_in_cadence = number_in_cadence,
                             on_source_complex_cadence=args.source_name,
                             sortby_tstart=True,
@@ -176,7 +183,8 @@ def execute_pipelines(args):
                             saving=True)
     else: # not a complex cadence
         df_check = find_event_pipeline(path_dat_list,
-                            filter_threshold = args.filt_thresh,
+                            path_h5_list,
+                            filter_threshold = args.filter_threshold,
                             number_in_cadence = number_in_cadence,
                             on_source_complex_cadence=False,
                             on_off_first=first_file,
@@ -195,17 +203,16 @@ def execute_pipelines(args):
     matplotlib.use("agg", force=True)
     plot_event_pipeline(path_csvf,
                         path_h5_list,
-                        plot_dir=dest_dir,
-                        filter_spec=args.filt_thresh,
+                        plot_dir=out_dir,
+                        filter_spec=args.filter_threshold,
                         offset=0,
                         user_validation=False)
 
-    print("\nplotSETI: Plots are stored in directory {}.  Bye-bye.".format(dest_dir))
-    
+    print("\nplotSETI: Plots are stored in directory {}.  Bye-bye.".format(out_dir))
+
     return 0
 
 
 if __name__ == "__main__":
     # Start the show!
     main()
-

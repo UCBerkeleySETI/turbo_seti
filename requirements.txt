@@ -1,6 +1,6 @@
 astropy
 numpy
-blimpy>=2.0.0
+blimpy>=2.0.34
 pandas
 toolz
 fsspec

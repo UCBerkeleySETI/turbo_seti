@@ -21,6 +21,7 @@ logger.setLevel(logging.INFO)
 import pandas as pd
 import numpy as np
 from blimpy import Waterfall
+from blimpy.utils import change_the_ext
 from turbo_seti.find_event.find_event import find_events
 
 
@@ -56,7 +57,6 @@ def get_file_header(filepath_h5):
     
 
     '''
-    #filepath_h5 = dat_path.replace('.dat', '.h5')
     wf = Waterfall(filepath_h5, load_data=False)
     return wf.container.header
 
@@ -199,7 +199,7 @@ def find_event_pipeline(dat_file_list_str,h5_file_list_str=None, SNR_cut=10, che
     if h5_file_list_str is None:
         h5_file_list = dat_file_list
         for hf in h5_file_list:
-            header = get_file_header(hf.replace('.dat', '.h5'))
+            header = get_file_header(change_the_ext(hf, 'dat', 'h5'))
             source_name = header["source_name"]
             tstart = header["tstart"]
             path_record.append(PathRecord(hf, tstart, source_name, header["fch1"],

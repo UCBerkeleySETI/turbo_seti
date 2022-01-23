@@ -13,6 +13,7 @@ import h5py
 from blimpy import Waterfall
 from blimpy.io import sigproc
 from blimpy.io.hdf_writer import __write_to_hdf5_heavy as write_to_h5
+from blimpy.utils import change_the_ext
 
 from .kernels import Kernels
 
@@ -108,7 +109,7 @@ class DATAHandle:
         """
         wf = Waterfall(self.filename, load_data=False)
         fil_path = os.path.basename(self.filename)
-        h5_path = os.path.join(self.out_dir, fil_path.replace('.fil', '.h5'))
+        h5_path = os.path.join(self.out_dir, change_the_ext(fil_path, 'fil', 'h5'))
         try:
             os.remove(h5_path)
         except:

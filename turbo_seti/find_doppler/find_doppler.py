@@ -21,7 +21,10 @@ import logging
 import dask.bag as db
 from dask.diagnostics import ProgressBar
 
+from h5py.version import hdf5_version as LIBHDF5_VERSION
 from h5py import __version__ as H5PY_VERSION
+from h5py._errors import unsilence_errors
+from hdf5plugin import version as HDF5PLUGIN_VERSION
 from blimpy import __version__ as BLIMPY_VERSION
 from .turbo_seti_version import TURBO_SETI_VERSION
 from .kernels import Kernels, Scheduler
@@ -34,8 +37,8 @@ from .merge_dats_logs import merge_dats_logs
 #import pdb;# pdb.set_trace()
 logger_name = 'find_doppler'
 logger = logging.getLogger(logger_name)
-version_announcements = '\nturbo_seti version {}\nblimpy version {}\nh5py version {}\n' \
-                        .format(TURBO_SETI_VERSION, BLIMPY_VERSION, H5PY_VERSION)
+version_announcements = '\nturbo_seti version {}\nblimpy version {}\nh5py version {}\nhdf5plugin version {}\nHDF5 library version {}\n\n' \
+                        .format(TURBO_SETI_VERSION, BLIMPY_VERSION, H5PY_VERSION, HDF5PLUGIN_VERSION, LIBHDF5_VERSION)
 
 class max_vals:
     r"""
@@ -199,6 +202,9 @@ class FindDoppler:
         It is not recommended to mix dask partitions with GPU mode as this could cause GPU queuing.
         """
         t0 = time.time()
+        
+        # Make libhdf5 errors visible.  I should not have to do this!
+        unsilence_errors() # from h5py._errors
 
         filename_in = self.data_handle.filename
         header_in   = self.data_handle.header

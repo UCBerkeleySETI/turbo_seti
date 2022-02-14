@@ -14,8 +14,8 @@ This file is a version history of turbo_seti amendments, beginning with version 
 | 2021-11-29 | 2.1.19 | Fix to find_doppler.py for potentially lost signals in hitsearch. (issue #290) |
 | 2021-11-19 | 2.1.18 | Fix to data_handler.py for handling of the NFPC header field from the new rawspec. (issue #285) |
 | 2021-11-10 | 2.1.17 | Fix to find_event.py which was generating too many events & plots. (issue #283) |
-| 2021-10-28 | 2.1.16 | Print a 3x3 data postage stamp when loading data for coarse channel 0 only. (issue #280) |
-| 2021-10-23 | 2.1.15 | Print a 3x3 data postage stamp when loading data. (issue #280) |
+| 2021-10-28 | 2.1.16 | Print a 2x3 data postage stamp when loading data for coarse channel 0 only. (issue #280, part 2) |
+| 2021-10-23 | 2.1.15 | Print a 2x3 data postage stamp when loading data. (issue #280) |
 | 2021-10-22 | 2.1.14 | Support new metadata field, NFPC. (issue #278). |
 | 2021-09-13 | 2.1.13 | Make find_doppler easier to read and amend. (issue #274). |
 | 2021-08-17 | 2.1.12 | Fix "AttributeError: module 'cupy' has no attribute '_core'". (issue #272). |

@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-__version__ = "2.1.24"
+__version__ = "2.1.25"
 
 with open("turbo_seti/find_doppler/turbo_seti_version.py", "w") as fh:
     fh.write("TURBO_SETI_VERSION = '{}'\n".format(__version__))

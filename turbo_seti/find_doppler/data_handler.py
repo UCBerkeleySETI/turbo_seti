@@ -299,7 +299,9 @@ class DATAH5:
             spectra = self.kernels.np.concatenate((spectra, padding), axis=0)
 
         self.tsteps_valid = self.tsteps
+        #updating obs_length and drift_rate resolution after changing the spectra shape
         self.header['obs_length'] = self.tsteps * self.header['DELTAT']
+        self.drift_rate_resolution = (1e6 * np.abs(self.header['DELTAF'])) / self.header['obs_length']   # in Hz/sec
 
         if spectra.shape != (self.tsteps_valid, self.fftlen):
             msg = "data_handler.py:load_data: spectra.shape={}!".format(spectra.shape)

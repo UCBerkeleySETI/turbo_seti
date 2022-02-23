@@ -4,9 +4,9 @@ This file is a version history of turbo_seti amendments, beginning with version 
 
 | `YYYY_MM_DD` | `Version` | `Contents` |
 | :--: | :--: | :-- |
-| 2022-02-23 |2.1.25 |Fix to the wrong drift rates when the number of time integrations is not a power of 2|
-| 2022-02-07 | 2.1.24 | Print versions of hdf5plugin and the HDF5 library (#issue 299). |
-| | | Enable the display of HDF5 library error messages which are inhibited by default (#issue 299). |
+| 2022-02-23 |2.1.25 |Fix to the wrong drift rates when the number of time integrations is not a power of 2 (issue #302). |
+| 2022-02-07 | 2.1.24 | Print versions of hdf5plugin and the HDF5 library (issue #299). |
+| | | Enable the display of HDF5 library error messages which are inhibited by default (issue #299). |
 | 2022-01-23 | 2.1.23 | Stop mangled path file names in data_handler.py & find_event_pipeline.py (issue #297). |
 | | | Dependent on blimpy version >= 2.0.34 |
 | 2021-12-05 | 2.1.22 | Add the ability to entertain .h5 files and .dat files in separate directories - part 2 (issue #294) |

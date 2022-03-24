@@ -13,7 +13,7 @@ from math import abs
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 import pandas as pd
 
-DEBUGGING = True
+DEBUGGING = False
 SEP = r"\s+"
 HDR_LINE_COUNT = 9
 COPIED = False

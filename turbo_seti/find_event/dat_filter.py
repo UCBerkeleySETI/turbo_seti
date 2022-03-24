@@ -9,6 +9,7 @@ saving the original content in .dat.old:
 import sys
 import os
 import shutil
+from math import abs
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 import pandas as pd
 
@@ -69,6 +70,9 @@ def main(args=None):
     if args.min_drift_rate is None and args.max_drift_rate is None and args.min_snr is None:
         oops("At least one filter parameter must be specified")
 
+    if args.min_drift_rate < 0 or args.max_drift_rate < 0 or args.min_snr < 0:
+        oops("All filter parameters must be > 0")
+
     return execute_pruner(full_path, args.min_drift_rate, args.max_drift_rate, args.min_snr)
 
 
@@ -128,15 +132,15 @@ def execute_pruner(dat_file, min_drift_rate, max_drift_rate, min_snr):
             drift_rate = float(df[1][jj])
             snr = float(df[2][jj])
             if min_drift_rate is not None:
-                if drift_rate < min_drift_rate:
+                if abs(drift_rate) < min_drift_rate:
                     discarded_count += 1
                     continue
             if max_drift_rate is not None:
-                if drift_rate > max_drift_rate:
+                if abs(drift_rate) > max_drift_rate:
                     discarded_count += 1
                     continue
             if min_snr is not None:
-                if snr < min_snr:
+                if abs(snr) < min_snr:
                     discarded_count += 1
                     continue
             # Include this one.

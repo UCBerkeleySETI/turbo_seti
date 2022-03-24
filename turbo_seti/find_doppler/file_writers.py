@@ -203,7 +203,7 @@ class FileWriter(GeneralWriter):
         else:
             this_one = 0
 
-        info_str = '%03d\t'%(self.tophit_count)  #Top Hit number
+        info_str = '%06d\t'%(self.tophit_count)  #Top Hit number
         info_str += '%10.6f\t'%max_val.maxdrift[ind]  #Drift Rate
         info_str += '%10.6f\t'%max_val.maxsnr[ind]  #SNR
         info_str += '%14.6f\t'%uncorr_freq #Uncorrected Frequency:

@@ -36,7 +36,7 @@ def oops(arg_text):
     print(f"\n*** dat_filter: Oops, {arg_text} !!")
     if COPIED:
         print("*** dat_filter: Note that the original input file has a new name.  Check the dat files carefully !!")
-    sys.exit(86)
+    sys.exit(1)
 
 
 def main(args=None):

@@ -11,6 +11,7 @@ import os
 import shutil
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 import pandas as pd
+from pandas.errors import EmptyDataError
 
 DEBUGGING = False
 SEP = r"\s+"
@@ -125,10 +126,12 @@ def execute_pruner(dat_file, min_drift_rate, max_drift_rate, min_snr):
                 out_file.write(hdr_line)
 
         # Make a pandas dataframe out of the tophit lines.
-        df = pd.read_csv(dat_file_original, header=None, sep=SEP, engine="python", comment="#")
+        try:
+            df = pd.read_csv(dat_file_original, header=None, sep=SEP, engine="python", comment="#")
+        except EmptyDataError:
+            # Create empty dataframe.
+            df = pd.DataFrame()
         input_count = len(df)
-        if input_count < 1:
-            oops("Empty tophit table")
 
         # Process each tophit.
         for jj in range(input_count):

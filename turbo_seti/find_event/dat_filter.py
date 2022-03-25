@@ -25,6 +25,10 @@ saving the original content in .dat.original:
     * min_drift_rate (Hz/s)
     * max_drift_rate (Hz/s)
     * min_snr
+
+Exit status:
+    0 : All went well, even if 0 top hits were read or retained.
+    1 : Some sort of error was reported.
 """
 
 

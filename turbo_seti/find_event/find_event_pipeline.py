@@ -258,13 +258,14 @@ def find_event_pipeline(dat_file_list_str,h5_file_list_str=None, check_zero_drif
                             .format(os.path.basename(obj.path_dat), obj.tstart, obj.source_name,
                                     obj.fch1, obj.foff, obj.nchans))
             return None
+        logger.info(f"Source '{on_source_complex_cadence}' is in this complex cadence.")
     else:
         matcher = path_record[0]
 
     # Display path_record rows.
     flag_terminate = False
     for obj in path_record:
-        logger.info("find_event_pipeline: file={}, tstart={}, source_name={}, fch1={}, foff={}, nchans={}"
+        logger.info("file={}, tstart={}, source_name={}, fch1={}, foff={}, nchans={}"
                     .format(os.path.basename(obj.path_dat), obj.tstart, obj.source_name,
                             obj.fch1, obj.foff, obj.nchans))
         if on_source_complex_cadence: # Complex cadence?
@@ -273,6 +274,7 @@ def find_event_pipeline(dat_file_list_str,h5_file_list_str=None, check_zero_drif
                 continue
         # Part of the cadence, complex or not.
         # Make sure that the frequency range makes sense.
+        print(f"DEBUG fch1 {obj.fch1}:{matcher.fch1}   foff {obj.foff}:{matcher.foff}   nchans {obj.nchans}:{matcher.nchans}")
         if not close_enough(obj.fch1, matcher.fch1) \
         or not close_enough(obj.foff, matcher.foff) \
         or obj.nchans != matcher.nchans:

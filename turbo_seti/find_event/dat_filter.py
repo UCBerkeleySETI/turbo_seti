@@ -155,7 +155,7 @@ def execute_pruner(dat_file, min_drift_rate, max_drift_rate, min_snr):
                     continue
             # Include this one.
             tophit_count += 1
-            tophit_line = '%06d\t'    % (jj + 1)    # Top Hit number
+            tophit_line = '%06d\t'    % (tophit_count)    # Top Hit number
             tophit_line += '%10.6f\t' % df[1][jj]    # Drift Rate
             tophit_line += '%10.6f\t' % df[2][jj]    # SNR
             tophit_line += '%14.6f\t' % df[3][jj]    # Uncorrected Frequency

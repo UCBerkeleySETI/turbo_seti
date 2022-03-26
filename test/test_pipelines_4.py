@@ -4,7 +4,6 @@ test_pipelines_4.py
 Test plotSETI.
 '''
 
-import os
 from tempfile import gettempdir
 import pytest
 from turbo_seti import run_pipelines
@@ -38,13 +37,13 @@ def test_pipelines_4():
 
     args = [TESTDIR, "-o", PLOTDIR, "-c", "off"]
     rc = execute_one(4, args)
-    assert(rc == 86)
+    assert(rc != 0)
 
     args = [TESTDIR, "-o", PLOTDIR, "-c", "complex", "-n", "Rubbish"]
     rc = execute_one(5, args)
-    assert(rc == 86)
+    assert(rc != 0)
 
-    args = [TESTDIR, "-o", PLOTDIR, "-c", "complex", "-n", "VOYAGER-1"]
+    args = [TESTDIR, "-o", PLOTDIR, "-f", "2", "-c", "complex", "-n", "VOYAGER-1"]
     rc = execute_one(6, args)
     assert(rc == 0)
 

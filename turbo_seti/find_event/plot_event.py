@@ -9,7 +9,7 @@ in this file (described below) to plot events from a turboSETI event .csv file.
 
 from os import mkdir
 from os.path import dirname, abspath, isdir
-import gc
+import time
 import logging
 logger_plot_event_name = 'plot_event'
 logger_plot_event = logging.getLogger(logger_plot_event_name)
@@ -141,7 +141,6 @@ def plot_waterfall(wf, source_name, f_start=None, f_stop=None, **kwargs):
     # return plot
 
     del plot_f, plot_data
-    gc.collect()
 
     return this_plot
 
@@ -180,8 +179,6 @@ def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_r
     at the frequency of a recorded event from find_event. Calls :func:`~plot_waterfall`
 
     '''
-    global logger_plot_event
-
     # prepare for plotting
     matplotlib.rc('font', **font)
 
@@ -219,7 +216,6 @@ def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_r
 
     subplots = []
     del wf1, plot_f1, plot_data1
-    gc.collect()
 
     # Fill in each subplot for the full plot
     for ii, filename in enumerate(fil_file_list):
@@ -256,9 +252,7 @@ def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_r
         if ii < len(fil_file_list)-1:
             plt.xticks(np.linspace(f_start, f_stop, num=4), ['','','',''])
 
-
         del wf
-        gc.collect()
 
 
     # More overall plot formatting, axis labelling
@@ -358,7 +352,6 @@ def plot_candidate_events(candidate_event_dataframe, fil_file_list, filter_level
     ...                                  filter_level, source_name_list, offset=0)
 
     '''
-    global logger_plot_event
 
     # load in the data for each individual hit
     if candidate_event_dataframe is None:
@@ -368,6 +361,8 @@ def plot_candidate_events(candidate_event_dataframe, fil_file_list, filter_level
     if len_df < 1:
         print('*** plot_candidate_events: len(candidate_event_dataframe) = 0, nothing to do.')
         return
+
+    time1 = time.time()
     for i in range(0, len_df):
         candidate = candidate_event_dataframe.iloc[i]
         on_source_name = candidate['Source']
@@ -410,3 +405,6 @@ def plot_candidate_events(candidate_event_dataframe, fil_file_list, filter_level
                              offset=offset,
                              plot_dir=plot_dir,
                              **kwargs)
+    time2 = time.time()
+    et = time2 - time1
+    logger_plot_event.info(f"plot_candidate_events: elapsed time = {et:.2f} seconds")

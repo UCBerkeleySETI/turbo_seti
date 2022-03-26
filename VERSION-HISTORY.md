@@ -4,8 +4,9 @@ This file is a version history of turbo_seti amendments, beginning with version 
 
 | `YYYY_MM_DD` | `Version` | `Contents` |
 | :--: | :--: | :-- |
-| 2022-03-24 |2.2.0.beta |Introduced dat_filter utility (related to issue #303). |
-| 2022-02-23 |2.1.25 |Fix to the wrong drift rates when the number of time integrations is not a power of 2 (issue #302). |
+| 2022-03-24 | 2.2.0 |Introduced dat_filter utility (issue #303). |
+| | | Enhance event analysis (plotSETI et al) to filter by SNR and drift rate (issue #303). |
+| 2022-02-23 | 2.1.25 | Fix to the wrong drift rates when the number of time integrations is not a power of 2 (issue #302). |
 | 2022-02-07 | 2.1.24 | Print versions of hdf5plugin and the HDF5 library (issue #299). |
 | | | Enable the display of HDF5 library error messages which are inhibited by default (issue #299). |
 | 2022-01-23 | 2.1.23 | Stop mangled path file names in data_handler.py & find_event_pipeline.py (issue #297). |

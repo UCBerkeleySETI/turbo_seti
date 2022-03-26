@@ -30,12 +30,20 @@ NAME_DAT_LIST = "list_dat_files.txt"
 
 HELP_EPILOGUE = \
 """
-Top Hit Filtering (--filter_threshold)
+Optional Filtering Parameters
+--------------------------------------
+The following parameters can be used to prune hits from the dat files,
+regardless of the filter threshold value:
+    * min_drift_rate (Hz/s)
+    * max_drift_rate (Hz/s)
+    * min_snr
+
+Filter Threshold (ON-OFF tables)
 --------------------------------------
 1 : Select all top hits from the DAT files.
 2 : Select only those top hits that are in at least one ON file AND not in any OFF files.
 3 : Select only those top hits that are in all ON files AND not in any OFF files.
-Default: 2.
+Default: 3.
 
 Complex Cadences (--cadence=complex)
 ------------------------------------
@@ -93,10 +101,14 @@ def main(args=None):
     parser.add_argument("-o", "--out_dir", dest="out_dir", type=str, default="./",
                         help="Path to the output directory. Default: current directory (.).")
     parser.add_argument("-f", "--filter_threshold", dest="filter_threshold", type=int,
-                        choices=[1, 2, 3], default=2,
+                        choices=[1, 2, 3], default=3,
                         help="Specification for how strict the top hit filtering will be.")
-    parser.add_argument("-s", "--snr_threshold", dest="snr_threshold", type=float, default=10.0,
+    parser.add_argument("-s", "--snr_threshold", dest="snr_threshold", default=None,
                         help="The SNR below which signals will be discarded.")
+    parser.add_argument("-m", "--min_drift_rate", dest="min_drift_rate", default=None,
+                        help="The minimum drift rate below which signals will be discarded.")
+    parser.add_argument("-M", "--max_drift_rate", dest="max_drift_rate", default=None,
+                        help="The maximum drift rate above which signals will be discarded.")
     parser.add_argument("-c", "--cadence", dest="cadence", type=str,
                         choices=["on", "off", "complex"], default="on",
                         help="Input file cadence FIRST file: on source, off source, complex cadence. Default: on.")
@@ -178,6 +190,8 @@ def execute_pipelines(args):
                             sortby_tstart=True,
                             check_zero_drift=False,
                             SNR_cut=args.snr_threshold,
+                            min_drift_rate=args.min_drift_rate,
+                            max_drift_rate=args.max_drift_rate,
                             user_validation=False,
                             csv_name=path_csvf,
                             saving=True)
@@ -191,6 +205,8 @@ def execute_pipelines(args):
                             sortby_tstart=True,
                             check_zero_drift=False,
                             SNR_cut=args.snr_threshold,
+                            min_drift_rate=args.min_drift_rate,
+                            max_drift_rate=args.max_drift_rate,
                             user_validation=False,
                             csv_name=path_csvf,
                             saving=True)

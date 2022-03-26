@@ -54,7 +54,7 @@ def get_file_header(filepath_h5):
     -------
     header : Waterfall header object
 
-    
+
 
     '''
     wf = Waterfall(filepath_h5, load_data=False)
@@ -68,10 +68,11 @@ def close_enough(x, y):
     return False
 
 
-def find_event_pipeline(dat_file_list_str,h5_file_list_str=None, SNR_cut=10, check_zero_drift=False, filter_threshold=3,
+def find_event_pipeline(dat_file_list_str,h5_file_list_str=None, check_zero_drift=False, filter_threshold=3,
                         on_off_first='ON', number_in_cadence=6, on_source_complex_cadence=False,
                         saving=True, csv_name=None, user_validation=False,
-                        sortby_tstart=True):
+                        sortby_tstart=True,
+                        SNR_cut=None, min_drift_rate=None, max_drift_rate=None):
     """
     Find event pipeline.
 
@@ -100,28 +101,25 @@ def find_event_pipeline(dat_file_list_str,h5_file_list_str=None, SNR_cut=10, che
         as well as OFF first cadences like BACADA. Minimum
         cadence length is 2, maximum cadence length is
         unspecified (currently tested up to 6).
-
-    SNR_cut : int
-        The threshold SNR below which hits in the ON source
-        will be disregarded. For the least strict thresholding,
-        set this parameter equal to the minimum-searched SNR
-        that you used to create the .dat files from
-        seti_event.py. Recommendation (and default) is 10.
     check_zero_drift : bool
         A True/False flag that tells the program whether to
         include hits that have a drift rate of 0 Hz/s. Earth-
         based RFI tends to have no drift rate, while signals
         from the sky are expected to have non-zero drift rates.
-    filter_threshold : int
+    filter_threshold : int, default is 3
         Specification for how strict the hit filtering will be.
         There are 3 different levels of filtering, specified by
-        the integers 1, 2, and 3. Filter_threshold = 1
-        returns hits above an SNR cut, taking into account the
-        check_zero_drift parameter, but without an ON-OFF check.
-        Filter_threshold = 2 returns hits that passed level 1
-        AND that are in at least one ON but no OFFs.
-        Filter_threshold = 3 returns events that passed level 2
-        AND that are present in *ALL* ONs.
+        the integers 1, 2, and 3.
+        * Filter_threshold = 1 applies the following parameter checks:
+            check_zero_drift
+            SNR_cut
+            min_drift_rate
+            max_drift_rate
+        However, Filter_threshold = 1 applies no ON-OFF check.
+        * Filter_threshold = 2 returns hits that passed level 1
+        AND that are in at least one ON table but no OFF tables.
+        * Filter_threshold = 3 returns events that passed level 2
+        AND that are present in *ALL* ON tables.
     on_off_first : str {'ON', 'OFF'}
         Tells the code whether the .dat sequence starts with
         the ON or the OFF observation. Valid entries are 'ON'
@@ -147,6 +145,21 @@ def find_event_pipeline(dat_file_list_str,h5_file_list_str=None, SNR_cut=10, che
         automated scripts.
     sortby_tstart : bool
         If True, the input file list is sorted by header.tstart.
+    SNR_cut : None (default value) or float value > 0
+        If None, then all SNR values from the dedoppler results in the dat
+        files are accepted as-is.
+        Otherwise, the specified value is the threshold SNR below which
+        hits will be discarded.
+    min_drift_rate : None (default value) or float value > 0
+        If None, then all drift rate values from the dedoppler results in the dat
+        files are accepted as-is.
+        Otherwise, the specified value is the threshold drift rate below which
+        hits will be discarded.
+    max_drift_rate : None (default value) or float value > 0
+        If None, then all drift rate values from the dedoppler results in the dat
+        files are accepted as-is.
+        Otherwise, the specified value is the threshold drift rate above which
+        hits will be discarded.
 
     Returns
     -------
@@ -163,6 +176,8 @@ def find_event_pipeline(dat_file_list_str,h5_file_list_str=None, SNR_cut=10, che
     >>> import find_event_pipeline;
     >>> find_event_pipeline.find_event_pipeline(dat_file_list_str,
     ...                                         SNR_cut=10,
+    ...                                         min_drift_rate=0.1,
+    ...                                         max_drift_rate=4,
     ...                                         check_zero_drift=False,
     ...                                         filter_threshold=3,
     ...                                         on_off_first='ON',
@@ -173,7 +188,7 @@ def find_event_pipeline(dat_file_list_str,h5_file_list_str=None, SNR_cut=10, che
 
     """
     print()
-    print("************   BEGINNING FIND_EVENT PIPELINE   **************")
+    print("===========   BEGINNING FIND_EVENT PIPELINE   ===========")
     print()
 
     if on_source_complex_cadence:
@@ -206,7 +221,7 @@ def find_event_pipeline(dat_file_list_str,h5_file_list_str=None, SNR_cut=10, che
                                         header["foff"], header["nchans"]))
             source_name_list.append(source_name)
     else:
-        hn_files, h5_file_list = list_of_files(h5_file_list_str)
+        _, h5_file_list = list_of_files(h5_file_list_str)
         for hf in h5_file_list:
             header = get_file_header(hf)
             for dat in dat_file_list: # O(n^2) TODO: create tests in pytest
@@ -216,8 +231,8 @@ def find_event_pipeline(dat_file_list_str,h5_file_list_str=None, SNR_cut=10, che
                     path_record.append(PathRecord(dat, tstart, source_name, header["fch1"],
                                             header["foff"], header["nchans"]))
                     source_name_list.append(source_name)
-    
-    
+
+
 
     # If sorting by header.tstart, then rewrite the dat_file_list in header.tstart order.
     if sortby_tstart:
@@ -237,16 +252,15 @@ def find_event_pipeline(dat_file_list_str,h5_file_list_str=None, SNR_cut=10, che
                 flag_terminate = False
                 break
         if flag_terminate:
-            logger.error("find_event_pipeline: Source '{}' is not in this complex cadence!"
-                         .format(on_source_complex_cadence))
+            logger.error(f"Source '{on_source_complex_cadence}' is not in this complex cadence!")
             for obj in path_record:
-                logger.info("find_event_pipeline: file={}, tstart={}, source_name={}, fch1={}, foff={}, nchans={}"
+                logger.info("file={}, tstart={}, source_name={}, fch1={}, foff={}, nchans={}"
                             .format(os.path.basename(obj.path_dat), obj.tstart, obj.source_name,
                                     obj.fch1, obj.foff, obj.nchans))
             return None
     else:
         matcher = path_record[0]
-            
+
     # Display path_record rows.
     flag_terminate = False
     for obj in path_record:
@@ -262,7 +276,7 @@ def find_event_pipeline(dat_file_list_str,h5_file_list_str=None, SNR_cut=10, che
         if not close_enough(obj.fch1, matcher.fch1) \
         or not close_enough(obj.foff, matcher.foff) \
         or obj.nchans != matcher.nchans:
-            logger.error("find_event_pipeline: Inconsistent frequency range!  This does not look like a cadence of related files.")
+            logger.error("Inconsistent frequency range!  This does not look like a cadence of related files.")
             flag_terminate = True
     if flag_terminate:
         return None
@@ -284,31 +298,25 @@ def find_event_pipeline(dat_file_list_str,h5_file_list_str=None, SNR_cut=10, che
         if count_cadence > 0:
             print("The derived complex cadence is: " + str(complex_cadence))
         else:
-            print("\n*** find_event_pipeline [complex cadence]: Sorry, no potential candidates with your given on_source_complex_cadence={}  :("
-                  .format(on_source_complex_cadence))
+            logger.error(f"Sorry, no potential candidates with your given on_source_complex_cadence={on_source_complex_cadence}  :(")
             return None
 
     num_of_sets = int(n_files / number_in_cadence)
     print("There are " + str(len(dat_file_list)) + " total files in the filelist "
           + dat_file_list_str)
-    print("therefore, looking for events in " + str(num_of_sets) + " on-off set(s)")
-    print("with a minimum SNR of " + str(SNR_cut))
+    print("Therefore, looking for events in " + str(num_of_sets) + " on-off set(s)")
 
     if filter_threshold == 1:
-        print("Present in an ON source only, above SNR_cut")
+        print("Present in an ON source only")
     if filter_threshold == 2:
         print("Present in at least one ON source with RFI rejection from the OFF sources")
     if filter_threshold == 3:
         print("Present in all ON sources with RFI rejection from the OFF sources")
 
-    if not check_zero_drift:
-        print("not including signals with zero drift")
-    else:
-        print("including signals with zero drift")
     if not saving:
-        print("not saving the output files")
+        print("A CSV file will not be saved")
     else:
-        print("saving the output files")
+        print("A CSV file will be saved")
 
     if user_validation:
         question = "Do you wish to proceed with these settings?"
@@ -335,11 +343,11 @@ def find_event_pipeline(dat_file_list_str,h5_file_list_str=None, SNR_cut=10, che
         else: # complex_cadence
             filename = os.path.basename(file_sublist[complex_cadence.index(1)])
 
-        print()
-        print("*** First DAT file in set:  " + filename + " ***")
-        print()
+        print("=== First DAT file in set:  " + filename + " ===")
         cand = find_events(file_sublist,
                            SNR_cut=SNR_cut,
+                           min_drift_rate=min_drift_rate,
+                           max_drift_rate=max_drift_rate,
                            check_zero_drift=check_zero_drift,
                            filter_threshold=filter_threshold,
                            on_off_first=on_off_first,
@@ -352,10 +360,10 @@ def find_event_pipeline(dat_file_list_str,h5_file_list_str=None, SNR_cut=10, che
     if len(candidate_list) > 0:
         find_event_output_dataframe = pd.concat(candidate_list)
     else:
-        print("\n*** find_event_pipeline: Sorry, no potential candidates with your given parameters :(")
+        logger.error("Sorry, no potential candidates with your given parameters :(")
         return None
 
-    print("*** find_event_output_dataframe is complete ***")
+    print("===========   find_event_pipeline: output dataframe is complete   ===========")
 
     if saving:
         if csv_name is None:
@@ -372,7 +380,7 @@ def find_event_pipeline(dat_file_list_str,h5_file_list_str=None, SNR_cut=10, che
             find_event_output_dataframe.to_csv(filestring)
             print("find_event_pipeline: Saved CSV file to {}".format(filestring))
         else:
-            print("\n*** find_event_pipeline: Sorry, no events to save :(")
+            logger.error("Sorry, no events to save :(")
             return None
 
     return find_event_output_dataframe

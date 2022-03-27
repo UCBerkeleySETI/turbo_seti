@@ -441,7 +441,7 @@ def find_events(dat_file_list, check_zero_drift=False, filter_threshold=3,
 
     # If max_drift_rate is None, include all signals from the filter_adjusted_table.
     # Else, include only signals with a drift_rate below max_drift_rate.
-    if min_drift_rate is not None:
+    if max_drift_rate is not None:
         filter_adjusted_table = filter_adjusted_table[abs(filter_adjusted_table['DriftRate']) < abs(float(max_drift_rate))]
 
     #If there are no hits left once SNR adjustments are made,

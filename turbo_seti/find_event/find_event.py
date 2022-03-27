@@ -30,8 +30,7 @@ def end_search(t0):
     """
     #Report elapsed search time
     t1 = time.time()
-    print('Search time: %.2f sec' % ((t1-t0)))
-    print('------   o   -------')
+    print('find_events: Elapsed time: %.2f sec' % ((t1-t0)))
 
 
 def read_dat(filename):
@@ -231,7 +230,9 @@ def not_yet_seen(mylist, argument):
 
 
 
-def find_events(dat_file_list, SNR_cut=10, check_zero_drift=False, filter_threshold=3, on_off_first='ON', complex_cadence=False):
+def find_events(dat_file_list, check_zero_drift=False, filter_threshold=3,
+                on_off_first='ON', complex_cadence=False,
+                SNR_cut=None, min_drift_rate=None, max_drift_rate=None):
     r"""
     Reads a list of turboSETI .dat files.
 
@@ -245,28 +246,26 @@ def find_events(dat_file_list, SNR_cut=10, check_zero_drift=False, filter_thresh
         standard ABACAD as well as OFF first cadences like
         BACADA. Minimum cadence length is 2, maximum cadence
         length is unspecified (currently tested up to 6).
-    SNR_cut : int, optional
-        The threshold SNR below which hits in the ON source
-        will be disregarded. For the least strict thresholding,
-        set this parameter equal to the minimum-searched SNR
-        that you used to create the .dat files from
-        seti_event.py. Recommendation (and default) is 10.
     check_zero_drift : bool, optional
         A True/False flag that tells the program whether to
         include hits that have a drift rate of 0 Hz/s. Earth-
         based RFI tends to have no drift rate, while signals
         from the sky are expected to have non-zero drift rates.
         Default is False.
-    filter_threshold : int, optional
+    filter_threshold : int, default is 3
         Specification for how strict the hit filtering will be.
         There are 3 different levels of filtering, specified by
-        the integers 1, 2, and 3. Filter_threshold = 1
-        returns hits above an SNR cut, taking into account the
-        check_zero_drift parameter, but without an ON-OFF check.
-        Filter_threshold = 2 returns hits that passed level 1
-        AND that are in at least one ON but no OFFs.
-        Filter_threshold = 3 returns events that passed level 2
-        AND that are present in *ALL* ONs.
+        the integers 1, 2, and 3. 
+        * Filter_threshold = 1 applies the following parameter checks:
+            check_zero_drift
+            SNR_cut
+            min_drift_rate
+            max_drift_rate
+        However, Filter_threshold = 1 applies no ON-OFF check.
+        * Filter_threshold = 2 returns hits that passed level 1
+        AND that are in at least one ON table but no OFF tables.
+        * Filter_threshold = 3 returns events that passed level 2
+        AND that are present in *ALL* ON tables.
     on_off_first : str {'ON', 'OFF}, optional
         Tells the code whether the .dat sequence starts with
         the ON or the OFF observation. Valid entries are 'ON'
@@ -275,7 +274,22 @@ def find_events(dat_file_list, SNR_cut=10, check_zero_drift=False, filter_thresh
         A Python list of 1s and 0s corresponding to which
         files in the file_sublist are on-sources and which are
         off_sources for complex (i.e. non alternating) cadences.
-
+    SNR_cut : None (default value) or float value > 0
+        If None, then all SNR values from the dedoppler results in the dat
+        files are accepted as-is.
+        Otherwise, the specified value is the threshold SNR below which
+        hits will be discarded.
+    min_drift_rate : None (default value) or float value > 0
+        If None, then all drift rate values from the dedoppler results in the dat
+        files are accepted as-is.
+        Otherwise, the specified value is the threshold drift rate below which
+        hits will be discarded.
+    max_drift_rate : None (default value) or float value > 0
+        If None, then all drift rate values from the dedoppler results in the dat
+        files are accepted as-is.
+        Otherwise, the specified value is the threshold drift rate above which
+        hits will be discarded.
+ 
     Examples
     --------
     It is highly recommended that users interact with this program via the
@@ -302,8 +316,10 @@ def find_events(dat_file_list, SNR_cut=10, check_zero_drift=False, filter_thresh
     #Initializing timer
     t0 = time.time()
 
-    print('------   o   -------')
-    print("Loading data...")
+    print(f"find_events: SNR_cut = {SNR_cut}")
+    print(f"find_events: min_drift_rate = {min_drift_rate}")
+    print(f"find_events: max_drift_rate = {max_drift_rate}")
+    print("find_events: Loading data...")
 
     #Preparing to read in the list of files
     on_table_list = []
@@ -335,7 +351,7 @@ def find_events(dat_file_list, SNR_cut=10, check_zero_drift=False, filter_thresh
             #and create the pandas hit table for OFF sources
             off_table_ii = read_dat(dat_file)
             nhits = len(off_table_ii)
-            print('Loaded %i hits from %s (OFF)'%(nhits, dat_file))
+            print('find_events: Loaded %i hits from %s (OFF)'%(nhits, dat_file))
             if nhits > 0:
                 off_table_ii['status'] = 'off_table_{}'.format(off_count)
                 #Grouping all of the off hits into one table
@@ -347,7 +363,7 @@ def find_events(dat_file_list, SNR_cut=10, check_zero_drift=False, filter_thresh
             #and create the pandas hit table for ON sources
             on_table_ii = read_dat(dat_file)
             nhits = len(on_table_ii)
-            print('Loaded %i hits from %s (ON)'%(nhits, dat_file))
+            print('find_events: Loaded %i hits from %s (ON)'%(nhits, dat_file))
             if nhits > 0:
                 on_table_ii['status'] = 'on_table_{}'.format(on_count)
                 #Grouping all of the on hits into one table
@@ -356,7 +372,7 @@ def find_events(dat_file_list, SNR_cut=10, check_zero_drift=False, filter_thresh
 
     #If there are no hits on any on target, return to caller
     if len(on_table_list) < 1:
-        print('There are no hits in this cadence :(')
+        print('*** find_events: There are no hits in this cadence (on_table_list) :(')
         end_search(t0)
         return None
 
@@ -377,7 +393,7 @@ def find_events(dat_file_list, SNR_cut=10, check_zero_drift=False, filter_thresh
         except:
             continue
     if len(set(uniqlist)) > 1:
-        raise ValueError('There are multiple sources in the on table.'
+        raise ValueError('find_events: There are multiple sources in the ON table.'
                          'Please check your input files, '
                          'on_off_first parameter,'
                          'or complex_cadence.')
@@ -391,15 +407,19 @@ def find_events(dat_file_list, SNR_cut=10, check_zero_drift=False, filter_thresh
         (float(x) - ref_time)*3600*24)
 
     #######################################################################
-    print('All data loaded!')
+    print('find_events: All data loaded!')
     print()
-    print('Finding events in this cadence...')
+    print('find_events: Finding events in this cadence...')
     #######################################################################
-    #Using logic statements and pandas capabilities to find events that:
-    # 1) Are above an SNR cut, taking into account the check_zero_drift parameter,
-    #    but without an ON-OFF check.
-    # 2) Passed level 1 AND that are in at least one ON but no OFFs
-    # 3) Passed level 2 AND that are present in *ALL* ONs.
+    # Using logic statements and pandas capabilities to find events that
+    # meet these requirements:
+    # * If zero drift rate checking is requested, then filter out hits with
+    #      a drift rate exactly = 0.0.  Obsolete parameter?
+    # * SNR value > SNR cut.
+    # * Drift rate value > min_drift_rate.
+    # * Drift rate value < max_drift_rate.
+    # * Passed level 1 AND that are in at least one ON but no OFFs.
+    # * Passed level 2 AND that are present in *ALL* ONs.
 
     #Optionally remove signals that don't have a drift rate
     if check_zero_drift:
@@ -407,32 +427,45 @@ def find_events(dat_file_list, SNR_cut=10, check_zero_drift=False, filter_thresh
     else:
         zero_adjusted_table = on_table[on_table['DriftRate'] != 0.0]
 
-    #Remove signals below a certain signal-to-noise ratio (SNR_cut)
-    snr_adjusted_table = zero_adjusted_table[zero_adjusted_table['SNR'] > SNR_cut]
+    # If SNR_cut is None, include all signals from the zero adjusted table.
+    # Else, include only signals with SNRs above the threshold value (SNR_cut).
+    if SNR_cut is None:
+        filter_adjusted_table = zero_adjusted_table
+    else:
+        filter_adjusted_table = zero_adjusted_table[ abs(zero_adjusted_table['SNR']) > abs(float(SNR_cut)) ]
+
+    # If min_drift_rate is None, include all signals from the filter_adjusted_table.
+    # Else, include only signals with a drift_rate above min_drift_rate.
+    if min_drift_rate is not None:
+        filter_adjusted_table = filter_adjusted_table[abs(filter_adjusted_table['DriftRate']) > abs(float(min_drift_rate))]
+
+    # If max_drift_rate is None, include all signals from the filter_adjusted_table.
+    # Else, include only signals with a drift_rate below max_drift_rate.
+    if max_drift_rate is not None:
+        filter_adjusted_table = filter_adjusted_table[abs(filter_adjusted_table['DriftRate']) < abs(float(max_drift_rate))]
 
     #If there are no hits left once SNR adjustments are made,
     #let the user know, return the zero-drift adjusted table, and end the
     #search
-    if len(snr_adjusted_table) == 0:
-        print('Found no hits above the SNR cut :(')
+    if len(filter_adjusted_table) == 0:
+        print('*** find_events: The filter_adjusted_table is empty.  No hits. :(')
         end_search(t0)
         return None
     if filter_threshold == 1:
-        print('Found a total of %i hits above the SNR cut in this cadence!'%len(snr_adjusted_table))
-        print('Filter level is 1 - returning this table...')
+        print('find_events (Filter threshold 1): Found a total of %i hits in this cadence!'%len(filter_adjusted_table))
         end_search(t0)
-        return snr_adjusted_table
-    print('Found a total of %i hits above the SNR cut in this cadence!'%len(snr_adjusted_table))
+        return filter_adjusted_table
+    print('find_events (Filter threshold 2/3): Found a total of %i hits in this cadence!'%len(filter_adjusted_table))
 
     #----------------------------------------------------------------------
 
     #Now find how much RFI is within a frequency range of the hit
     #by comparing the ON to the OFF observations. Update RFI_in_range
     if len(off_table) == 0:
-        print('Length of off_table = 0')
-        snr_adjusted_table['RFI_in_range'] = 0
+        print('find_events: Length of off_table = 0')
+        filter_adjusted_table['RFI_in_range'] = 0
     else:
-        snr_adjusted_table['RFI_in_range'] = snr_adjusted_table.apply(
+        filter_adjusted_table['RFI_in_range'] = filter_adjusted_table.apply(
             lambda hit:
                 len(off_table[((off_table['Freq'] > calc_freq_range(hit)[0])
                                & (off_table['Freq'] < calc_freq_range(hit)[1])
@@ -440,18 +473,18 @@ def find_events(dat_file_list, SNR_cut=10, check_zero_drift=False, filter_thresh
 
     #If there is no RFI in range of the hit, it graduates to the
     #not_in_B_table
-    not_in_off_table = snr_adjusted_table[snr_adjusted_table['RFI_in_range'] == 0]
+    not_in_off_table = filter_adjusted_table[filter_adjusted_table['RFI_in_range'] == 0]
 
     if len(not_in_off_table) == 0:
-        print('Found no hits present in only the on observations in this cadence :(')
+        print('find_events (Filter threshold 2/3): Found no hits present in only the on observations for this cadence :(')
         end_search(t0)
         return None
     if filter_threshold == 2:
-        print('Found a total of %i hits in only the on observations in this cadence!'%len(not_in_off_table))
-        print('Filter level is 2 - returning this table...')
+        print('find_events (Filter threshold 2): Found a total of %i hits in only the on observations for this cadence!'%len(not_in_off_table))
         end_search(t0)
         return not_in_off_table
-    print('Found a total of %i hits in only the on observations in this cadence!'%len(not_in_off_table))
+
+    print('find_events: Found a total of %i hits in only the on observations for this cadence!'%len(not_in_off_table))
 
     #----------------------------------------------------------------------
 
@@ -501,17 +534,16 @@ def find_events(dat_file_list, SNR_cut=10, check_zero_drift=False, filter_thresh
                     filter_3_event_list += [temp_table]
 
     else:
-        print('NOTE: At least one of the on tables is empty - no events across this cadence :(')
+        print('*** find_events (Filter threshold 3): At least one of the ON tables is empty :(')
         end_search(t0)
         return None
 
     if len(in_all_ons_table) > 0:
         best_events_table = pd.concat(filter_3_event_list)
-        print('Found a total of {} events across this cadence!'.format(len(best_events_table)))
+        print('find_events: Found a total of {} events across this cadence!'.format(len(best_events_table)))
         end_search(t0)
         return best_events_table
 
-    print('NOTE: Found no events across this cadence :(')
+    print('*** find_events (Filter threshold 3): Found no events across this cadence (in_all_ons_table empty)) :(')
     end_search(t0)
     return None
-

@@ -142,7 +142,9 @@ def find_plot_pipelines(need_init=True, filter_threshold=FILTER_THRESHOLD):
         for filename_h5 in H5_FILE_LIST:
             wgetter(filename_h5)
         # Make all of the DAT files.
-        make_all_dat_files()
+    
+    # For each h5, make a dat file.
+    make_all_dat_files()
 
     print('find_plot_pipelines: Filter threshold = ', filter_threshold)
     number_in_cadence = len(H5_FILE_LIST)

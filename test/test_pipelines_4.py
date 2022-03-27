@@ -35,16 +35,24 @@ def test_pipelines_4():
     rc = execute_one(3, args)
     assert(rc == 0)
 
-    args = [TESTDIR, "-o", PLOTDIR, "-c", "off"]
+    args = [TESTDIR, "-o", PLOTDIR, "-f", "3", "-m", "0.1", "-c", "on"]
     rc = execute_one(4, args)
+    assert(rc == 0)
+
+    args = [TESTDIR, "-o", PLOTDIR, "-f", "2", "-M", "0.4", "-c", "on"]
+    rc = execute_one(5, args)
+    assert(rc == 0)
+
+    args = [TESTDIR, "-o", PLOTDIR, "-c", "off"]
+    rc = execute_one(6, args)
     assert(rc != 0)
 
     args = [TESTDIR, "-o", PLOTDIR, "-c", "complex", "-n", "Rubbish"]
-    rc = execute_one(5, args)
+    rc = execute_one(7, args)
     assert(rc != 0)
 
     args = [TESTDIR, "-o", PLOTDIR, "-f", "2", "-c", "complex", "-n", "VOYAGER-1"]
-    rc = execute_one(6, args)
+    rc = execute_one(8, args)
     assert(rc == 0)
 
     print('\n===== test_pipelines_4: END =====')

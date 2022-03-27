@@ -274,7 +274,7 @@ def find_event_pipeline(dat_file_list_str,h5_file_list_str=None, check_zero_drif
                 continue
         # Part of the cadence, complex or not.
         # Make sure that the frequency range makes sense.
-        print(f"DEBUG fch1 {obj.fch1}:{matcher.fch1}   foff {obj.foff}:{matcher.foff}   nchans {obj.nchans}:{matcher.nchans}")
+        ###print(f"DEBUG fch1 {obj.fch1}:{matcher.fch1}   foff {obj.foff}:{matcher.foff}   nchans {obj.nchans}:{matcher.nchans}")
         if not close_enough(obj.fch1, matcher.fch1) \
         or not close_enough(obj.foff, matcher.foff) \
         or obj.nchans != matcher.nchans:

@@ -12,7 +12,7 @@ The main purpose of the code is to hopefully one day find signals of extraterres
 It can search the data for hundreds of drift rates (in Hz/sec). It can handle either .fil or .h5 file formats.
 
 **NOTE**:
-This code is stable, but new features are currently under development.  'Git pull' for the latest version.
+This code is stable, but new features are currently under development.
 
 Some details for the expert eye:
 

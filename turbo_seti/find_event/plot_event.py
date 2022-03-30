@@ -43,8 +43,8 @@ def overlay_drift(f_event, f_start, f_stop, drift_rate, t_duration, offset=0, al
     '''
     # determines automatic offset and plots offset lines
     if offset == 'auto':
-        offset = ((f_start - f_stop) / 10)
-        plt.plot((f_event - offset, f_event),
+        offset = (f_start - f_stop) * 0.1
+        plt.plot((f_event - abs(offset), f_event),
                  (10, 10),
                  "o-",
                  c=color,
@@ -196,9 +196,7 @@ def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_r
 
 
     # read in data for the first panel
-    max_load = bl.calcload.calc_max_load(fil_file_list[0])
-    #print('plot_event make_waterfall_plots: max_load={} is required for {}'.format(max_load, fil_file_list[0]))
-    wf1 = bl.Waterfall(fil_file_list[0], f_start=f_start, f_stop=f_stop, max_load=max_load)
+    wf1 = bl.Waterfall(fil_file_list[0], f_start=f_start, f_stop=f_stop)
     t0 = wf1.header['tstart']
     plot_f1, plot_data1 = wf1.grab_data()
 
@@ -215,7 +213,6 @@ def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_r
     mid_f = np.abs(f_start+f_stop)/2.
 
     subplots = []
-    del wf1, plot_f1, plot_data1
 
     # Fill in each subplot for the full plot
     for ii, filename in enumerate(fil_file_list):
@@ -225,9 +222,7 @@ def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_r
         subplots.append(subplot)
 
         # read in data
-        max_load = bl.calcload.calc_max_load(filename)
-        #print('plot_event make_waterfall_plots: max_load={} is required for {}'.format(max_load, filename))
-        wf = bl.Waterfall(filename, f_start=f_start, f_stop=f_stop, max_load=max_load)
+        wf = bl.Waterfall(filename, f_start=f_start, f_stop=f_stop)
         # make plot with plot_waterfall
         source_name = source_name_list[ii]
         this_plot = plot_waterfall(wf,
@@ -251,8 +246,6 @@ def make_waterfall_plots(fil_file_list, on_source_name, f_start, f_stop, drift_r
         # Format full plot
         if ii < len(fil_file_list)-1:
             plt.xticks(np.linspace(f_start, f_stop, num=4), ['','','',''])
-
-        del wf
 
 
     # More overall plot formatting, axis labelling

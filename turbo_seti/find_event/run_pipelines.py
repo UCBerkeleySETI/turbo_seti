@@ -103,6 +103,8 @@ def main(args=None):
     parser.add_argument("-f", "--filter_threshold", dest="filter_threshold", type=int,
                         choices=[1, 2, 3], default=3,
                         help="Specification for how strict the top hit filtering will be.")
+    parser.add_argument("-z", "--plot_offset", dest="plot_offset", default=False, action="store_true",
+                        help="Plot offset lines from from signal?  Default:")
     parser.add_argument("-s", "--snr_threshold", dest="snr_threshold", default=None,
                         help="The SNR below which signals will be discarded.")
     parser.add_argument("-m", "--min_drift_rate", dest="min_drift_rate", default=None,
@@ -171,6 +173,10 @@ def execute_pipelines(args):
     out_dir = os.path.abspath(args.out_dir) + "/"
     if not os.path.exists(out_dir):
         os.mkdir(out_dir)
+    if args.plot_offset:
+        offset="auto"
+    else:
+        offset=0
 
     # Establish output pathnames,
     path_h5_list = out_dir + NAME_H5_LIST
@@ -221,7 +227,7 @@ def execute_pipelines(args):
                         path_h5_list,
                         plot_dir=out_dir,
                         filter_spec=args.filter_threshold,
-                        offset=0,
+                        offset=offset,
                         user_validation=False)
 
     print("\nplotSETI: Plots are stored in directory {}.  Bye-bye.".format(out_dir))

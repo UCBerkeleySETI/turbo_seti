@@ -4,7 +4,10 @@ This file is a version history of turbo_seti amendments, beginning with version 
 
 | `YYYY_MM_DD` | `Version` | `Contents` |
 | :--: | :--: | :-- |
-| 2022-03-24 | 2.2.0 |Introduced dat_filter utility (issue #303). |
+| 2022-03-30 | 2.2.1 | Expose --plot_offset in plotSETI (issue #305). |
+| | | Fix plot offset output in plot_event.py overlay_drift function  (issue #305). |
+| | | Get rid of Waterfall max_load parameters and object deletes in plot_event.py make_waterfall_plots function. |
+| 2022-03-24 | 2.2.0 | Introduced dat_filter utility (issue #303). |
 | | | Enhance event analysis (plotSETI et al) to filter by SNR and drift rate (issue #303). |
 | 2022-02-23 | 2.1.25 | Fix to the wrong drift rates when the number of time integrations is not a power of 2 (issue #302). |
 | 2022-02-07 | 2.1.24 | Print versions of hdf5plugin and the HDF5 library (issue #299). |

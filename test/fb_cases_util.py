@@ -16,6 +16,25 @@ DF_REFERENCE = HERE + '/fb_dat_reference.txt'
 SEP = r'\s+'
 
 
+def using_gpu():
+    r"""
+    Using GPU acceleration?
+
+    Returns
+    -------
+    using_gpu : bool
+        True : use GPU
+        False : use CPU
+
+    """
+    try:
+        import cupy
+        cupy.__version__
+    except:
+        return False
+    return True
+
+
 def initialize(arg_dir):
     r'''
     Recreate working directory, TESTDIR.
@@ -162,6 +181,7 @@ def make_one_dat_file(arg_path_fil, min_drift=0.0, max_drift=4.0, min_snr=25.0, 
                        max_drift=max_drift,
                        snr=min_snr,
                        log_level_int=logging.WARNING,
+                       gpu_backend = using_gpu(),
                        out_dir=woutdir)
     fdop.search()
     path_h5_file = arg_path_fil.replace('.fil', '.h5')

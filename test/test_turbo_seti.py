@@ -212,7 +212,10 @@ def test_turboSETI_entry_point():
     seti_event.main(args)
     print("\n===== test_turboSETI_entry_point 4 =====")
     h5_4 = os.path.join(TESTDIR, OFFNIL_H5)
-    args = [h5_4, "-g", "y", "-s", str(MIN_SNR), "-M", str(MAX_DRIFT), "-o", TESTDIR, ]
+    args = [h5_4]
+    if Kernels.has_gpu():
+        args.extend(["-g", "y"])
+    args.extend(["-s", str(MIN_SNR), "-M", str(MAX_DRIFT), "-o", TESTDIR, ])
     seti_event.main(args)
     print("\n===== test_turboSETI_entry_point 5 =====")
     h5_5 = os.path.join(TESTDIR, OFFNIL_H5)

@@ -4,6 +4,7 @@ This file is a version history of turbo_seti amendments, beginning with version 
 
 | `YYYY_MM_DD` | `Version` | `Contents` |
 | :--: | :--: | :-- |
+| 2022-04-04 | 2.2.2 | Performance improvement in GPU mode: Use a cupy RawKernel for the 'flt' function. |
 | 2022-03-30 | 2.2.1 | Expose --plot_offset in plotSETI (issue #305). |
 | | | Fix plot offset output in plot_event.py overlay_drift function  (issue #305). |
 | | | Get rid of Waterfall max_load parameters and object deletes in plot_event.py make_waterfall_plots function. |

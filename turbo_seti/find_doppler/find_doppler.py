@@ -387,24 +387,14 @@ def search_coarse_channel(cchan_dict, fd, dataloader=None, logwriter=None, filew
         median_flag = 0
     logger.debug('median_flag={}'.format(median_flag))
 
-    # allocate array for findopplering
-    # init findopplering array to zero
+    # Allocate array for findopplering
     tree_findoppler = fd.kernels.xp.zeros(tsteps * tdwidth, dtype=fd.kernels.float_type) + median_flag
 
-    # allocate array for holding original
-    # Allocates array in a fast way (without initialize)
+    # Allocate array for holding original
     tree_findoppler_original = fd.kernels.xp.empty_like(tree_findoppler, dtype=fd.kernels.float_type)
-
-    # allocate array for negative doppler rates
+    # Allocate array for negative doppler rates
     tree_findoppler_flip = fd.kernels.xp.empty_like(tree_findoppler, dtype=fd.kernels.float_type)
 
-    # build index mask for in-place tree doppler correction
-    ibrev = fd.kernels.np.zeros(tsteps, dtype=fd.kernels.np.int32)
-
-    for i in range(0, tsteps):
-        ibrev[i] = fd.kernels.bitrev(i, int(fd.kernels.np.log2(tsteps)))
-
-    ##EE: should double check if tdwidth is really better than fftlen here.
     max_val = max_vals()
     if max_val.maxsnr is None:
         max_val.maxsnr = fd.kernels.xp.zeros(tdwidth, dtype=fd.kernels.float_type)
@@ -413,7 +403,7 @@ def search_coarse_channel(cchan_dict, fd, dataloader=None, logwriter=None, filew
     if max_val.total_n_hits is None:
         max_val.total_n_hits = fd.kernels.xp.zeros(1, dtype=fd.kernels.xp.uint32)
 
-    # EE: Making "shoulders" to avoid "edge effects". Could do further testing.
+    # Making "shoulders" to avoid edge effects.
     specstart = int(tsteps * shoulder_size / 2)
     specend = tdwidth - (tsteps * shoulder_size)
     logger.debug('specstart={}, specend={}'.format(specstart, specend))
@@ -448,7 +438,6 @@ def search_coarse_channel(cchan_dict, fd, dataloader=None, logwriter=None, filew
     # Transfer data to device
     spectra = fd.kernels.xp.asarray(spectra, dtype=fd.kernels.float_type)
 
-    ##EE-debuging        kk = 0
     drift_low = -1 * drift_rate_nblock
     drift_high = drift_rate_nblock + 1
     for drift_block in range(drift_low, drift_high):
@@ -472,7 +461,7 @@ def search_coarse_channel(cchan_dict, fd, dataloader=None, logwriter=None, filew
 
             # Flip matrix across X dimension to search negative doppler drift rates
             fd.kernels.xp.copyto(tree_findoppler_flip, tree_findoppler_flip.reshape((tsteps, tdwidth))[:, ::-1].ravel())
-            fd.kernels.tt.flt(tree_findoppler_flip, tsteps * tdwidth, tsteps)
+            tree_findoppler_flip = fd.kernels.tt.flt(tree_findoppler_flip, tsteps)
             logger.debug("done...")
 
             complete_drift_range = datah5_obj.drift_rate_resolution * fd.kernels.np.array(
@@ -481,15 +470,12 @@ def search_coarse_channel(cchan_dict, fd, dataloader=None, logwriter=None, filew
             bool_selected = complete_drift_range >= -fd.max_drift
             logger.debug('***** drift_block <= 0 selected drift range:\n%s', complete_drift_range[bool_selected])
             for k, drift_rate in enumerate(complete_drift_range[bool_selected]):
-                # DCP 2020.04 -- WAR to drift rate in flipped files
+                # Fix drift rate in flipped files
                 if datah5_obj.header['DELTAF'] < 0:
                     drift_rate = -drift_rate
 
-                indx = ibrev[drift_indices[::-1][bool_selected][k]] * tdwidth
-
-                # SEARCH NEGATIVE DRIFT RATES
-                spectrum = tree_findoppler_flip[indx: indx + tdwidth]
-
+                drift_index = drift_indices[::-1][bool_selected][k]
+                spectrum = fd.kernels.get_spectrum(tree_findoppler_flip, tsteps, tdwidth, drift_index)
                 # Reverse spectrum back
                 spectrum = spectrum[::-1]
 
@@ -509,22 +495,21 @@ def search_coarse_channel(cchan_dict, fd, dataloader=None, logwriter=None, filew
 
             # populate original array
             fd.kernels.xp.copyto(tree_findoppler_original, tree_findoppler)
-            fd.kernels.tt.flt(tree_findoppler, tsteps * tdwidth, tsteps)
+            tree_findoppler = fd.kernels.tt.flt(tree_findoppler, tsteps)
 
-            ##EE: Calculates the range of drift rates for a full drift block.
+            # Calculates the range of drift rates for a full drift block.
             complete_drift_range = datah5_obj.drift_rate_resolution * fd.kernels.np.array(
                 range(tsteps_valid * (drift_block), tsteps_valid * (drift_block + 1)))
             bool_selected = complete_drift_range <= fd.max_drift
             logger.debug('***** drift_block >= 0 selected drift range:\n%s', complete_drift_range[bool_selected])
             for k, drift_rate in enumerate(complete_drift_range[bool_selected]):
-                indx = ibrev[drift_indices[k]] * tdwidth
 
-                # DCP 2020.04 -- WAR to drift rate in flipped files
+                # Fix drift rate in flipped files
                 if datah5_obj.header['DELTAF'] < 0:
                     drift_rate = -drift_rate
 
-                # SEARCH POSITIVE DRIFT RATES
-                spectrum = tree_findoppler[indx: indx + tdwidth]
+                drift_index = drift_indices[k]
+                spectrum = fd.kernels.get_spectrum(tree_findoppler, tsteps, tdwidth, drift_index)
 
                 if abs(drift_rate) > fd.min_drift:
                     hitsearch(fd, spectrum, specstart, specend, fd.snr, 
@@ -542,7 +527,7 @@ def search_coarse_channel(cchan_dict, fd, dataloader=None, logwriter=None, filew
     filewriter.close()
     logwriter.close()
 
-    return True ## NEEDED for dask
+    return True # Needed for dask
 
 
 def populate_tree(fd, spectra, tree_findoppler, nframes, tdwidth, tsteps, fftlen,

@@ -5,6 +5,8 @@ import numpy as np
 TYPE_PAIRS = {"float": cp.float32, "double": cp.float64}
 
 # Cuda kernels for the flt function to use.
+# Based on the original C code by Franklin Antonio, available at
+#   https://github.com/UCBerkeleySETI/dedopplerperf/blob/main/CudaTaylor5demo.cu
 # It does one round of the Taylor tree algorithm, calculating the sums of length-2^(x+1) paths
 # from the sums of length-2^x paths.
 CODE = r"""

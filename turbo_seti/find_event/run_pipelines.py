@@ -61,8 +61,6 @@ matched files to be an event.
 
 def clean_event_stuff(path_out_dir):
     r"""Take out the trash."""
-    for deader in glob.glob("{}/*.csv".format(path_out_dir)):
-        os.remove(deader)
     for deader in glob.glob("{}/*.png".format(path_out_dir)):
         os.remove(deader)
     for deader in glob.glob("{}/list*.tst".format(path_out_dir)):

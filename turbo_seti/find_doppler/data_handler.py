@@ -263,7 +263,7 @@ class DATAH5:
         self.tsteps = int(math.pow(2, math.ceil(np.log2(math.floor(self.tsteps_valid)))))
 
         self.header['obs_length'] = self.tsteps_valid * header['DELTAT']
-        self.drift_rate_resolution = (1e6 * np.abs(header['DELTAF'])) / self.header['obs_length']   # in Hz/sec
+        self.drift_rate_resolution = (1e6 * np.abs(header['DELTAF'])) / ((self.tsteps_valid - 1) * header['DELTAT'])
         self.header['cchan_id'] = cchan_id
 
         #EE For now I'm not using a shoulder. This is ok as long as
@@ -301,7 +301,7 @@ class DATAH5:
         self.tsteps_valid = self.tsteps
         #updating obs_length and drift_rate resolution after changing the spectra shape
         self.header['obs_length'] = self.tsteps * self.header['DELTAT']
-        self.drift_rate_resolution = (1e6 * np.abs(self.header['DELTAF'])) / self.header['obs_length']   # in Hz/sec
+        self.drift_rate_resolution = (1e6 * np.abs(self.header['DELTAF'])) / ((self.tsteps_valid - 1) * self.header['DELTAT'])
 
         if spectra.shape != (self.tsteps_valid, self.fftlen):
             msg = "data_handler.py:load_data: spectra.shape={}!".format(spectra.shape)

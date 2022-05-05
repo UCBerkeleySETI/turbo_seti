@@ -464,9 +464,12 @@ def search_coarse_channel(cchan_dict, fd, dataloader=None, logwriter=None, filew
             tree_findoppler_flip = fd.kernels.tt.flt(tree_findoppler_flip, tsteps)
             logger.debug("done...")
 
+            # Calculates the drift rates for the full drift block.
+            # The smallest drift is block_start units of the drift resolution, and we
+            # are considering tsteps_valid different drifts.
+            block_start = (tsteps_valid - 1) * drift_block
             complete_drift_range = datah5_obj.drift_rate_resolution * fd.kernels.np.array(
-                range(-1 * tsteps_valid * (abs(drift_block) + 1) + 1,
-                      -1 * tsteps_valid * (abs(drift_block)) + 1))
+                range(block_start + 1 - tsteps_valid, block_start + 1))
             bool_selected = complete_drift_range >= -fd.max_drift
             logger.debug('***** drift_block <= 0 selected drift range:\n%s', complete_drift_range[bool_selected])
             for k, drift_rate in enumerate(complete_drift_range[bool_selected]):
@@ -497,13 +500,16 @@ def search_coarse_channel(cchan_dict, fd, dataloader=None, logwriter=None, filew
             fd.kernels.xp.copyto(tree_findoppler_original, tree_findoppler)
             tree_findoppler = fd.kernels.tt.flt(tree_findoppler, tsteps)
 
-            # Calculates the range of drift rates for a full drift block.
+            # Calculates the drift rates for the full drift block.
+            # The smallest drift is block_start units of the drift resolution, and we
+            # are considering tsteps_valid different drifts.            
+            block_start = (tsteps_valid - 1) * drift_block
             complete_drift_range = datah5_obj.drift_rate_resolution * fd.kernels.np.array(
-                range(tsteps_valid * (drift_block), tsteps_valid * (drift_block + 1)))
+                range(block_start, block_start + tsteps_valid))
             bool_selected = complete_drift_range <= fd.max_drift
             logger.debug('***** drift_block >= 0 selected drift range:\n%s', complete_drift_range[bool_selected])
             for k, drift_rate in enumerate(complete_drift_range[bool_selected]):
-
+    
                 # Fix drift rate in flipped files
                 if datah5_obj.header['DELTAF'] < 0:
                     drift_rate = -drift_rate

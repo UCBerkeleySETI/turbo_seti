@@ -14,6 +14,7 @@ Independent functions:
     tophitsearch - Searches for hits with largest SNR within 2*tsteps fine frequency channels.
 """
 
+import math
 import os
 import time
 import logging
@@ -525,7 +526,7 @@ def search_coarse_channel(cchan_dict, fd, dataloader=None, logwriter=None, filew
     # Writing the top hits to file.
     logger.debug('END looping over drift_rate_nblock.')
     tophitsearch(fd, tree_findoppler_original, max_val, tsteps, datah5_obj.header, tdwidth,
-                 fftlen, fd.max_drift, datah5_obj.header['obs_length'],
+                 fftlen, fd.max_drift, datah5_obj.drift_rate_resolution,
                  logwriter=logwriter, filewriter=filewriter, obs_info=fd.obs_info)
 
     logger.debug("Total number of candidates for coarse channel " +
@@ -684,9 +685,11 @@ def hitsearch(fd, spectrum, specstart, specend, snr_thresh, drift_rate,
         max_val.total_n_hits[0] += hits
 
 def tophitsearch(fd, tree_findoppler_original, max_val, tsteps, header, tdwidth, fftlen,
-                 max_drift, obs_length, logwriter=None, filewriter=None, obs_info=None):
+                 max_drift, drift_rate_resolution,
+                 logwriter=None, filewriter=None, obs_info=None):
     r"""
-    This finds the hits with largest SNR within 2*tsteps frequency channels.
+    This finds the hits with largest SNR within a nearby window of frequency channels.
+    The window size is calculated so that we cannot report multiple overlapping hits.
 
     Parameters
     ----------
@@ -703,7 +706,8 @@ def tophitsearch(fd, tree_findoppler_original, max_val, tsteps, header, tdwidth,
         Length of fast fourier transform (fft) matrix
     max_drift : float
         Maximum drift rate in Hz/second
-    obs_length : float,
+    drift_rate_resolution : float
+        The drift rate corresponding to drifting rightwards one bin in the whole observation
     logwriter : LogWriter, optional
         Logwriter to which we should write if we find a top hit.
     filewriter : FileWriter, optional
@@ -726,9 +730,14 @@ def tophitsearch(fd, tree_findoppler_original, max_val, tsteps, header, tdwidth,
     if fd.kernels.gpu_backend:
         maxsnr = fd.kernels.xp.asnumpy(maxsnr)
 
+    # This distance is the furthest number of bins apart two overlapping hits can be,
+    # because each hit could be drifting toward each other by max_drift, and to convert
+    # that into units of bins you divide by the resolution.
+    distance = 2 * math.ceil(max_drift / abs(drift_rate_resolution))
+    
     for i in (maxsnr > 0).nonzero()[0]:
-        lbound = int(max(0, i - obs_length*max_drift/2))
-        ubound = int(min(tdwidth, i + obs_length*max_drift/2))
+        lbound = int(max(0, i - distance))
+        ubound = int(min(tdwidth, i + distance))
 
         if (maxsnr[lbound:ubound] > maxsnr[i]).nonzero()[0].any():
             logger.debug("SNR not big enough... %f pass... index: %d", maxsnr[i], i)

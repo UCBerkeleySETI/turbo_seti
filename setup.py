@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-__version__ = "2.2.4"
+__version__ = "2.3.0"
 
 with open("turbo_seti/find_doppler/turbo_seti_version.py", "w") as fh:
     fh.write("TURBO_SETI_VERSION = '{}'\n".format(__version__))
@@ -16,8 +16,9 @@ with open("requirements_test.txt", "r") as fh:
 
 entry_points = {
     "console_scripts": [
-        "turboSETI = turbo_seti.find_doppler.seti_event:main",
-        "plotSETI = turbo_seti.find_event.run_pipelines:main",
+        "turboSETI  = turbo_seti.find_doppler.seti_event:main",
+        "dat_diff   = turbo_seti.find_doppler.dat_diff:main",
+        "plotSETI   = turbo_seti.find_event.run_pipelines:main",
         "dat_filter = turbo_seti.find_event.dat_filter:main",
     ]
 }

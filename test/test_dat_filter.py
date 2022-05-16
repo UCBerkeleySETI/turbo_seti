@@ -1,6 +1,4 @@
 r'''
-TESTDAT_filter.py
-
 Test dat_filter.
 '''
 

@@ -1,5 +1,5 @@
 r'''
-test_pipelines.py
+test_pipelines_1.py
 
 Using the 0000.h5 Voyager 2020 set of HDF5 files
 from http://blpd14.ssl.berkeley.edu/voyager_2020/single_coarse_channel/

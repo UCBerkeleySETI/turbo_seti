@@ -1,4 +1,4 @@
-r""" Testspectra_gen functions"""
+r""" Test setup.py"""
 
 
 def test_setup():

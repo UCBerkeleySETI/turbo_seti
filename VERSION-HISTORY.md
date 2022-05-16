@@ -4,6 +4,7 @@ This file is a version history of turbo_seti amendments, beginning with version 
 
 | `YYYY_MM_DD` | `Version` | `Contents` |
 | :--: | :--: | :-- |
+| 2022-05-16 | 2.3.0 | New utility (dat_diff) to show differences between two dat files (issue  #311). |
 | 2022-05-05 | 2.2.4 | Bug fix in the logic for removing duplicate hits. |
 | 2022-05-05 | 2.2.3 | Bug fix in drift rate calculation. |
 | 2022-04-04 | 2.2.2 | Performance improvement in GPU mode: Use a cupy RawKernel for the 'flt' function. |

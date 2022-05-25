@@ -110,6 +110,9 @@ def make_lists(path_h5_dir, path_h5_list, path_dat_dir, path_dat_list):
 
     N_dat = N_h5 = 0
 
+    print(f"plotSETI: Directory of h5 files: {path_h5_dir}")
+    print(f"plotSETI: Directory of dat files: {path_dat_dir}")
+
     # Make a list of the h5 files.
     with open(path_h5_list, "w", encoding="utf-8") as fh_h5:
         for path_h5 in sorted(glob.glob("{}/*.h5".format(path_h5_dir))):

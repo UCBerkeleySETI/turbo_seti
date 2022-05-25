@@ -32,13 +32,14 @@ It was originally based on `dedoppler` [dedoppler](http://github.com/cs150bf/gbt
 - Python 3.7+
 - astropy
 - numpy
-- blimpy (Breakthrough Listen I/O Methods for Python :  https://github.com/UCBerkeleySETI/blimpy)
+- blimpy 2.0.34+ (Breakthrough Listen I/O Methods for Python :  https://github.com/UCBerkeleySETI/blimpy)
 - pandas
 - toolz
 - fsspec
 - dask
 - dask[bag]
 - numba
+- cloudpickle
 - cupy (NVIDIA GPU mode only)
 
 &nbsp;
@@ -49,36 +50,30 @@ It was originally based on `dedoppler` [dedoppler](http://github.com/cs150bf/gbt
 
 If you have not yet installed blimpy, do so in this manner:
 
-`python3 -m pip install --user -U git+https://github.com/UCBerkeleySETI/blimpy`
+`python3 -m pip install --user -U blimpy`
 
-Then, install turbo_seti directly from this repository:
+Then, install turbo_seti:
 
-`python3 -m pip install --user -U git+https://github.com/UCBerkeleySETI/turbo_seti`
+`python3 -m pip install --user -U turbo_seti`
 
 ## NVIDIA GPU Users
 
 Already included is NUMBA Just-in-Time (JIT) CPU performance enhancements. However, if you have NVIDIA GPU hardware on the computer where turbo_seti is going to execute, you can get significant additional performance improvement.  Enable GPU enhanced processing with these steps:
 
 1. Install pypi package "cupy":  `python3 -m pip install cupy`
-2. Run the executable this way:  `turboSETI <FULL_PATH_TO_INPUT_HDF5_FILE> -g y [OTHER OPTIONS]`
-
-Once you are using a GPU, you may also want to use the `--single_precision=y` flag, to use float32 rather than float64 processing. Each of
-these changes has the potential to roughly double turboSETI's speed, although performance improvements always depend on the details of
-your hardware and data set.
+2. Run the executable this way:  `turboSETI <PATH_TO_INPUT_HDF5_FILE> -g y [OTHER OPTIONS]`
 
 ## Usage
 
 ### Expected Input File Format
 
-At the moment, the `turboSETI` command line and the `FindDoppler` object expect an HDF5 file (.h5) or a Filterbank file (.fil) such as produced by one of the blimpy utilities.
+At the moment, the `turboSETI` command line and the `FindDoppler` object expect an Filterbank HDF5 file (.h5) or a Filterbank SIGPROC file (.fil).
 
 ### Usage as a Command Line
 
-Run with data: `turboSETI <FULL_PATH_TO_INPUT_HDF5_FILE> [OPTIONS]`
+Run with data: `turboSETI <PATH_TO_INPUT_HDF5_FILE> [OPTIONS]`
 
-For an explanation of the program options: `turboSETI -h`
-
-
+For an explanation of the program parameters: `turboSETI -h`
 
 ### Usage as a Python Package
 
@@ -95,9 +90,9 @@ import time
 from blimpy import Waterfall
 from turbo_seti.find_doppler.find_doppler import FindDoppler
 
-H5DIR = "/seti_data/voyager/"
+H5DIR = "/path_to_seti_data/voyager/"
 H5PATH = H5DIR + "Voyager1.single_coarse.fine_res.h5"
-OUT_DIR_BASE = H5DIR
+OUT_DIR = "/path_to_output_directory"
 
 print("\nUsing HDF5 file: {}\nHeader and data shape:".format(H5PATH))
 # -- Get a report of header and data shape
@@ -105,7 +100,7 @@ wf = Waterfall(H5PATH)
 wf.info()
 # -- Instantiate FindDoppler.
 print("\nInstantiating the FindDoppler object.")
-fdop = FindDoppler(datafile=H5PATH, max_drift=4, snr=25, out_dir=H5DIR)
+fdop = FindDoppler(datafile=H5PATH, max_drift=4, snr=25, out_dir=OUT_DIR)
 # -- Search for hits and report elapsed time.
 print("\nBegin doppler search.  Please wait ...")
 t1 = time.time()

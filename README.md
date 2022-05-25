@@ -67,7 +67,7 @@ Already included is NUMBA Just-in-Time (JIT) CPU performance enhancements. Howev
 
 ### Expected Input File Format
 
-At the moment, the `turboSETI` command line and the `FindDoppler` object expect a Filterbank HDF5 file (.h5) or a Filterbank SIGPROC file (.fil).
+At the moment, the `turboSETI` command line and the `FindDoppler` object expect a Filterbank HDF5 file (.h5) or a Filterbank SIGPROC file (.fil).  If a SIGPROC file is supplied, it will automatically be converted to an HDF5 file which resides in the same directory as the SIGPROC file.
 
 ### Usage as a Command Line
 

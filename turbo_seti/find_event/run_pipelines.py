@@ -59,6 +59,22 @@ at least one of the matched files to qualify as an event.
 
 Specifying a --filter_threshold value of 3 indicates that a top hit must be in all
 matched files to be an event.
+
+Lists of h5 and dat files used internally
+-----------------------------------------
+Internally, plotSETI uses one text-file-resident list of h5 files
+and another for the corresponding dat files.
+Normally, these 2 lists are generated internally.
+However, if parameter --h5dat_lists is set to 2 file paths separated by spaces
+(one text file for h5s, one text file for dats), then those 2 list files:
+* Will be checked for existence and consistency.
+* Will be used for internal list processing.
+
+E.g. plotSETI --h5dat_lists /dir_a/list_h5_files.txt /b/list_h5_files.txt --out_dir .....
+tells plotSETI that there exists a list of h5 files in /dir_a/list_h5_files.txt
+and a list of dat files in /dir_b/list_dat_files.txt
+
+If --h5dat_lists is absent (default), plotSETI will internally generate the 2 list files.
 """
 
 
@@ -78,11 +94,30 @@ def clean_event_stuff(path_out_dir):
     """
     for deader in glob.glob(f"{path_out_dir}/*.png"):
         os.remove(deader)
-    for deader in glob.glob(f"{path_out_dir}/list*.tst"):
+    for deader in glob.glob(f"{path_out_dir}/list*.txt"):
         os.remove(deader)
     PATH_CSV = f"{path_out_dir}/{NAME_CSVF}"
     if os.path.exists(PATH_CSV):
         os.remove(PATH_CSV)
+
+
+def count_text_lines(path_list_file):
+    """
+    Count the list of text lines in a file.
+
+    Parameters
+    ----------
+    path_list_file : str
+        Path of file containing a list of text lines..
+
+    Returns
+    -------
+    int
+        Count of text lines.
+
+    """
+    temp_list = open(path_list_file, "r", encoding="utf-8").readlines()
+    return len(temp_list)
 
 
 def make_lists(path_h5_dir, path_h5_list, path_dat_dir, path_dat_list):
@@ -161,6 +196,8 @@ def main(args=None):
                         help="Path to the directory holding the set of .dat files. Default: h5_path. ")
     parser.add_argument("-o", "--out_dir", dest="out_dir", type=str, default="./",
                         help="Path to the output directory. Default: current directory (.).")
+    parser.add_argument("--h5dat_lists", type=str, nargs="+", required=False,
+                        help="User-supplied paths to lists of h5 files and dat files.  Default: None supplied; will be internally-generated.")
     parser.add_argument("-f", "--filter_threshold", dest="filter_threshold", type=int,
                         choices=[1, 2, 3], default=3,
                         help="Specification for how strict the top hit filtering will be.")
@@ -181,6 +218,8 @@ def main(args=None):
                         help="Erase pre-existing *.png, *.csv, and list*.txt files in the output directory.  Default: False.")
     parser.add_argument("-v", "--version", dest="show_version", default=False, action="store_true",
                         help="Show the turbo_seti and blimpy versions and exit.")
+    parser.add_argument("--debug", default=False, action="store_true",
+                        help="Turn on debug tracing (developer).")
 
     if args is None:
         args = parser.parse_args()
@@ -220,7 +259,7 @@ def execute_pipelines(args):
     if args.cadence == "complex":
         complex_cadence = True
         if len(args.source_name) < 1:
-            print("\n*** plotSETI: Complex cadence requires a source_name.  Bye-bye.")
+            print("\n*** plotSETI: Complex cadence requires a source_name.")
             sys.exit(RETURN_ERROR)
 
     else:
@@ -240,15 +279,49 @@ def execute_pipelines(args):
         offset=0
 
     # Establish output pathnames,
-    path_h5_list = out_dir + NAME_H5_LIST
-    path_dat_list = out_dir + NAME_DAT_LIST
     path_csvf = out_dir + NAME_CSVF
     clean_event_stuff(out_dir)
 
     # Make the h5 and dat lists.
-    number_in_cadence = make_lists(h5_dir, path_h5_list, dat_dir, path_dat_list)
-    if number_in_cadence == 0:
-        return RETURN_ERROR
+    # Default to auto-generation?
+    if args.h5dat_lists is None:
+        SZ_user_list = 0
+    else:
+        SZ_user_list = len(args.h5dat_lists)
+    if args.debug:
+        print(f"DEBUG h5dats_list: #{SZ_user_list} {args.h5dat_lists}")
+    if SZ_user_list == 0: # Default to auto-generation.
+        path_h5_list = out_dir + NAME_H5_LIST
+        path_dat_list = out_dir + NAME_DAT_LIST
+        number_in_cadence = make_lists(h5_dir, path_h5_list, dat_dir, path_dat_list)
+        if number_in_cadence == 0:
+            return RETURN_ERROR
+    else: # User-specified lists
+        if SZ_user_list != 2:
+            print(f"\n*** plotSETI: h5dat_lists had {SZ_user_list} elements; must be 2 (one for h5 and one for dat)!")
+            return RETURN_ERROR
+        if args.h5dat_lists[0] is None or args.h5dat_lists[1] is None:
+            print(f"\n*** plotSETI: h5dat_lists had {SZ_user_list} elements; must be 2 (one for h5 and one for dat)!")
+            return RETURN_ERROR
+        # Check the list of h5 files.
+        path_h5_list = args.h5dat_lists[0]
+        if not os.path.exists(path_h5_list):
+            print(f"\n*** plotSETI: File {path_h5_list} does not exist!")
+            return RETURN_ERROR
+        N_h5 = count_text_lines(path_h5_list)
+        print(f"plotSETI: Found {N_h5} h5 files.")
+        # Check the list of dat files.
+        path_dat_list = args.h5dat_lists[1]
+        if not os.path.exists(path_dat_list):
+            print(f"\n*** plotSETI: File {path_dat_list} does not exist!")
+            return RETURN_ERROR
+        N_dat = count_text_lines(path_dat_list)
+        print(f"plotSETI: Found {N_dat} dat files.")
+        # Make sure that the lists are of the same size.
+        if N_h5 != N_dat:
+            print("\n*** plotSETI: Count of dat files must = count of h5 files!")
+            return RETURN_ERROR
+        number_in_cadence = N_h5
 
     # Run find_event_pipeline()
     if complex_cadence:
@@ -282,7 +355,7 @@ def execute_pipelines(args):
                             saving=True)
 
     if df_check is None:
-        print("\n*** plotSETI: No events produced in find_event_pipeline()!  Bye-bye.")
+        print("\n*** plotSETI: No events produced in find_event_pipeline()!")
         return RETURN_ERROR
 
     # Make the plots for all of the HDF5/DAT file pairs in batch mode.
@@ -294,7 +367,7 @@ def execute_pipelines(args):
                         offset=offset,
                         user_validation=False)
 
-    print("\nplotSETI: Plots are stored in directory {}.  Bye-bye.".format(out_dir))
+    print(f"\nplotSETI: Plots are stored in directory {out_dir}.")
 
     return RETURN_NORMAL
 

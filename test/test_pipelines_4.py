@@ -4,6 +4,8 @@ test_pipelines_4.py
 Test plotSETI.
 '''
 
+import os
+import shutil
 from tempfile import gettempdir
 import pytest
 from turbo_seti import run_pipelines
@@ -20,7 +22,7 @@ def execute_one(counter, args):
 
 
 @pytest.mark.order(2)
-def test_pipelines_4():
+def test_pipelines_4a():
     print('\n===== test_pipelines_4: BEGIN =====')
     
     args = [TESTDIR, "-o", PLOTDIR, "-f", "1", "-s", "25.0", "-c", "on"]
@@ -57,6 +59,23 @@ def test_pipelines_4():
 
     print('\n===== test_pipelines_4: END =====')
 
+@pytest.mark.order(2)
+def test_pipelines_4b():
+
+    # --h5dat_lists
+    LISTDIR = TESTDIR + "/my_lists"
+    if not os.path.exists(LISTDIR):
+        os.mkdir(LISTDIR)
+    LISTH5 = "h5_files.lst"
+    LISTDAT = "dat_files.lst"
+    shutil.copyfile(TESTDIR + "/" + LISTH5, LISTDIR + "/" + LISTH5)
+    shutil.copyfile(TESTDIR + "/" + LISTDAT, LISTDIR + "/" + LISTDAT)
+    args = [TESTDIR, "-o", PLOTDIR, "-f", "2", "-M", "0.4",
+            "--h5dat_lists", LISTDIR + "/" + LISTH5, LISTDIR + "/" + LISTDAT]
+    rc = execute_one(42, args)
+    assert(rc == 0)
+
 
 if __name__ == '__main__':
-    test_pipelines_4()
+    #test_pipelines_4a()
+    test_pipelines_4b()

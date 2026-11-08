@@ -530,7 +530,7 @@ def search_coarse_channel(cchan_dict, fd, dataloader=None, logwriter=None, filew
                  logwriter=logwriter, filewriter=filewriter, obs_info=fd.obs_info)
 
     logger.debug("Total number of candidates for coarse channel " +
-                str(datah5_obj.header['cchan_id']) + " is: %i" % max_val.total_n_hits)
+                str(datah5_obj.header['cchan_id']) + " is: %i" % int(max_val.total_n_hits[0]))
     filewriter.close()
     logwriter.close()
 

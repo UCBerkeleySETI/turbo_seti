@@ -213,9 +213,8 @@ class FindDoppler:
         # As of 2.1.0, add max_drift_rate and obs_length to FileWriter header input
         header_in['max_drift_rate'] = self.max_drift
 
-        wfilename = filename_in.split('/')[-1].replace('.h5', '').replace('.fits', '').replace('.fil', '')
-        path_log = '{}/{}.log'.format(self.out_dir.rstrip('/'), wfilename)
-        path_dat = '{}/{}.dat'.format(self.out_dir.rstrip('/'), wfilename)
+        path_log = output_path(self.out_dir, filename_in, '.log')
+        path_dat = output_path(self.out_dir, filename_in, '.dat')
         if self.append_output:
             logger.debug('Appending DAT and LOG files')
         else:
@@ -260,6 +259,33 @@ class FindDoppler:
 
         t1 = time.time()
         self.last_logwriter(path_log, '\n===== Search time: {:.2f} minutes'.format((t1 - t0)/60.0))
+
+def output_path(out_dir, data_filename, suffix, path=os.path):
+    """
+    Build an output (.dat/.log) path from the output directory and the input file name.
+
+    Uses os.path so it works on Windows (backslash separators, drive letters) as well as
+    POSIX.  ``path`` is a parameter only so tests can exercise ntpath/posixpath on any OS.
+
+    Parameters
+    ----------
+    out_dir : str
+        Output directory.
+    data_filename : str
+        Input data file (.h5, .fil or .fits), with or without a directory part.
+    suffix : str
+        Appended to the file stem, e.g. '.dat' or '_3.log'.
+    path : module, optional
+        os.path (default), ntpath or posixpath.
+
+    Returns
+    -------
+    str
+        The output file path.
+    """
+    stem = path.basename(data_filename).replace('.h5', '').replace('.fits', '').replace('.fil', '')
+    return path.join(out_dir, stem + suffix)
+
 
 def load_the_data(cchan_dict, precision):
     r"""
@@ -342,15 +368,12 @@ def search_coarse_channel(cchan_dict, fd, dataloader=None, logwriter=None, filew
         logger.info("Spectra 0 1st 3 values: {}".format(spectra[0, 0:3]))
         logger.info("Spectra 1 1st 3 values: {}".format(spectra[1, 0:3]))
 
-    fileroot_out = fd.data_handle.filename.split('/')[-1].replace('.h5', '').replace('.fits', '').replace('.fil', '')
     if logwriter is None:
-        logwriter = LogWriter('%s/%s_%i.log' % (fd.out_dir.rstrip('/'),
-                              fileroot_out,
-                              this_coarse_channel))
+        logwriter = LogWriter(output_path(fd.out_dir, fd.data_handle.filename,
+                                          '_%i.log' % this_coarse_channel))
     if filewriter is None:
-        filewriter = FileWriter('%s/%s_%i.dat' % (fd.out_dir.rstrip('/'),
-                                fileroot_out,
-                                this_coarse_channel),
+        filewriter = FileWriter(output_path(fd.out_dir, fd.data_handle.filename,
+                                            '_%i.dat' % this_coarse_channel),
                                 fd.data_handle.header)
 
     tsteps = datah5_obj.tsteps

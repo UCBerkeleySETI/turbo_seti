@@ -1,6 +1,7 @@
 r''' Source file for merge_dats_logs() '''
 
 from os import chdir, getcwd, listdir, remove, rename
+from os.path import basename
 
 PREFIX = "_c_"
 DEBUGGING = False
@@ -29,7 +30,7 @@ def merge_dats_logs(arg_h5: str, arg_dir: str, arg_type: str, cleanup='n'):
     chdir(arg_dir) # Change directory
     suffix = '.' + arg_type # E.g. .dat
     files = []
-    filenamestem = arg_h5.split('/')[-1].replace('.h5', '')
+    filenamestem = basename(arg_h5).replace('.h5', '')
     len_filenamestem = len(filenamestem)
     print('merge_dats_logs: Working on filename-stem {} type {}'
           .format(filenamestem, arg_type))

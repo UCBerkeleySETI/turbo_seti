@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import os
+
 import numpy as np
 from .helper_functions import chan_freq
 
@@ -126,7 +128,7 @@ class FileWriter(GeneralWriter):
         """
         GeneralWriter.__init__(self, filename)
         self.write('# -------------------------- o --------------------------\n')
-        self.write('# File ID: %s \n'%(filename.split('/')[-1].replace('.dat','')+'.h5'))
+        self.write('# File ID: %s \n'%(os.path.basename(filename).replace('.dat','')+'.h5'))
         self.write('# -------------------------- o --------------------------\n')
         self.report_header(header)
 
